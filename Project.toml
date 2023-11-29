@@ -1,0 +1,13 @@
+name = "Mooring"
+uuid = "54d656fe-1954-4949-b509-86ef6fd939c8"
+authors = ["Shagun Agarwal <s.agarwal@tudelft.nl>"]
+
+[deps]
+DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
+Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+
+[compat]
+DrWatson = "2.12.0"
+julia = "1.8.2"
