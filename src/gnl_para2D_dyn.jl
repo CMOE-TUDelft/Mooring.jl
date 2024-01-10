@@ -37,9 +37,9 @@ A = 0.01
 
 # Time Parameters
 t0 = 0.0
-simΔt = 0.01
+simΔt = 0.02
 simT = 5.0
-outΔt = 0.01
+outΔt = 0.02
 
 
 # Parameter Domain
@@ -105,7 +105,7 @@ reffe = ReferenceFE(lagrangian,
 # Dirichlet BC
 g1(x, t::Real) = VectorValue(0.0, 0.0)
 g1(t::Real) = x -> g1(x, t)
-g2(x, t::Real) = VectorValue(-0.1*sin(2*pi/0.2*t), 0.0)
+g2(x, t::Real) = VectorValue(-0.02*sin(2*pi/0.2*t), 0.0)
 g2(t::Real) = x -> g2(x, t)
 
 U = TransientTrialFESpace(Ψu, [g2,g1])
@@ -157,7 +157,9 @@ stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u)
 
 FBodyh = interpolate_everywhere(VectorValue(0.0, -ρc*g), Ψu)
 
-
+bedK = ρc*g*2
+bedRamp = 1e3
+spng(u) = 0.5+0.5*(tanh∘( VectorValue(0.0,-bedRamp) ⋅ (Xh+u)))
 
 ## Weak form
 # ---------------------Start---------------------
@@ -168,7 +170,8 @@ res(u, ψu) =
   ∫( 
     ( 
       ∇X_Dir(ψu) ⊙ stressK(u) + 
-      - ( ψu ⋅ FBodyh ) 
+      - ( ψu ⋅ FBodyh ) + 
+      - ( ψu ⋅ VectorValue(0.0,bedK) * spng(u) )
     )*((J ⊙ J).^0.5) 
   )dΩ 
 
@@ -221,7 +224,8 @@ createpvd(filename*"_tSol") do pvd
   pvd[t0] = createvtk(Ω,    
       filename*"_tSol_$tprt"*".vtu",
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-      "ETang"=>ETang(uh), "sigma"=>stressσ(uh) ])
+      "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+      "spr"=>spng(uh) ])
 end
 
 
@@ -245,7 +249,8 @@ createpvd(filename*"_tSol", append=true) do pvd
     pvd[t] = createvtk(Ω,    
       filename*"_tSol_$tprt"*".vtu",
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-      "ETang"=>ETang(uh), "sigma"=>stressσ(uh) ])
+      "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+      "spr"=>spng(uh) ])
   end
 end  
 tock()  

@@ -34,7 +34,7 @@ A = 0.01
 
 
 # Parameter Domain
-nx = 1000
+nx = 100
 domain = (0, L)
 partition = (nx)
 model = CartesianDiscreteModel(domain, partition)
@@ -145,11 +145,18 @@ stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u)
 
 FExth = interpolate_everywhere(VectorValue(0.0, -2000), Ψu)
 
+bedK = 2000
+bedRamp = 1e3
+spng(u) = 0.5+0.5*(tanh∘( VectorValue(0.0,-bedRamp) ⋅ (Xh+u)))
 
 ## Weak form
 # ---------------------Start---------------------
 res(u, ψu) =  
-  ∫( ( ∇X_Dir(ψu) ⊙ stressK(u) - ( ψu ⋅ FExth ) )*((J ⊙ J).^0.5) )dΩ 
+  ∫( ( 
+      ∇X_Dir(ψu) ⊙ stressK(u) +
+      - ( ψu ⋅ FExth ) + 
+      - ( ψu ⋅ VectorValue(0.0,bedK) * spng(u) )
+    )*((J ⊙ J).^0.5) )dΩ 
 
 # ----------------------End----------------------
 
@@ -172,7 +179,7 @@ res(u, ψu) =
 
 # Initial solution
 fx_U(r) = 0.0#sin(π*r[1])
-fy_U(r) = -0.01*sin(π*r[1])
+fy_U(r) = -0.0000001*sin(π*r[1])
 Ua(r) = VectorValue(fx_U(r), fy_U(r))
 # Ua(r) = VectorValue(0.0, -0.00001)
 U0 = interpolate_everywhere(Ua, U)
