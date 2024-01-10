@@ -19,13 +19,15 @@ using CSV
 using Printf
 
 
+g = 9.81
+
 # File properties
 filename = datadir("sims","run","mem")
 
 
 # Material properties
 E = 1e4
-ρc = 200 #Kg/m3
+ρc = 2000/g #Kg/m3
 L = 1 #m
 A = 0.01
 μₘ = 0.5*E
@@ -35,9 +37,9 @@ A = 0.01
 
 # Time Parameters
 t0 = 0.0
-simΔt = 0.0001
-simT = 2
-outΔt = 0.002
+simΔt = 0.01
+simT = 5.0
+outΔt = 0.01
 
 
 # Parameter Domain
@@ -103,7 +105,7 @@ reffe = ReferenceFE(lagrangian,
 # Dirichlet BC
 g1(x, t::Real) = VectorValue(0.0, 0.0)
 g1(t::Real) = x -> g1(x, t)
-g2(x, t::Real) = VectorValue(-0.0001*sin(2*pi/1.0*t), 0.0)
+g2(x, t::Real) = VectorValue(-0.1*sin(2*pi/0.2*t), 0.0)
 g2(t::Real) = x -> g2(x, t)
 
 U = TransientTrialFESpace(Ψu, [g2,g1])
@@ -153,23 +155,28 @@ stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u)
 # ----------------------End----------------------
 
 
-FExth = interpolate_everywhere(VectorValue(0.0, -2000), Ψu)
+FBodyh = interpolate_everywhere(VectorValue(0.0, -ρc*g), Ψu)
 
 
 
 ## Weak form
 # ---------------------Start---------------------
-res(t, u, ψu) =  
+mass(t, u, ψu) =  
+  ∫( ( (ψu ⋅ ∂tt(u)) * ρc ) * ( (J ⊙ J).^0.5 ) )dΩ 
+
+res(u, ψu) =  
   ∫( 
     ( 
-      (ψu ⋅ ∂tt(u)) * ρc +
-      - ∇X_Dir(ψu) ⊙ stressK(u) + 
-      ( ψu ⋅ FExth ) 
+      ∇X_Dir(ψu) ⊙ stressK(u) + 
+      - ( ψu ⋅ FBodyh ) 
     )*((J ⊙ J).^0.5) 
   )dΩ 
 
 
-op_AD = TransientFEOperator(res, U, Ψu; order=2)
+resD(t, u, ψu) = mass(t,u,ψu) + res(u,ψu)
+
+
+op_AD = TransientFEOperator(resD, U, Ψu; order=2)
 # ----------------------End----------------------
 
 
@@ -195,7 +202,7 @@ U0tt = interpolate_everywhere(VectorValue(0.0, 0.0), U(t0))
 
 nls = NLSolver(show_trace=true, 
   method=:newton, linesearch=Static(), 
-  iterations=100, ftol = 1e-6)
+  iterations=100, ftol = 1e-8)
 
 ode_solver = GeneralizedAlpha(nls, simΔt, 0.0)    
 
@@ -220,14 +227,15 @@ end
 
 
 # Execute
-outMod = floor(Int64,outΔt/simΔt);
+tick()
+@show outMod = floor(Int64,outΔt/simΔt);
 createpvd(filename*"_tSol", append=true) do pvd    
   cnt=0
   for (uh, t) in solnht                       
     cnt = cnt+1    
     tval = @sprintf("%5.6f",t)                
     println("Time : $tval")
-    tprt = @sprintf("%d",floor(Int64,t*1000))                        
+    tprt = @sprintf("%d",floor(Int64,t*1000000))                        
 
     if(cnt%outMod != 0) 
       continue
@@ -239,6 +247,7 @@ createpvd(filename*"_tSol", append=true) do pvd
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
       "ETang"=>ETang(uh), "sigma"=>stressσ(uh) ])
   end
-end    
+end  
+tock()  
 
 # end
