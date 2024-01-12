@@ -22,7 +22,7 @@ using Printf
 g = 9.81
 
 # File properties
-filename = datadir("sims","run","mem")
+filename = datadir("sims","run_spr1","mem")
 
 
 # Material properties
@@ -157,9 +157,11 @@ stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u)
 
 FBodyh = interpolate_everywhere(VectorValue(0.0, -ρc*g), Ψu)
 
-bedK = ρc*g*2
+bedK1 = ρc*g
+bedK2 = ρc*g*1000
 bedRamp = 1e3
 spng(u) = 0.5+0.5*(tanh∘( VectorValue(0.0,-bedRamp) ⋅ (Xh+u)))
+excursion(u) = VectorValue(0.0,-1.0) ⋅ (Xh+u)
 
 ## Weak form
 # ---------------------Start---------------------
@@ -171,7 +173,8 @@ res(u, ψu) =
     ( 
       ∇X_Dir(ψu) ⊙ stressK(u) + 
       - ( ψu ⋅ FBodyh ) + 
-      - ( ψu ⋅ VectorValue(0.0,bedK) * spng(u) )
+      - ( ψu ⋅ VectorValue(0.0,1.0) * spng(u) * 
+          ( bedK1 +  bedK2*excursion(u)) )
     )*((J ⊙ J).^0.5) 
   )dΩ 
 
