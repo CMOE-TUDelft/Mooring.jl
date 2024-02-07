@@ -1,11 +1,10 @@
 module Mooring
 
-using Revise
 using Gridap
+using Parameters
+using Printf
+using DrWatson
 
-
-function main()
-  return 0
-end
+include("gnl_simple.jl")
 
 end
