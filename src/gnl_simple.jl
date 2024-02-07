@@ -1,22 +1,26 @@
 
 @with_kw struct gnl_simple_params
-  η₀::Float64 = 1.0
-  ω::Float64 = 0.1
-  E::Float64 = 1e4
-  ρₘ::Float64 = 1
-  L::Float64 = 1 #m
-  A::Float64 = 0.01
-  nx::Int = 100
-  verbose::Bool = false
-  Δt::Float64 = 0.1
-  T::Float64 = 0.2
-  outΔt::Float64 = 0.1
+  η₀::Float64 = 1.0 # wave amplitude
+  ω::Float64 = 0.1 # wave frequency
+  E::Float64 = 1e4 # rope Young's modulus
+  ρₘ::Float64 = 1 # rope density
+  L::Float64 = 1 # rope length
+  A::Float64 = 0.01 # rope cross-sectional area
+  nx::Int = 100 # number of elements
+  verbose::Bool = false # print debug info
+  Δt::Float64 = 0.1 # time step
+  T::Float64 = 0.2 # final time
+  outΔt::Float64 = 0.1 # output time step
+  testname::String = "tmp" # test name
+  sampling_points::Vector{Float64} = [0.5] # sampling point (relative to the length)
 end
 
 function main_dynamic(params)
 
   # Data filename
-  filename = datadir("gnl_simple")
+  @unpack testname = params
+  filename = datadir(testname)
+  csvfile = open(filename*".csv", "w")
 
   # Material properties
   @unpack E,ρₘ,L,A = params
@@ -76,7 +80,6 @@ function main_dynamic(params)
   dΩ = Measure(Ω,degree)
   dΓ = Measure(Γ,degree)
   nΓ = get_normal_vector(Γ)
-
 
   ## Geometric quantities
   # ---------------------Start---------------------
@@ -152,8 +155,9 @@ function main_dynamic(params)
   # ----------------------End----------------------
 
   # Execute
-  @unpack outΔt = params
-  @show outMod = floor(Int64,outΔt/Δt);
+  @unpack outΔt, sampling_points = params
+  outMod = floor(Int64,outΔt/Δt)
+  points = [Point(L*p,) for p in sampling_points]
   createpvd(filename*"_tSol", append=true) do pvd
     cnt=0
     for (uh, t) in solnht
@@ -162,13 +166,16 @@ function main_dynamic(params)
       println("Time : $tval")
       tprt = @sprintf("%d",floor(Int64,t*1000000))
 
+
       if(cnt%outMod != 0)
         continue
       end
       xNew = X + uh
 
-      σₕ = stressσ(uh)
-      println(σₕ(L/2))
+      Sₕ = stressS(uh)
+      Sₕ_norms = [norm(Sₕ(point)) for point in points]
+      vals = [t, Sₕ_norms...]
+      CSV.write(csvfile, Tables.table(vals'), append=true)
 
       if (verbose)
         pvd[t] = createvtk(Ω,
@@ -180,12 +187,15 @@ function main_dynamic(params)
     end
   end
 
+  close(csvfile)
+
 end
 
 function main_static(params)
 
   # Data filename
-  filename = datadir("gnl_simple")
+  @unpack testname = params
+  filename = datadir(testname)
 
   # Material properties
   @unpack E,ρₘ,L,A = params
@@ -310,6 +320,6 @@ function main_static(params)
     "uh" => get_free_dof_values(uh)
   )
 
-  wsave(filename*"_sol.jld2", data)
+  wsave(filename*"_sol0.jld2", data)
 
 end
