@@ -12,13 +12,14 @@
   T::Float64 = 0.2 # final time
   outΔt::Float64 = 0.1 # output time step
   testname::String = "tmp" # test name
+  staticfilename::String = "tmp0.jld2" # static file name
   sampling_points::Vector{Float64} = [0.5] # sampling point (relative to the length)
 end
 
 function main_dynamic(params)
 
   # Data filename
-  @unpack testname = params
+  @unpack testname, staticfilename = params
   filename = datadir(testname)
   csvfile = open(filename*".csv", "w")
 
@@ -137,7 +138,7 @@ function main_dynamic(params)
   ## Initial solution
   # ---------------------Start--------------------
   t0 = 0.0
-  da = wload(datadir(filename*"_sol0.jld2"))
+  da = wload(datadir(staticfilename))
   uf = FEFunction( Ψu, da["uh"] )
   U0 = interpolate_everywhere(uf, U(t0))
   U0t = interpolate_everywhere(VectorValue(0.0, 0.0), U(t0))
@@ -194,7 +195,7 @@ end
 function main_static(params)
 
   # Data filename
-  @unpack testname = params
+  @unpack testname,staticfilename = params
   filename = datadir(testname)
 
   # Material properties
@@ -320,6 +321,6 @@ function main_static(params)
     "uh" => get_free_dof_values(uh)
   )
 
-  wsave(filename*"_sol0.jld2", data)
+  wsave(datadir(staticfilename), data)
 
 end
