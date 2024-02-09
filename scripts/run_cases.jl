@@ -9,8 +9,8 @@ Mooring.main_static(params)
 Mooring.main_dynamic(params)
 
 # Test cases
-η = [0.1,0.2]
-ω = [0.1,0.2]
+η = [ηi for ηi in 0.05:0.05:0.3]
+ω = [ωi for ωi in 0.2:0.2:2.0]
 all_params = @strdict η ω
 cases = dict_list(all_params)
 
