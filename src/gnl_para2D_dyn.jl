@@ -51,8 +51,8 @@ model = CartesianDiscreteModel(domain, partition)
 
 # Labelling 
 labels_Ω = get_face_labeling(model)
-add_tag_from_tags!(labels_Ω,"leftEdge",[1]) 
-add_tag_from_tags!(labels_Ω,"rightEdge",[2]) 
+add_tag_from_tags!(labels_Ω,"anchor",[1]) 
+add_tag_from_tags!(labels_Ω,"fairLead",[2]) 
 writevtk(model, filename*"_model")
 
 
@@ -96,7 +96,7 @@ reffe = ReferenceFE(lagrangian,
   VectorValue{2,Float64}, order)
 Ψu = TestFESpace(Ω, reffe, 
   conformity=:H1, 
-  dirichlet_tags=["leftEdge", "rightEdge"])
+  dirichlet_tags=["anchor", "fairLead"])
 # ----------------------End----------------------
 
 
