@@ -1,11 +1,14 @@
 module Mooring
 
-using Revise
 using Gridap
+using Parameters
+using Printf
+using DrWatson
+using LineSearches: Static
+using DataFrames
+using CSV
+using Tables
 
-
-function main()
-  return 0
-end
+include("gnl_simple.jl")
 
 end

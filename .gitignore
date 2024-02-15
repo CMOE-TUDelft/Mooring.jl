@@ -30,6 +30,7 @@ Manifest.toml
 *.pvd
 *.vscode
 *.pvsm
+*.csv
 
 # Folders
 output/
