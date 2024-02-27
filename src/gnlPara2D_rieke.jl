@@ -27,34 +27,6 @@ Warmup and Test params
 ===========
 
 """
-@with_kw struct Test_params
-
-  initCSV::String = "models/catShape_1.csv" 
-  resDir = "data/"
-
-  # Material properties
-  E = 64.2986e9 #N
-  mDry = 52.8  #kg/m Dry weight per unit len
-  mSub = 45.936  #kg/m Submerged weight per unit len
-  L = 75 #m
-  ρc = 7.8e3 #kg/m3 Density of steel
-
-  # Parameter Domain
-  nx = 100
-
-  # Time Parameters
-  t0 = 0.0
-  simT = 20.0
-  simΔt = 0.2
-  outΔt = 0.2
-
-  # Fairlead Excitation
-  fairLead_η = 0.5
-  fairLead_T = 4.0
-
-end
-
-
 @with_kw struct Warmup_params
 
   initCSV::String = "models/catShape_xfl60_zfl20.csv" 
@@ -65,7 +37,7 @@ end
   mDry = 52.8  #kg/m Dry weight per unit len
   mSub = 45.936  #kg/m Submerged weight per unit len
   L = 75 #m
-  ρc = 7.8e3 #kg/m3 Density of steel
+  ρcDry = 7.8e3 #kg/m3 Density of steel
 
   # Parameter Domain
   nx = 100
@@ -79,6 +51,10 @@ end
   # Fairlead Excitation
   fairLead_η = 0.1
   fairLead_T = 4.0
+
+  # Drag coeff
+  Cdn = 0.5
+  Cdt = 0.5
 
 end
 
@@ -97,8 +73,10 @@ function main(params)
 
 
   # Material properties
-  @unpack E, ρc, L = params
+  @unpack E, ρcDry, L = params
+  ρw = 1025 #Kg/m3 density of water
   μₘ = 0.5*E
+  ρcSub = ρcDry - ρw
   @show L
 
   
@@ -180,14 +158,14 @@ function main(params)
 
   # Initial solution
   Xh = interpolate_everywhere(X, Ψu)
-  FBodyh = interpolate_everywhere(VectorValue(0.0, -ρc*g), Ψu)
+  FWeih = interpolate_everywhere(VectorValue(0.0, -ρcSub*g), Ψu)
 
   
   ## Geometric quantities
-  # ---------------------Start---------------------
-  J = ∇(Xh)'
+  # ---------------------Start---------------------  
+  J = ∇(Xh)' #d x q
 
-  G = J' ⋅ J
+  G = J' ⋅ J #q x q
   GInv = inv(G)
 
   Q = J ⋅ GInv
@@ -204,6 +182,14 @@ function main(params)
   # Length of line
   calcLen(JLoc) = sum(∫( sqrt∘(JLoc ⊙ JLoc) )dΩ)
 
+  # Tangent
+  T1s = J ⋅ VectorValue(1.0)
+  T1m = (T1s ⋅ T1s).^0.5
+  T1 = T1s / T1m
+  t1s(u) = FΓ(u) ⋅ T1s
+  t1m(u) = (t1s(u) ⋅ t1s(u)).^0.5
+  t1(u) = t1s(u) / t1m(u)
+
   # Strain tensors
   EDir(u) = 0.5 * ( FΓ(u)' ⋅ FΓ(u) - TensorValue(1.0,0.0,0.0,1.0) )
   ETang(u) = P ⋅ EDir(u) ⋅ P
@@ -217,31 +203,60 @@ function main(params)
   
   ## Spring bed
   # ---------------------Start---------------------
-  bedK1 = ρc*g
-  bedK2 = ρc*g*1000
+  bedK1 = ρcSub*g
+  bedK2 = ρcSub*g*1000
   bedRamp = 1e3
-  spng(u) = 0.5+0.5*(tanh∘( VectorValue(0.0,-bedRamp) ⋅ (Xh+u)))
+  spng(u) = 0.5+0.5*(tanh∘( bedRamp*excursion(u) ))
   excursion(u) = VectorValue(0.0,-1.0) ⋅ (Xh+u)
+  bedForce(u) = spng(u) * (bedK1 + bedK2*excursion(u)) 
   # ----------------------End----------------------
+
+
+  ## Drag force
+  # ---------------------Start---------------------
+  @unpack Cdn = params
+  velN(v, u) = (v ⋅ t1(u)) * t1(u) - v
+  velN_mag(v, u) = (velN(v, u) ⋅ velN(v, u)).^0.5
+  # drag(v, u) = 0.5 * ρw * Cdn * velN(v, u) * velN_mag(v, u)  
+
+  function drag(v, u)
+
+    l_t1s = FΓ(u) ⋅ T1s
+    l_t1 = l_t1s / ((l_t1s ⋅ l_t1s).^0.5)
+  
+    vn = (v ⋅ l_t1) * l_t1 - v
+    vnm = (vn ⋅ vn).^0.5
+    return 0.5 * ρw * Cdn * vn * vnm
+  
+  end
+  # ----------------------End----------------------  
 
 
   ## Weak form
   # ---------------------Start---------------------
   mass(t, u, ψu) =  
-  ∫( ( (ψu ⋅ ∂tt(u)) * ρc ) * ( (J ⊙ J).^0.5 ) )dΩ 
+  ∫( ( (ψu ⋅ ∂tt(u)) * ρcDry ) * ( (J ⊙ J).^0.5 ) )dΩ 
+
+
+  damp(t, u, ψu) =  
+  ∫( 
+    (
+      ψu ⋅ drag(∂t(u), u)
+    )*((J ⊙ J).^0.5) 
+  )dΩ 
+
 
   res(u, ψu) =  
   ∫( 
     ( 
       ∇X_Dir(ψu) ⊙ stressK(u) + 
-      - ( ψu ⋅ FBodyh ) + 
-      - ( ψu ⋅ VectorValue(0.0,1.0) * spng(u) * 
-          ( bedK1 +  bedK2*excursion(u)) )
+      - ( ψu ⋅ FWeih ) + 
+      - ( ψu ⋅ VectorValue(0.0,1.0) * bedForce(u) )
     )*((J ⊙ J).^0.5) 
   )dΩ 
 
 
-  resD(t, u, ψu) = mass(t,u,ψu) + res(u,ψu)
+  resD(t, u, ψu) = mass(t,u,ψu) + res(u,ψu) + damp(t, u, ψu)
 
   op_S = FEOperator(res, US, Ψu)
   op_D = TransientFEOperator(resD, U, Ψu; order=2)
@@ -271,7 +286,8 @@ function main(params)
 
   writevtk(Ω, pltName*"staticRes",
     cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh_S, 
-      "ETang"=>ETang(uh_S), "sigma"=>stressσ(uh_S) ])
+      "ETang"=>ETang(uh_S), "sigma"=>stressσ(uh_S),
+      "t1"=>t1(uh_S) ])
   # ----------------------End----------------------  
 
 
@@ -310,6 +326,7 @@ function main(params)
       pltName*"tSol_$tprt"*".vtu",
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
         "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+        "t1"=>t1(uh_S),
         "spr"=>spng(uh) ])
   end
   # ----------------------End----------------------
@@ -338,6 +355,7 @@ function main(params)
           pltName*"tSol_$tprt"*".vtu",
           cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
             "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+            "t1"=>t1(uh_S),
             "spr"=>spng(uh) ])
      
       end

@@ -25,7 +25,7 @@ params = gnlPara2D.Warmup_params(
   mDry = 52.8,  #kg/m Dry weight per unit len
   mSub = 45.936,  #kg/m Submerged weight per unit len
   L = 75, #m
-  ρc = 7.8e3, #kg/m3 Density of steel
+  ρcDry = 7.8e3, #kg/m3 Dry Density of steel
 
   # Parameter Domain
   nx = 100,
@@ -38,7 +38,11 @@ params = gnlPara2D.Warmup_params(
 
   # Fairlead Excitation
   fairLead_η = 0.1,
-  fairLead_T = 4.0
+  fairLead_T = 4.0,
+
+  # Drag coeff
+  Cdn = 0.5,
+  Cdt = 0.5
 )
 gnlPara2D.main(params)
 
