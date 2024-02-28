@@ -34,10 +34,9 @@ Warmup and Test params
 
   # Material properties
   E = 64.2986e9 #N
-  mDry = 52.8  #kg/m Dry weight per unit len
-  mSub = 45.936  #kg/m Submerged weight per unit len
   L = 75 #m
-  ρcDry = 7.8e3 #kg/m3 Density of steel
+  A_str = 2*(π*0.048*0.048/4) #m2 Str cross-section area
+  ρcDry = 7.8e3 #kg/m3 Density of steel  
 
   # Parameter Domain
   nx = 100
@@ -53,8 +52,10 @@ Warmup and Test params
   fairLead_T = 4.0
 
   # Drag coeff
-  Cdn = 0.5
-  Cdt = 0.5
+  Cdn = 2.6 # Normal drag coeff
+  d_dn = 0.048 #m Normal drag projection diameter
+  Cdt = 1.4 # Tangent drag coff
+  d_dt = 0.048/pi #m Normal drag projection diameter
 
 end
 
@@ -73,7 +74,7 @@ function main(params)
 
 
   # Material properties
-  @unpack E, ρcDry, L = params
+  @unpack E, ρcDry, L, A_str = params
   ρw = 1025 #Kg/m3 density of water
   μₘ = 0.5*E
   ρcSub = ρcDry - ρw
@@ -180,7 +181,7 @@ function main(params)
   sΛ(u) = ((JNew(u) ⊙ JNew(u)) ./ (J ⊙ J)).^0.5
 
   # Length of line
-  calcLen(JLoc) = sum(∫( sqrt∘(JLoc ⊙ JLoc) )dΩ)
+  calcLen(JLoc) = sum(∫( sqrt∘(JLoc ⊙ JLoc) )dΩ)  
 
   # Tangent
   T1s = J ⋅ VectorValue(1.0)
@@ -197,7 +198,32 @@ function main(params)
   # Stress tensors
   stressK(u) = 2*μₘ * (FΓ(u) ⋅ ETang(u))
   stressS(u) = 2*μₘ * ETang(u)
-  stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u)
+  stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u)  
+  # ----------------------End----------------------
+
+
+  ## Cell state
+  # ---------------------Start---------------------  
+  function new_J(J_csin, Jin)
+    return true, Jin
+  end
+
+  function create_cellState(Jin, loc)
+    local J_cs
+    J_cs = CellState(Jin(loc), dΩ)  
+    update_state!(new_J, J_cs, Jin)    
+
+    return J_cs
+  end
+
+  loc = Point(0.0)
+  J_cs = create_cellState(J, loc)
+  QTrans_cs = create_cellState(Q', loc)
+  P_cs = create_cellState(P, loc)
+  JJ_cs = create_cellState((J ⊙ J).^0.5, loc)  
+  T1s_cs = create_cellState(T1s, loc)
+  T1m_cs = create_cellState(T1m, loc)
+  T1_cs = create_cellState(T1, loc)
   # ----------------------End----------------------
   
   
@@ -212,53 +238,149 @@ function main(params)
   # ----------------------End----------------------
 
 
-  ## Drag force
+  ## Function form stressK
   # ---------------------Start---------------------
-  @unpack Cdn = params
-  velN(v, u) = (v ⋅ t1(u)) * t1(u) - v
-  velN_mag(v, u) = (velN(v, u) ⋅ velN(v, u)).^0.5
-  # drag(v, u) = 0.5 * ρw * Cdn * velN(v, u) * velN_mag(v, u)  
+  # stressK function for speed
+  function stressK_fnc(u)
+    
+    local FΓ, EDir, ETang
+    
+    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
 
-  function drag(v, u)
+    EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
 
-    l_t1s = FΓ(u) ⋅ T1s
-    l_t1 = l_t1s / ((l_t1s ⋅ l_t1s).^0.5)
-  
-    vn = (v ⋅ l_t1) * l_t1 - v
-    vnm = (vn ⋅ vn).^0.5
-    return 0.5 * ρw * Cdn * vn * vnm
-  
+    ETang = P_cs ⋅ EDir ⋅ P_cs
+
+    return 2*μₘ * (FΓ ⋅ ETang)
+
   end
   # ----------------------End----------------------  
 
 
-  ## Weak form
+  ## Function form drag
   # ---------------------Start---------------------
-  mass(t, u, ψu) =  
-  ∫( ( (ψu ⋅ ∂tt(u)) * ρcDry ) * ( (J ⊙ J).^0.5 ) )dΩ 
+  @unpack Cdn, d_dn, Cdt, d_dt = params
+  @show D_dn = 0.5 * ρw * Cdn * d_dn / A_str #kg/m4
+  @show D_dt = 0.5 * ρw * Cdt * π * d_dt / A_str #kg/m4
+
+  function drag_ΓX_intp(v,u)  
+    # Slow basic version
+    # Useful for plotting
+
+    local vn, vnm, vt, vtm
+    
+    vt = -(v ⋅ t1(u)) * t1(u)
+    vtm = (vt ⋅ vt).^0.5
+    vn = -v - vt
+    vnm = (vn ⋅ vn).^0.5    
+
+    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ(u)
+
+  end
+
+  function drag_ΓX(v, u)
+
+    local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm
+
+    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+
+    t1s = FΓ ⋅ T1s_cs
+    t1m2 = t1s ⋅ t1s    
+    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
+
+    sΛ = (t1m2.^0.5) / T1m_cs
+    
+    vt = -(v ⋅ t1s) * t1s / t1m2
+    vtm = (vt ⋅ vt).^0.5
+    vn = -v - vt
+    vnm = (vn ⋅ vn).^0.5
+
+    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ
+
+  end
+
+  function drag_n_ΓX(v, u)
+
+    local FΓ, t1s, t1m2, vn, vnm, sΛ
+
+    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+
+    t1s = FΓ ⋅ T1s_cs
+    t1m2 = t1s ⋅ t1s    
+    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
+
+    sΛ = (t1m2.^0.5) / T1m_cs
+    
+    vn = (v ⋅ t1s) * t1s / t1m2 - v 
+    vnm = (vn ⋅ vn).^0.5
+
+    return D_dn * vn * vnm * sΛ
+
+  end
+
+  function drag_t_ΓX(v, u)
+
+    local FΓ, t1s, t1m2, sΛ, vt, vtm
+
+    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+
+    t1s = FΓ ⋅ T1s_cs
+    t1m2 = t1s ⋅ t1s    
+    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
+
+    sΛ = (t1m2.^0.5) / T1m_cs
+    
+    vt = -(v ⋅ t1s) * t1s / t1m2
+    vtm = (vt ⋅ vt).^0.5
+
+    return D_dt * vt * vtm * sΛ
+
+  end
+  # ----------------------End----------------------  
 
 
-  damp(t, u, ψu) =  
-  ∫( 
-    (
-      ψu ⋅ drag(∂t(u), u)
-    )*((J ⊙ J).^0.5) 
-  )dΩ 
-
-
+  ## Weak form: Static
+  # ---------------------Start---------------------
   res(u, ψu) =  
   ∫( 
     ( 
-      ∇X_Dir(ψu) ⊙ stressK(u) + 
+      ∇X_Dir(ψu) ⊙ stressK_fnc(u) + 
       - ( ψu ⋅ FWeih ) + 
       - ( ψu ⋅ VectorValue(0.0,1.0) * bedForce(u) )
-    )*((J ⊙ J).^0.5) 
+    )*JJ_cs 
   )dΩ 
 
 
-  resD(t, u, ψu) = mass(t,u,ψu) + res(u,ψu) + damp(t, u, ψu)
-
   op_S = FEOperator(res, US, Ψu)
+  # ----------------------End----------------------
+
+
+  ## Weak form: Dynamic
+  # ---------------------Start---------------------
+  # resD(t, u, ψu) =  
+  # ∫( 
+  #   ( 
+  #     (ψu ⋅ ∂tt(u)) * ρcDry +
+  #     ∇X_Dir(ψu) ⊙ stressK(u) +
+  #     -ψu ⋅ FWeih +
+  #     -ψu ⋅ VectorValue(0.0,1.0) * bedForce(u) 
+  #   )*((J ⊙ J).^0.5)
+  # )dΩ 
+
+
+  resD(t, u, ψu) =  
+    ∫( ( (ψu ⋅ ∂tt(u)) * ρcDry )*JJ_cs )dΩ +
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ FWeih )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedForce(u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ drag_n_ΓX(∂t(u), u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ drag_t_ΓX(∂t(u), u) )*JJ_cs )dΩ 
+    # ∫( ( -ψu ⋅ drag_ΓX(∂t(u), u) )*JJ_cs )dΩ 
+    # ∫( (  )*JJ_cs )dΩ +
+    # ∫( (  )*JJ_cs )dΩ +
+    # ∫( (  )*JJ_cs )dΩ   
+
+
   op_D = TransientFEOperator(resD, U, Ψu; order=2)
   # ----------------------End----------------------
 
@@ -286,8 +408,7 @@ function main(params)
 
   writevtk(Ω, pltName*"staticRes",
     cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh_S, 
-      "ETang"=>ETang(uh_S), "sigma"=>stressσ(uh_S),
-      "t1"=>t1(uh_S) ])
+      "ETang"=>ETang(uh_S), "sigma"=>stressσ(uh_S) ])
   # ----------------------End----------------------  
 
 
@@ -326,8 +447,8 @@ function main(params)
       pltName*"tSol_$tprt"*".vtu",
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
         "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
-        "t1"=>t1(uh_S),
         "spr"=>spng(uh) ])
+        # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
   end
   # ----------------------End----------------------
 
@@ -355,8 +476,8 @@ function main(params)
           pltName*"tSol_$tprt"*".vtu",
           cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
             "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
-            "t1"=>t1(uh_S),
             "spr"=>spng(uh) ])
+            # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
      
       end
 
@@ -407,7 +528,6 @@ function setInitXZ(initCSV)
   interpZ = linear_interpolation(r, initXZ[:,2])
   
   # X(r) = VectorValue(interpX(r), interpZ(r))
-
   # Xh = interpolate_everywhere(X, Ψu)
 
   # return Xh

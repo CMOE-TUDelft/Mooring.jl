@@ -22,9 +22,8 @@ params = gnlPara2D.Warmup_params(
 
   # Material properties
   E = 64.2986e9, #N
-  mDry = 52.8,  #kg/m Dry weight per unit len
-  mSub = 45.936,  #kg/m Submerged weight per unit len
   L = 75, #m
+  A_str = 2*(π*0.048*0.048/4), #m2 Str cross-section area
   ρcDry = 7.8e3, #kg/m3 Dry Density of steel
 
   # Parameter Domain
@@ -32,7 +31,7 @@ params = gnlPara2D.Warmup_params(
 
   # Time Parameters
   t0 = 0.0,
-  simT = 20.0,
+  simT = 10.0,
   simΔt = 0.2,
   outΔt = 0.2,
 
@@ -41,8 +40,10 @@ params = gnlPara2D.Warmup_params(
   fairLead_T = 4.0,
 
   # Drag coeff
-  Cdn = 0.5,
-  Cdt = 0.5
+  Cdn = 2.6, # Normal drag coeff
+  d_dn = 0.048, #m Normal drag projection diameter
+  Cdt = 1.4, # Tangent drag coff
+  d_dt = 0.048/pi #m Trangent drag projection diameter
 )
 gnlPara2D.main(params)
 
