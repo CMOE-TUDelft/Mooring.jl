@@ -17,8 +17,11 @@ using LineSearches: Static
 using LinearAlgebra
 using CSV
 using Interpolations
-using WaveSpec.Constants
 using Printf
+using Roots: find_zero
+using WaveSpec.Constants
+using WaveSpec.Jonswap
+using WaveSpec.WaveTimeSeries
 
 
 
@@ -39,7 +42,7 @@ Warmup and Test params
   ρcDry = 7.8e3 #kg/m3 Density of steel  
 
   # Parameter Domain
-  nx = 100
+  nx = 75
 
   # Time Parameters
   t0 = 0.0
@@ -47,15 +50,21 @@ Warmup and Test params
   simΔt = 0.02
   outΔt = 0.2
 
-  # Fairlead Excitation
-  fairLead_η = 0.1
-  fairLead_T = 4.0
+  # # Fairlead Excitation
+  # fairLead_η = 0.1
+  # fairLead_T = 4.0
 
   # Drag coeff
   Cdn = 2.6 # Normal drag coeff
   d_dn = 0.048 #m Normal drag projection diameter
   Cdt = 1.4 # Tangent drag coff
-  d_dt = 0.048/pi #m Normal drag projection diameter
+  d_dt = 0.048/pi #m Tangent drag projection diameter
+
+  # Wave spectrum
+  h0 = 23 #m
+  Hs = 3 #m
+  Tp = 12 #s
+  nω = 257 #including 0
 
 end
 
@@ -85,11 +94,64 @@ function main(params)
   @unpack t0, simT, simΔt, outΔt = params
 
 
-  # Parameter domain
+  ## Wave input
+  # ---------------------Start---------------------  
+  @unpack Hs, Tp, h0, nω = params
+  ω, S, A = jonswap(Hs, Tp,
+    plotflag=false, nω = nω)
+
+  k = dispersionRelAng.(h0, ω; msg=false)
+  α = randomPhase(ω)
+
+  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
+  #η, ϕ, u, w = waveAiry1D(sp, t, 0.1, -0.1)
+  # ----------------------End----------------------  
+
+
+  ## Mesh setup
+  # ---------------------Start---------------------  
+  # function meshIrr(x, nxT, nx1, dx1)
+
+  #   local rr, a0
+
+  #   # x0 = 0.0
+  #   # xEnd = L
+  #   # x1 = 40
+
+  #   # Δx1 = x1-x0
+
+  #   # fMesh(r) = Δx1*(r-1) - dx1*(r^nx0 - 1)
+  #   # rr = find_zero(fMesh,1.1)
+    
+  #   ind = round(Int64, (L-x)/L*nx)    
+
+  #   rr = 1.1
+  #   a0 = L * (rr-1) / (rr^nxT - 1)
+
+  #   if(x ≈ 0.0)
+  #     return x
+  #   else
+  #     return L - a0 / (rr - 1) * (rr^ind - 1)
+  #   end
+
+  #   # @show x
+  #   # return x
+
+  #   # if(ind == 0)
+  #   #   return 0.0
+  #   # elseif(ind ≥ nxT-nx1)
+  #   #   return   1.25*ind #VectorValue(x1 + (ind-nx1)*dx1)
+  #   # else
+  #   #   return 1.25*ind #x0 + (rr^ind -1)/(rr-1)
+  #   # end
+  # end
+
   @unpack nx = params
   domain = (0, L)
-  partition = (nx)
+  partition = (nx)      
+  # map(x) = VectorValue( meshIrr(x[1], nx, 44, 0.75) )
   model = CartesianDiscreteModel(domain, partition)
+  # ----------------------End----------------------  
 
 
   # Labelling 
@@ -138,12 +200,23 @@ function main(params)
 
   ## Define Trial Fnc Dynamic
   # ---------------------Start---------------------
-  @unpack fairLead_η, fairLead_T = params
+  # @unpack fairLead_η, fairLead_T = params
 
   # Dirichlet BC
   gAnch(x, t::Real) = VectorValue(0.0, 0.0)
   gAnch(t::Real) = x -> gAnch(x, t)
-  gFairLead(x, t::Real) = VectorValue(fairLead_η*sin(2*pi/fairLead_T*t), 0.0)
+
+  Xh_fl = X(Point(L))
+  function getFairLeadEnd(x,t)
+    η, _, _, _ = waveAiry1D(sp, t, Xh_fl[1], h0-Xh_fl[2])
+    tRamp = timeRamp(t, 0.0, 15, simT, simT)
+    return VectorValue(0.0, η*tRamp)
+  end
+  
+  # gFairLead(x, t::Real) =  
+  #   VectorValue(fairLead_η*sin(2*pi/fairLead_T*t), 0.0)
+  
+  gFairLead(x, t::Real) = getFairLeadEnd(x,t)    
   gFairLead(t::Real) = x -> gFairLead(x, t)
 
   U = TransientTrialFESpace(Ψu, [gAnch, gFairLead])
@@ -198,7 +271,16 @@ function main(params)
   # Stress tensors
   stressK(u) = 2*μₘ * (FΓ(u) ⋅ ETang(u))
   stressS(u) = 2*μₘ * ETang(u)
-  stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u)  
+  stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u) 
+  
+  
+  function getPrincipalStress(uh, lp)
+
+    sT = stressσ(uh).(lp)
+    sTP = [ (lT[1] + lT[4])/2 + sqrt( ((lT[1] - lT[4])/2)^2 + lT[2]^2 )
+      for lT in sT ]     
+  
+  end
   # ----------------------End----------------------
 
 
@@ -433,6 +515,18 @@ function main(params)
   # ----------------------End----------------------
 
 
+  ## Save quantities
+  # ---------------------Start---------------------  
+  xPrb = Point.(0.0:L/nx:L)
+
+  daFile1 = open( pltName*"data1.dat", "w" )
+  daFile2 = open( pltName*"data2.dat", "w" )
+  
+  daSave1 = DataFrame(zeros(Float64, 1, 9), :auto)
+  daSave2 = DataFrame(zeros(Float64, 1, 6), :auto)
+  # ----------------------End----------------------
+
+
   ## Save initial solution
   # ---------------------Start---------------------
   createpvd(pltName*"tSol") do pvd
@@ -464,13 +558,31 @@ function main(params)
       tval = @sprintf("%5.6f",t)                
       println("Count \t $cnt \t Time : $tval")
       tprt = @sprintf("%d",floor(Int64,t*1000000))
-            
 
+      xNew = X + uh
+      σT = getPrincipalStress(uh, xPrb)      
+
+      lDa = [t, 
+        xNew(xPrb[1])[1], xNew(xPrb[1])[2], σT[1], σT[1]*A_str,
+        xNew(xPrb[end])[1], xNew(xPrb[end])[2], σT[end], σT[end]*A_str]        
+      push!(daSave1, lDa)
+
+      # [print(daFile1, string(val)*", \t") for val in lDa]
+      [@printf(daFile1, "%.5f \t", val) for val in lDa]
+      @printf(daFile1, "\n")
+
+      _, mInd = findmax(σT)
+      lDa = [t, mInd,
+        xNew(xPrb[mInd])[1], xNew(xPrb[mInd])[2], σT[mInd], σT[mInd]*A_str]        
+      push!(daSave2, lDa)
+      
+      # [print(daFile2, string(val)*", \t") for val in lDa]
+      [@printf(daFile2, "%.5f \t", val) for val in lDa]
+      @printf(daFile2, "\n")
+            
       if(cnt%outMod == 0)               
 
-        println("Paraview output")
-      
-        xNew = X + uh
+        println("Paraview output")        
 
         pvd[t] = createvtk(Ω,    
           pltName*"tSol_$tprt"*".vtu",
@@ -488,6 +600,9 @@ function main(params)
     end
   end  
   tock()  
+
+  close(daFile1)
+  close(daFile2)
   # ----------------------End----------------------
 
     
@@ -536,23 +651,6 @@ function setInitXZ(initCSV)
 
 end
 
-
-
-# ramp = (0.0, 0.5/fFreq[2])
-# rampΔT = ramp[2] - ramp[1]
-# function getRamp(t::Real)
-#   if(rampΔT < 1e-4)
-#     return 1.0
-#   end
-  
-#   if(t < ramp[1])
-#     return 0.0
-#   elseif(t > ramp[2])
-#     return 1.0
-#   else
-#     return 0.5*( 1.0 - cos(π*(t - ramp[1]) / rampΔT) )
-#   end
-# end
 
 # ----------------------End----------------------
 

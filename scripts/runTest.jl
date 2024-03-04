@@ -27,18 +27,14 @@ params = gnlPara2D.Warmup_params(
   ρcDry = 7.8e3, #kg/m3 Dry Density of steel
 
   # Parameter Domain
-  nx = 100,
+  nx = 60,
 
   # Time Parameters
   t0 = 0.0,
-  simT = 10.0,
+  simT = 50.0,
   simΔt = 0.2,
-  outΔt = 0.2,
-
-  # Fairlead Excitation
-  fairLead_η = 0.1,
-  fairLead_T = 4.0,
-
+  outΔt = 2,
+  
   # Drag coeff
   Cdn = 2.6, # Normal drag coeff
   d_dn = 0.048, #m Normal drag projection diameter
