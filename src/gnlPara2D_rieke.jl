@@ -18,7 +18,6 @@ using LinearAlgebra
 using CSV
 using Interpolations
 using Printf
-using Roots: find_zero
 using WaveSpec.Constants
 using WaveSpec.Jonswap
 using WaveSpec.WaveTimeSeries
@@ -41,8 +40,13 @@ Warmup and Test params
   A_str = 2*(π*0.048*0.048/4) #m2 Str cross-section area
   ρcDry = 7.8e3 #kg/m3 Density of steel  
 
+  # Bed parameter
+  bed_tanhRamp = 1e3
+  bed_springK = 1e2
+
   # Parameter Domain
-  nx = 75
+  nx = 100
+  order = 1
 
   # Time Parameters
   t0 = 0.0
@@ -55,10 +59,14 @@ Warmup and Test params
   # fairLead_T = 4.0
 
   # Drag coeff
-  Cdn = 2.6 # Normal drag coeff
+  C_dn = 2.6 # Normal drag coeff
   d_dn = 0.048 #m Normal drag projection diameter
-  Cdt = 1.4 # Tangent drag coff
+  C_dt = 1.4 # Tangent drag coff
   d_dt = 0.048/pi #m Tangent drag projection diameter
+
+  # Added mass coeff
+  C_an = 1.0 # Normal added-mass coeff
+  C_at = 0.5 # Tangent added-mass coff
 
   # Wave spectrum
   h0 = 23 #m
@@ -108,57 +116,31 @@ function main(params)
   # ----------------------End----------------------  
 
 
-  ## Mesh setup
+  ## Mesh setup: Regular
   # ---------------------Start---------------------  
-  # function meshIrr(x, nxT, nx1, dx1)
-
-  #   local rr, a0
-
-  #   # x0 = 0.0
-  #   # xEnd = L
-  #   # x1 = 40
-
-  #   # Δx1 = x1-x0
-
-  #   # fMesh(r) = Δx1*(r-1) - dx1*(r^nx0 - 1)
-  #   # rr = find_zero(fMesh,1.1)
-    
-  #   ind = round(Int64, (L-x)/L*nx)    
-
-  #   rr = 1.1
-  #   a0 = L * (rr-1) / (rr^nxT - 1)
-
-  #   if(x ≈ 0.0)
-  #     return x
-  #   else
-  #     return L - a0 / (rr - 1) * (rr^ind - 1)
-  #   end
-
-  #   # @show x
-  #   # return x
-
-  #   # if(ind == 0)
-  #   #   return 0.0
-  #   # elseif(ind ≥ nxT-nx1)
-  #   #   return   1.25*ind #VectorValue(x1 + (ind-nx1)*dx1)
-  #   # else
-  #   #   return 1.25*ind #x0 + (rr^ind -1)/(rr-1)
-  #   # end
-  # end
-
   @unpack nx = params
   domain = (0, L)
   partition = (nx)      
-  # map(x) = VectorValue( meshIrr(x[1], nx, 44, 0.75) )
   model = CartesianDiscreteModel(domain, partition)
-  # ----------------------End----------------------  
-
 
   # Labelling 
   labels_Ω = get_face_labeling(model)
   add_tag_from_tags!(labels_Ω,"anchor",[1]) 
   add_tag_from_tags!(labels_Ω,"fairLead",[2]) 
   writevtk(model, pltName*"model")
+  # ----------------------End----------------------  
+
+
+  # ## Mesh setup: Gmesh
+  # # ---------------------Start---------------------  
+  # model = DiscreteModelFromFile(projectdir("models/mesh2/irrMesh.msh"))
+
+  # # Labelling 
+  # labels_Ω = get_face_labeling(model)
+  # # add_tag_from_tags!(labels_Ω,"anchor",[1]) 
+  # # add_tag_from_tags!(labels_Ω,"fairLead",[2]) 
+  # writevtk(model, pltName*"model")
+  # # ----------------------End----------------------  
 
 
   # Triangulations
@@ -179,7 +161,7 @@ function main(params)
 
   ## Define Test Fnc
   # ---------------------Start---------------------
-  order = 1
+  @unpack order = params
 
   reffe = ReferenceFE(lagrangian, 
     VectorValue{2,Float64}, order)
@@ -206,11 +188,14 @@ function main(params)
   gAnch(x, t::Real) = VectorValue(0.0, 0.0)
   gAnch(t::Real) = x -> gAnch(x, t)
 
-  Xh_fl = X(Point(L))
-  function getFairLeadEnd(x,t)
-    η, _, _, _ = waveAiry1D(sp, t, Xh_fl[1], h0-Xh_fl[2])
-    tRamp = timeRamp(t, 0.0, 15, simT, simT)
-    return VectorValue(0.0, η*tRamp)
+  @show Xh_fl = X(Point(L))
+  @show (Xh_fl[1], Xh_fl[2]-h0)
+  function getFairLeadEnd(x,t)    
+    η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
+    tRamp = timeRamp(t, 0.0, 15)
+
+    # return VectorValue(0.0, η*tRamp)
+    return VectorValue(px*tRamp, py*tRamp)
   end
   
   # gFairLead(x, t::Real) =  
@@ -299,6 +284,7 @@ function main(params)
   end
 
   loc = Point(0.0)
+  Xh_cs = create_cellState(Xh, loc)
   J_cs = create_cellState(J, loc)
   QTrans_cs = create_cellState(Q', loc)
   P_cs = create_cellState(P, loc)
@@ -311,12 +297,34 @@ function main(params)
   
   ## Spring bed
   # ---------------------Start---------------------
+  @unpack bed_tanhRamp, bed_springK = params
+  @show bed_tanhRamp, bed_springK
   bedK1 = ρcSub*g
-  bedK2 = ρcSub*g*1000
-  bedRamp = 1e3
+  bedK2 = ρcSub*g * bed_springK
+  bedRamp = bed_tanhRamp
   spng(u) = 0.5+0.5*(tanh∘( bedRamp*excursion(u) ))
   excursion(u) = VectorValue(0.0,-1.0) ⋅ (Xh+u)
   bedForce(u) = spng(u) * (bedK1 + bedK2*excursion(u)) 
+
+  function bedSpring_fnc(u)
+    local exc, lspng
+
+    exc = VectorValue(0.0,-1.0) ⋅ (Xh_cs+u)
+    lspng = 0.5 + 0.5*(tanh∘( bedRamp*exc ))
+
+    return lspng * (bedK1 + bedK2*exc) 
+  end
+
+  function bedDamp_fnc(v, u)
+    local exc, lspng, vz
+
+    exc = VectorValue(0.0,-1.0) ⋅ (Xh_cs + u)
+    lspng = 0.5 + 0.5*(tanh∘( bedRamp*exc ))
+
+    vz = VectorValue(0.0,1.0) ⋅ (v)
+
+    return -lspng * (0.05*bedK2*vz)
+  end
   # ----------------------End----------------------
 
 
@@ -341,9 +349,9 @@ function main(params)
 
   ## Function form drag
   # ---------------------Start---------------------
-  @unpack Cdn, d_dn, Cdt, d_dt = params
-  @show D_dn = 0.5 * ρw * Cdn * d_dn / A_str #kg/m4
-  @show D_dt = 0.5 * ρw * Cdt * π * d_dt / A_str #kg/m4
+  @unpack C_dn, d_dn, C_dt, d_dt = params
+  @show D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
+  @show D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
 
   function drag_ΓX_intp(v,u)  
     # Slow basic version
@@ -356,7 +364,7 @@ function main(params)
     vn = -v - vt
     vnm = (vn ⋅ vn).^0.5    
 
-    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ(u)
+    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ(u) 
 
   end
 
@@ -375,9 +383,9 @@ function main(params)
     vt = -(v ⋅ t1s) * t1s / t1m2
     vtm = (vt ⋅ vt).^0.5
     vn = -v - vt
-    vnm = (vn ⋅ vn).^0.5
+    vnm = (vn ⋅ vn).^0.5    
 
-    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ
+    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ 
 
   end
 
@@ -396,7 +404,7 @@ function main(params)
     vn = (v ⋅ t1s) * t1s / t1m2 - v 
     vnm = (vn ⋅ vn).^0.5
 
-    return D_dn * vn * vnm * sΛ
+    return D_dn * vn * vnm * sΛ 
 
   end
 
@@ -415,7 +423,51 @@ function main(params)
     vt = -(v ⋅ t1s) * t1s / t1m2
     vtm = (vt ⋅ vt).^0.5
 
-    return D_dt * vt * vtm * sΛ
+    return D_dt * vt * vtm * sΛ 
+
+  end
+  # ----------------------End----------------------  
+
+
+  ## Function form added-mass
+  # ---------------------Start---------------------
+  @unpack C_an, C_at, = params
+  @show D_an = ρw * C_an
+  @show D_at = ρw * C_at   
+
+  function addedMass_n_ΓX(a, u)
+
+    local FΓ, t1s, t1m2, an, sΛ
+
+    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+
+    t1s = FΓ ⋅ T1s_cs
+    t1m2 = t1s ⋅ t1s    
+    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
+
+    sΛ = (t1m2.^0.5) / T1m_cs
+    
+    an = (a ⋅ t1s) * t1s / t1m2 - a    
+
+    return D_an * an * sΛ
+
+  end
+
+  function addedMass_t_ΓX(a, u)
+
+    local FΓ, t1s, t1m2, sΛ, at
+
+    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+
+    t1s = FΓ ⋅ T1s_cs
+    t1m2 = t1s ⋅ t1s    
+    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
+
+    sΛ = (t1m2.^0.5) / T1m_cs
+    
+    at = -(a ⋅ t1s) * t1s / t1m2
+    
+    return D_at * at * sΛ 
 
   end
   # ----------------------End----------------------  
@@ -452,9 +504,12 @@ function main(params)
 
   resD(t, u, ψu) =  
     ∫( ( (ψu ⋅ ∂tt(u)) * ρcDry )*JJ_cs )dΩ +
+    # ∫( ( -ψu ⋅ addedMass_n_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
+    # ∫( ( -ψu ⋅ addedMass_t_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedDamp_fnc(∂t(u), u) )*JJ_cs )dΩ +
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedForce(u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedSpring_fnc(u) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ drag_n_ΓX(∂t(u), u) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ drag_t_ΓX(∂t(u), u) )*JJ_cs )dΩ 
     # ∫( ( -ψu ⋅ drag_ΓX(∂t(u), u) )*JJ_cs )dΩ 
@@ -472,9 +527,9 @@ function main(params)
   fx_U(r) = +0.00001*sin(π*r[1])
   fy_U(r) = -0.00001*sin(π*r[1])
   Ua(r) = VectorValue(fx_U(r), fy_U(r))  
-  U0 = interpolate_everywhere(Ua, US)  
+  U0 = interpolate_everywhere(Ua, US)    
 
-  nls = NLSolver(show_trace=true, 
+  nls = NLSolver(LUSolver(), show_trace=true, 
     method=:newton, linesearch=Static(), 
     iterations=100, ftol = 1e-8, xtol = 1e-8)
 
@@ -517,7 +572,7 @@ function main(params)
 
   ## Save quantities
   # ---------------------Start---------------------  
-  xPrb = Point.(0.0:L/nx:L)
+  xPrb = Point.(0.0:L/100:L)
 
   daFile1 = open( pltName*"data1.dat", "w" )
   daFile2 = open( pltName*"data2.dat", "w" )

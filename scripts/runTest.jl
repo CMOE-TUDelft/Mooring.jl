@@ -27,19 +27,23 @@ params = gnlPara2D.Warmup_params(
   ρcDry = 7.8e3, #kg/m3 Dry Density of steel
 
   # Parameter Domain
-  nx = 60,
+  nx = 100,
 
   # Time Parameters
   t0 = 0.0,
   simT = 50.0,
   simΔt = 0.2,
-  outΔt = 2,
+  outΔt = 0.2,
   
   # Drag coeff
-  Cdn = 2.6, # Normal drag coeff
+  C_dn = 2.6, # Normal drag coeff
   d_dn = 0.048, #m Normal drag projection diameter
-  Cdt = 1.4, # Tangent drag coff
-  d_dt = 0.048/pi #m Trangent drag projection diameter
+  C_dt = 1.4, # Tangent drag coff
+  d_dt = 0.048/pi, #m Trangent drag projection diameter
+
+  # Added mass coeff
+  C_an = 1.0, # Normal added-mass coeff
+  C_at = 0.5 # Tangent added-mass coff
 )
 gnlPara2D.main(params)
 
