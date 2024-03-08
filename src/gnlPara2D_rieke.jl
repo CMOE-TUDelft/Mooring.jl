@@ -191,16 +191,19 @@ function main(params)
   @show Xh_fl = X(Point(L))
   @show (Xh_fl[1], Xh_fl[2]-h0)
   @unpack startRamp = params
-  function getFairLeadEnd(x,t)    
-    η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
-    tRamp = timeRamp(t, startRamp[1], startRamp[2])
+  # function getFairLeadEnd(x,t)    
+  #   η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
+  #   tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
-    # return VectorValue(0.0, η*tRamp)
-    return VectorValue(px*tRamp, py*tRamp)
-  end
+  #   # return VectorValue(0.0, η*tRamp)
+  #   return VectorValue(px*tRamp, py*tRamp)
+  # end
   
-  # gFairLead(x, t::Real) =  
-  #   VectorValue(fairLead_η*sin(2*pi/fairLead_T*t), 0.0)
+  fairLead_η = 1.5 #m2
+  fairLead_ω = 1 #rad/s
+  getFairLeadEnd(x, t::Real) =  
+    VectorValue( fairLead_η*sin(fairLead_ω*t), 
+      fairLead_η*sin(fairLead_ω*t) )
   
   gFairLead(x, t::Real) = getFairLeadEnd(x,t)    
   gFairLead(t::Real) = x -> gFairLead(x, t)
@@ -573,7 +576,8 @@ function main(params)
 
   ## Save quantities
   # ---------------------Start---------------------  
-  xPrb = Point.(0.0:L/100:L)
+  rPrb = Point.(0.0:L/10:L)
+  nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
   daFile2 = open( pltName*"data2.dat", "w" )
@@ -616,25 +620,21 @@ function main(params)
       tprt = @sprintf("%d",floor(Int64,t*1000000))
 
       xNew = X + uh
-      σT = getPrincipalStress(uh, xPrb)      
+      σT = getPrincipalStress(uh, rPrb)      
+      xNewPrb = xNew.(rPrb)
 
-      lDa = [t, 
-        xNew(xPrb[1])[1], xNew(xPrb[1])[2], σT[1], σT[1]*A_str,
-        xNew(xPrb[end])[1], xNew(xPrb[end])[2], σT[end], σT[end]*A_str]        
-      push!(daSave1, lDa)
+      # lDa = [t, xPrb[1][1]
+      #   xNew(xPrb[1])[1], xNew(xPrb[1])[2], σT[1], σT[1]*A_str,
+      #   xNew(xPrb[end])[1], xNew(xPrb[end])[2], σT[end], σT[end]*A_str]        
+      # push!(daSave1, lDa)
 
+      @printf(daFile1, "%.5f \t",t)
       # [print(daFile1, string(val)*", \t") for val in lDa]
-      [@printf(daFile1, "%.5f \t", val) for val in lDa]
+      [@printf(daFile1, "%.5f \t %.5f \t %.5f \t %.5f \t", 
+        rPrb[i][1], xNew[i][1], xNew[i][2], σT[i])
+        for i in 1:nPrb]
       @printf(daFile1, "\n")
 
-      _, mInd = findmax(σT)
-      lDa = [t, mInd,
-        xNew(xPrb[mInd])[1], xNew(xPrb[mInd])[2], σT[mInd], σT[mInd]*A_str]        
-      push!(daSave2, lDa)
-      
-      # [print(daFile2, string(val)*", \t") for val in lDa]
-      [@printf(daFile2, "%.5f \t", val) for val in lDa]
-      @printf(daFile2, "\n")
             
       if(cnt%outMod == 0)               
 
