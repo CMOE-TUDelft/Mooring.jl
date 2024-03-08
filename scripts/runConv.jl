@@ -12,7 +12,8 @@ include(srcdir("gnlPara2D_rieke.jl"))
 
 testID = parse(Int,ENV["CASE_ID"])
 setList = CSV.read(scriptsdir("meshConvSetup.csv"), DataFrame)
-resDir = datadir("sims", "runBatch", @sprintf("case_%04i",testID))
+resDir = datadir("sims", "runBatch", 
+  @sprintf("case_%i_%04i",setList[testID,3], setList[testID,2]) )
 mkpath(resDir)
 
 @show testID, setList[testID,:]
@@ -52,11 +53,11 @@ params = gnlPara2D.Test_params(
 
   # Parameter Domain
   nx = setList[testID,2],
-  order = setList[testID,3]
+  order = setList[testID,3],
 
   # Time Parameters
   t0 = 0.0,
-  simT = 15.0,
+  simT = 5.0,#15.0,
   simΔt = 0.01,
   outΔt = 0.25,
   

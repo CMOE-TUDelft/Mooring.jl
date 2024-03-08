@@ -580,7 +580,7 @@ function main(params)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
-  daFile2 = open( pltName*"data2.dat", "w" )
+  # daFile2 = open( pltName*"data2.dat", "w" )
   
   daSave1 = DataFrame(zeros(Float64, 1, 9), :auto)
   daSave2 = DataFrame(zeros(Float64, 1, 6), :auto)
@@ -631,7 +631,7 @@ function main(params)
       @printf(daFile1, "%.5f \t",t)
       # [print(daFile1, string(val)*", \t") for val in lDa]
       [@printf(daFile1, "%.5f \t %.5f \t %.5f \t %.5f \t", 
-        rPrb[i][1], xNew[i][1], xNew[i][2], σT[i])
+        rPrb[i][1], xNewPrb[i][1], xNewPrb[i][2], σT[i])
         for i in 1:nPrb]
       @printf(daFile1, "\n")
 
@@ -658,7 +658,7 @@ function main(params)
   tock()  
 
   close(daFile1)
-  close(daFile2)
+  # close(daFile2)
   # ----------------------End----------------------
 
     
