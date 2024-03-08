@@ -8,16 +8,29 @@ using .Constants
 include(srcdir("gnlPara2D_rieke.jl"))
 
 # Warmup run
-params = gnlPara2D.Warmup_params( 
-  resDir = datadir("sims","run")
+params = gnlPara2D.Test_params( 
+  resDir = datadir("sims","run"),
+  
+  # Parameter Domain
+  nx = 20,
+  order = 1,
+
+  # Time Parameters
+  t0 = 0.0,
+  simT = 0.04,
+  simΔt = 0.02,
+  outΔt = 0.2,
+  maxIter = 2
+
 )
 gnlPara2D.main(params)
 
 
 # Production run
-params = gnlPara2D.Warmup_params( 
+params = gnlPara2D.Test_params( 
 
   initCSV = "models/catShape_xfl60_zfl20.csv",
+  # resDir = datadir("sims","testBedProperties","run_tanh1000_k0100_damp05_pPos"),
   resDir = datadir("sims","run"),
 
   # Material properties

@@ -29,7 +29,7 @@ Warmup and Test params
 ===========
 
 """
-@with_kw struct Warmup_params
+@with_kw struct Test_params
 
   initCSV::String = "models/catShape_xfl60_zfl20.csv" 
   resDir = "data/"
@@ -53,10 +53,7 @@ Warmup and Test params
   simT = 0.04
   simΔt = 0.02
   outΔt = 0.2
-
-  # # Fairlead Excitation
-  # fairLead_η = 0.1
-  # fairLead_T = 4.0
+  maxIter = 100
 
   # Drag coeff
   C_dn = 2.6 # Normal drag coeff
@@ -67,6 +64,9 @@ Warmup and Test params
   # Added mass coeff
   C_an = 1.0 # Normal added-mass coeff
   C_at = 0.5 # Tangent added-mass coff
+
+  # Time signal ramp up (t0 t1)
+  startRamp = (0.0, 15)
 
   # Wave spectrum
   h0 = 23 #m
@@ -99,7 +99,7 @@ function main(params)
 
   
   # Time Parameters
-  @unpack t0, simT, simΔt, outΔt = params
+  @unpack t0, simT, simΔt, outΔt, maxIter = params
 
 
   ## Wave input
@@ -190,9 +190,10 @@ function main(params)
 
   @show Xh_fl = X(Point(L))
   @show (Xh_fl[1], Xh_fl[2]-h0)
+  @unpack startRamp = params
   function getFairLeadEnd(x,t)    
     η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
-    tRamp = timeRamp(t, 0.0, 15)
+    tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
     # return VectorValue(0.0, η*tRamp)
     return VectorValue(px*tRamp, py*tRamp)
@@ -528,10 +529,10 @@ function main(params)
   fy_U(r) = -0.00001*sin(π*r[1])
   Ua(r) = VectorValue(fx_U(r), fy_U(r))  
   U0 = interpolate_everywhere(Ua, US)    
-
+  
   nls = NLSolver(LUSolver(), show_trace=true, 
     method=:newton, linesearch=Static(), 
-    iterations=100, ftol = 1e-8, xtol = 1e-8)
+    iterations=maxIter, ftol = 1e-8, xtol = 1e-8)
 
   # nls = NLSolver(show_trace=true, 
   #   method=:anderson,  iterations=10)
@@ -562,7 +563,7 @@ function main(params)
   # ---------------------Start---------------------
   nls = NLSolver(show_trace=true, 
     method=:newton, linesearch=Static(), 
-    iterations=100, ftol = 1e-8, xtol = 1e-8)
+    iterations=maxIter, ftol = 1e-8, xtol = 1e-8)
 
   ode_solver = GeneralizedAlpha(nls, simΔt, 0.0)    
 
@@ -705,8 +706,6 @@ function setInitXZ(initCSV)
   return interpX, interpZ
 
 end
-
-
 # ----------------------End----------------------
 
 end
