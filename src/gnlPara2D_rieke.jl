@@ -128,6 +128,8 @@ function main(params)
   add_tag_from_tags!(labels_Ω,"anchor",[1]) 
   add_tag_from_tags!(labels_Ω,"fairLead",[2]) 
   writevtk(model, pltName*"model")
+
+  daFile0 = open( pltName*"aout.dat", "w" )
   # ----------------------End----------------------  
 
 
@@ -202,8 +204,8 @@ function main(params)
   fairLead_η = 1.5 #m2
   fairLead_ω = 1 #rad/s
   getFairLeadEnd(x, t::Real) =  
-    VectorValue( fairLead_η*sin(fairLead_ω*t), 
-      fairLead_η*sin(fairLead_ω*t) )
+    VectorValue( -fairLead_η*sin(fairLead_ω*t), 
+      fairLead_η*(1-cos(fairLead_ω*t)) )
   
   gFairLead(x, t::Real) = getFairLeadEnd(x,t)    
   gFairLead(t::Real) = x -> gFairLead(x, t)
@@ -533,7 +535,8 @@ function main(params)
   Ua(r) = VectorValue(fx_U(r), fy_U(r))  
   U0 = interpolate_everywhere(Ua, US)    
   
-  nls = NLSolver(LUSolver(), show_trace=true, 
+  # nls = NLSolver(LUSolver(), show_trace=true, 
+  nls = NLSolver(show_trace=true, 
     method=:newton, linesearch=Static(), 
     iterations=maxIter, ftol = 1e-8, xtol = 1e-8)
 
@@ -564,9 +567,12 @@ function main(params)
 
   ## Dynamic Solver
   # ---------------------Start---------------------
+  # nls = NLSolver(LUSolver(), show_trace=true, 
   nls = NLSolver(show_trace=true, 
     method=:newton, linesearch=Static(), 
     iterations=maxIter, ftol = 1e-8, xtol = 1e-8)
+
+  # nls = NewtonRaphsonSolver(LUSolver(), 1e-8, 100)
 
   ode_solver = GeneralizedAlpha(nls, simΔt, 0.0)    
 
@@ -610,6 +616,9 @@ function main(params)
   ## Execute
   # ---------------------Start---------------------
   @show outMod = floor(Int64,outΔt/simΔt);
+  execTime = zeros(Float64, 1, 10)
+  execTime[1] = time()  # tick()
+  execTime[3] = time()   
   tick()
   createpvd(pltName*"tSol", append=true) do pvd    
     cnt=0
@@ -648,15 +657,24 @@ function main(params)
             # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
      
       end
-
+      execTime[4] = time()  
       tock()
+      @printf(daFile0, 
+        "Step Time: \t %5i \t %.3f \n", 
+        cnt, execTime[4]-execTime[3])
       println("-x-x-x-")
       println()
+      execTime[3] = time()  
       tick()
     end
   end  
-  tock()  
+  execTime[2] = time()  
+  tock()
+  @printf(daFile0, 
+    "\nTotal Time: \t %5i \t %.3f \n", 
+    round(simT/simΔt), execTime[2]-execTime[1])
 
+  close(daFile0)
   close(daFile1)
   # close(daFile2)
   # ----------------------End----------------------
