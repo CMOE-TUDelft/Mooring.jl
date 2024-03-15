@@ -42,7 +42,8 @@ Warmup and Test params
 
   # Bed parameter
   bed_tanhRamp = 1e3
-  bed_springK = 1e2
+  bed_springK = 0.5 #30kN/m4
+  #based on Marco's suggestion of 30kN/m2/m in the OrcaFlex manual
 
   # Parameter Domain
   nx = 100
@@ -177,15 +178,14 @@ function main(params)
   # ---------------------Start---------------------
   # Dirichlet BC
   gAnch_S(x) = VectorValue(0.0, 0.0)  
+  gFairLead_S(x) = VectorValue(0.0, 0.0)  
 
-  US = TrialFESpace(Ψu, [gAnch_S, gAnch_S])
+  US = TrialFESpace(Ψu, [gAnch_S, gFairLead_S])
   # ----------------------End----------------------
 
 
   ## Define Trial Fnc Dynamic
-  # ---------------------Start---------------------
-  # @unpack fairLead_η, fairLead_T = params
-
+  # ---------------------Start---------------------  
   # Dirichlet BC
   gAnch(x, t::Real) = VectorValue(0.0, 0.0)
   gAnch(t::Real) = x -> gAnch(x, t)
@@ -193,19 +193,23 @@ function main(params)
   @show Xh_fl = X(Point(L))
   @show (Xh_fl[1], Xh_fl[2]-h0)
   @unpack startRamp = params
+  function getFairLeadEnd(x,t)    
+    η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
+    tRamp = timeRamp(t, startRamp[1], startRamp[2])
+
+    # return VectorValue(0.0, η*tRamp)
+    return VectorValue(px*tRamp, py*tRamp)
+  end
+  
   # function getFairLeadEnd(x,t)    
-  #   η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
+  #   fairLead_η = 1.5 #m2
+  #   fairLead_ω = 1 #rad/s
+
   #   tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
-  #   # return VectorValue(0.0, η*tRamp)
-  #   return VectorValue(px*tRamp, py*tRamp)
-  # end
-  
-  fairLead_η = 1.5 #m2
-  fairLead_ω = 1 #rad/s
-  getFairLeadEnd(x, t::Real) =  
-    VectorValue( -fairLead_η*sin(fairLead_ω*t), 
-      fairLead_η*(1-cos(fairLead_ω*t)) )
+  #   return VectorValue( -tRamp*fairLead_η*sin(fairLead_ω*t), 
+  #   tRamp*fairLead_η*(1-cos(fairLead_ω*t)) )
+  # end    
   
   gFairLead(x, t::Real) = getFairLeadEnd(x,t)    
   gFairLead(t::Real) = x -> gFairLead(x, t)
@@ -307,6 +311,7 @@ function main(params)
   @show bed_tanhRamp, bed_springK
   bedK1 = ρcSub*g
   bedK2 = ρcSub*g * bed_springK
+  println("Bed spring constant = ", bedK2, " N/m3/m")
   bedRamp = bed_tanhRamp
   spng(u) = 0.5+0.5*(tanh∘( bedRamp*excursion(u) ))
   excursion(u) = VectorValue(0.0,-1.0) ⋅ (Xh+u)

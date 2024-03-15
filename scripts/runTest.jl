@@ -30,14 +30,16 @@ gnlPara2D.main(params)
 params = gnlPara2D.Test_params( 
 
   initCSV = "models/catShape_xfl60_zfl20.csv",
-  # resDir = datadir("sims","testBedProperties","run_tanh1000_k0100_damp05_pPos"),
+  # resDir = datadir("sims",
+  #   "testBedProperties",
+  #   "run_tanh1000_k0000p5_damp05_pPos"),
   resDir = datadir("sims","run"),
 
   # Material properties
   E = 64.2986e9, #N
   L = 75, #m
   A_str = 2*(π*0.048*0.048/4), #m2 Str cross-section area
-  ρcDry = 7.8e3, #kg/m3 Dry Density of steel
+  ρcDry = 7.8e3, #kg/m3 Dry Density of steel  
 
   # Parameter Domain
   nx = 100,
