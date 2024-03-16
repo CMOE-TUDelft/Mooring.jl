@@ -21,6 +21,7 @@ using Printf
 using WaveSpec.Constants
 using WaveSpec.Jonswap
 using WaveSpec.WaveTimeSeries
+using WaveSpec.Currents
 
 
 
@@ -74,6 +75,9 @@ Warmup and Test params
   Hs = 3 #m
   Tp = 12 #s
   nω = 257 #including 0
+
+  # Current
+  strCur = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
 
 end
 
@@ -228,7 +232,6 @@ function main(params)
   # Initial solution
   Xh = interpolate_everywhere(X, Ψu)
   FWeih = interpolate_everywhere(VectorValue(0.0, -ρcSub*g), Ψu)
-
   
   ## Geometric quantities
   # ---------------------Start---------------------  
@@ -295,6 +298,7 @@ function main(params)
 
   loc = Point(0.0)
   Xh_cs = create_cellState(Xh, loc)
+  FWeih_cs = create_cellState(FWeih, loc)
   J_cs = create_cellState(J, loc)
   QTrans_cs = create_cellState(Q', loc)
   P_cs = create_cellState(P, loc)
@@ -361,10 +365,22 @@ function main(params)
   ## Function form drag
   # ---------------------Start---------------------
   @unpack C_dn, d_dn, C_dt, d_dt = params
+  @unpack strCur = params
   @show D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
   @show D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
 
-  function drag_ΓX_intp(v,u)  
+  # Constant Currents
+  function getCurrentField(r)
+    pz = Xh(r) ⋅ VectorValue(0.0,1.0) - strCur.h0
+    pz = min(pz, 0.0)
+    pz = max(pz, -strCur.h0)
+
+    return VectorValue( strCur.itp( pz ), 0.0 ) 
+  end
+  UCur_h = interpolate_everywhere(getCurrentField, Ψu)
+  UCur_cs = create_cellState( UCur_h, loc )
+
+  function drag_ΓX_intp(v,u)  #No wave and current
     # Slow basic version
     # Useful for plotting
 
@@ -379,7 +395,7 @@ function main(params)
 
   end
 
-  function drag_ΓX(v, u)
+  function drag_ΓX(v, u) #No wave and current
 
     local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm
 
@@ -400,9 +416,11 @@ function main(params)
 
   end
 
-  function drag_n_ΓX(v, u)
+  function drag_n_ΓX(t, v, u)
 
-    local FΓ, t1s, t1m2, vn, vnm, sΛ
+    local FΓ, t1s, t1m2, vn, vnm, sΛ, vr, tRamp
+
+    tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
     FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
 
@@ -412,16 +430,20 @@ function main(params)
 
     sΛ = (t1m2.^0.5) / T1m_cs
     
-    vn = (v ⋅ t1s) * t1s / t1m2 - v 
+    vr = UCur_cs * tRamp - v
+    vn = vr - (vr ⋅ t1s) * t1s / t1m2
+    # vn = (v ⋅ t1s) * t1s / t1m2 - v 
     vnm = (vn ⋅ vn).^0.5
 
     return D_dn * vn * vnm * sΛ 
 
   end
 
-  function drag_t_ΓX(v, u)
+  function drag_t_ΓX(t, v, u)
 
-    local FΓ, t1s, t1m2, sΛ, vt, vtm
+    local FΓ, t1s, t1m2, sΛ, vt, vtm, tRamp
+
+    tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
     FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
 
@@ -431,7 +453,8 @@ function main(params)
 
     sΛ = (t1m2.^0.5) / T1m_cs
     
-    vt = -(v ⋅ t1s) * t1s / t1m2
+    vt = ((UCur_cs * tRamp - v) ⋅ t1s) * t1s / t1m2
+    # vt = -(v ⋅ t1s) * t1s / t1m2    
     vtm = (vt ⋅ vt).^0.5
 
     return D_dt * vt * vtm * sΛ 
@@ -486,14 +509,21 @@ function main(params)
 
   ## Weak form: Static
   # ---------------------Start---------------------
-  res(u, ψu) =  
-  ∫( 
-    ( 
-      ∇X_Dir(ψu) ⊙ stressK_fnc(u) + 
-      - ( ψu ⋅ FWeih ) + 
-      - ( ψu ⋅ VectorValue(0.0,1.0) * bedForce(u) )
-    )*JJ_cs 
-  )dΩ 
+  # res(u, ψu) =  
+  # ∫( 
+  #   ( 
+  #     ∇X_Dir(ψu) ⊙ stressK_fnc(u) + 
+  #     - ( ψu ⋅ FWeih_cs ) + 
+  #     - ( ψu ⋅ VectorValue(0.0,1.0) * bedForce(u) )
+  #   )*JJ_cs 
+  # )dΩ 
+  
+  res(u, ψu) =      
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedSpring_fnc(u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ drag_n_ΓX(0.0, VectorValue(0.0,0.0), u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ drag_t_ΓX(0.0, VectorValue(0.0,0.0), u) )*JJ_cs )dΩ 
 
 
   op_S = FEOperator(res, US, Ψu)
@@ -519,10 +549,10 @@ function main(params)
     # ∫( ( -ψu ⋅ addedMass_t_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedDamp_fnc(∂t(u), u) )*JJ_cs )dΩ +
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ FWeih )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedSpring_fnc(u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ drag_n_ΓX(∂t(u), u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ drag_t_ΓX(∂t(u), u) )*JJ_cs )dΩ 
+    ∫( ( -ψu ⋅ drag_n_ΓX(t, ∂t(u), u) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ drag_t_ΓX(t, ∂t(u), u) )*JJ_cs )dΩ 
     # ∫( ( -ψu ⋅ drag_ΓX(∂t(u), u) )*JJ_cs )dΩ 
     # ∫( (  )*JJ_cs )dΩ +
     # ∫( (  )*JJ_cs )dΩ +

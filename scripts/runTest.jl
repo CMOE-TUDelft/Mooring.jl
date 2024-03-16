@@ -4,6 +4,7 @@ using DrWatson
 using Parameters
 using WaveSpec
 using .Constants
+using .Currents
 
 include(srcdir("gnlPara2D_rieke.jl"))
 
@@ -26,14 +27,25 @@ params = gnlPara2D.Test_params(
 gnlPara2D.main(params)
 
 
+# Sea state
+h0 = 22.81 #m
+Hs = 3.8179 #m
+Tp = 8.37 #s
+nω = 257 #including 0
+
+strCur = CurrentStat(22.81, 
+  [-22.81, -21.81, -16.81, -11.81, -5.81, -0.81, 0.0], 
+  [0.0, 0.3104, 0.4269, 0.487, 0.4906, 0.5781, 0.5781])
+@show strCur.itp
+
 # Production run
 params = gnlPara2D.Test_params( 
 
   initCSV = "models/catShape_xfl60_zfl20.csv",
-  # resDir = datadir("sims",
-  #   "testBedProperties",
-  #   "run_tanh1000_k0000p5_damp05_pPos"),
-  resDir = datadir("sims","run"),
+  resDir = datadir("sims",
+    "testCurrent",
+    "run_cur1"),
+  # resDir = datadir("sims","run"),
 
   # Material properties
   E = 64.2986e9, #N
@@ -58,7 +70,16 @@ params = gnlPara2D.Test_params(
 
   # Added mass coeff
   C_an = 1.0, # Normal added-mass coeff
-  C_at = 0.5 # Tangent added-mass coff
+  C_at = 0.5, # Tangent added-mass coff
+
+  # Wave spectrum
+  h0 = h0,
+  Hs = Hs,
+  Tp = Tp,
+  nω = nω,
+
+  # Current
+  strCur = strCur
 )
 gnlPara2D.main(params)
 
