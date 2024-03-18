@@ -42,10 +42,10 @@ strCur = CurrentStat(22.81,
 params = gnlPara2D.Test_params( 
 
   initCSV = "models/catShape_xfl60_zfl20.csv",
-  resDir = datadir("sims",
-    "testCurrent",
-    "run_cur1"),
-  # resDir = datadir("sims","run"),
+  # resDir = datadir("sims",
+  #   "testCurrent",
+  #   "run_cur1_dt0p10"),
+  resDir = datadir("sims","run"),
 
   # Material properties
   E = 64.2986e9, #N
@@ -59,7 +59,7 @@ params = gnlPara2D.Test_params(
   # Time Parameters
   t0 = 0.0,
   simT = 50.0,
-  simΔt = 0.2,
+  simΔt = 0.10,
   outΔt = 0.2,
   
   # Drag coeff

@@ -43,8 +43,11 @@ Warmup and Test params
 
   # Bed parameter
   bed_tanhRamp = 1e3
-  bed_springK = 0.5 #30kN/m4
-  #based on Marco's suggestion of 30kN/m2/m in the OrcaFlex manual
+  bed_springK = 50 #30kN/m4
+  # Based on Marco's suggestion of 30kN/m2/m in the OrcaFlex manual
+  # Following certain tests from Rieke database,
+  # I choose to keep this value as bed_springK = 50 
+  # => actual spring constant of 3.32 MN/m3/m
 
   # Parameter Domain
   nx = 100
@@ -695,8 +698,8 @@ function main(params)
       execTime[4] = time()  
       tock()
       @printf(daFile0, 
-        "Step Time: \t %5i \t %.3f \n", 
-        cnt, execTime[4]-execTime[3])
+        "Step Time: \t %5i \t %.3f \t %.3f \n", 
+        cnt, t, execTime[4]-execTime[3])
       println("-x-x-x-")
       println()
       execTime[3] = time()  
