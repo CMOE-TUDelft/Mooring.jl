@@ -7,6 +7,7 @@ using DrWatson
 using Revise
 using Gridap
 using Gridap.Algebra
+using Gridap.ODEs
 using Plots
 using DataFrames:DataFrame
 using DataFrames:Matrix
@@ -612,9 +613,10 @@ function main(params)
 
   # nls = NewtonRaphsonSolver(LUSolver(), 1e-8, 100)
 
-  ode_solver = GeneralizedAlpha(nls, simΔt, 0.0)    
+  ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)    
 
-  solnht = solve(ode_solver, op_D, (U0,U0t,U0tt), t0, simT) 
+  solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t)) 
+  # solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t,U0tt)) 
   # ----------------------End----------------------
 
 
@@ -660,7 +662,8 @@ function main(params)
   tick()
   createpvd(pltName*"tSol", append=true) do pvd    
     cnt=0
-    for (uh, t) in solnht                       
+    for (t, uh) in solnht                       
+      @show uh
       cnt = cnt+1    
       tval = @sprintf("%5.6f",t)                
       println("Count \t $cnt \t Time : $tval")
