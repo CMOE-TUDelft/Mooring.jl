@@ -622,23 +622,20 @@ function main(params)
 
   ## Save quantities
   # ---------------------Start---------------------  
-  rPrb = Point.(0.0:L/10:L)
+  rPrb = Point.(0.0:L/20:L)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
   # daFile2 = open( pltName*"data2.dat", "w" )
   
-  daSave1 = DataFrame(zeros(Float64, 1, 9), :auto)
-  daSave2 = DataFrame(zeros(Float64, 1, 6), :auto)
   # ----------------------End----------------------
 
 
   ## Save initial solution
   # ---------------------Start---------------------
   createpvd(pltName*"tSol") do pvd
-    uh = U0
-    tval = @sprintf("%5.6f",t0)                
-    println("Time : $tval")
+    uh = U0    
+    @printf("Time : %10.3f s \t Counter : %5i \n", t0, 0)          
     tprt = @sprintf("%d",floor(Int64,t0*1000))                        
   
     xNew = X + uh
@@ -663,10 +660,8 @@ function main(params)
   createpvd(pltName*"tSol", append=true) do pvd    
     cnt=0
     for (t, uh) in solnht                       
-      @show uh
-      cnt = cnt+1    
-      tval = @sprintf("%5.6f",t)                
-      println("Count \t $cnt \t Time : $tval")
+      cnt = cnt+1          
+      @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
       tprt = @sprintf("%d",floor(Int64,t*1000000))
 
       xNew = X + uh
@@ -678,10 +673,10 @@ function main(params)
       #   xNew(xPrb[end])[1], xNew(xPrb[end])[2], σT[end], σT[end]*A_str]        
       # push!(daSave1, lDa)
 
-      @printf(daFile1, "%.5f \t",t)
+      @printf(daFile1, "%15.3f",t)
       # [print(daFile1, string(val)*", \t") for val in lDa]
-      [@printf(daFile1, "%.5f \t %.5f \t %.5f \t %.5f \t", 
-        rPrb[i][1], xNewPrb[i][1], xNewPrb[i][2], σT[i])
+      [@printf(daFile1, ", %15.3f, %15.3f, %15.3f, %15.3f", 
+        rPrb[i][1], xNewPrb[i][1], xNewPrb[i][2], σT[i]*A_str)
         for i in 1:nPrb]
       @printf(daFile1, "\n")
 
