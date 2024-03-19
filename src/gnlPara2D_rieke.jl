@@ -684,7 +684,7 @@ function main(params)
 
       cnt = cnt+1          
       @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
-      @printf("Converged? : %s \t Iterations : %5i \n",
+      @printf("Conv : %10s \t Iter    : %5i \n",
         iNLCache.result.x_converged, iNLCache.result.iterations)
       tprt = @sprintf("%d",floor(Int64,t*1000000))
 
@@ -722,8 +722,9 @@ function main(params)
       execTime[4] = time()  
       tock()
       @printf(daFile0, 
-        "Step Time: \t %5i \t %.3f \t %.3f \n", 
-        cnt, t, execTime[4]-execTime[3])
+        "Step Time: \t %5i \t %10.3f \t %10.3f \t %5i \t %2i \n", 
+        cnt, t, execTime[4]-execTime[3], 
+        iNLCache.result.iterations, iNLCache.result.x_converged)
       println("-x-x-x-")
       println()
       execTime[3] = time()  
