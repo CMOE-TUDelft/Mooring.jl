@@ -302,6 +302,8 @@ function main(params)
 
   loc = Point(0.0)
   Xh_cs = create_cellState(Xh, loc)
+  Xh_x_cs = create_cellState(Xh⋅VectorValue(1.0,0.0), loc)
+  Xh_z_cs = create_cellState(Xh⋅VectorValue(0.0,1.0), loc)
   FWeih_cs = create_cellState(FWeih, loc)
   J_cs = create_cellState(J, loc)
   QTrans_cs = create_cellState(Q', loc)
@@ -423,10 +425,21 @@ function main(params)
   function drag_n_ΓX(t, v, u)
 
     local FΓ, t1s, t1m2, vn, vnm, sΛ, vr, tRamp
+    # local w_u, w_w, lx, lz
 
     tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
     FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+
+    # Wave vel
+    # lx = Xh_x_cs 
+    # lz = Xh_z_cs 
+    # nothing, nothing, w_u, w_w = waveAiry1D(sp, t, -0.1, -0.5)
+
+    # lazy_map((x,z) -> waveAiry1D(sp,t,x,z), (lx,lz) )
+
+    # αₘ = sp.k * lx - sp.ω*t + sp.α
+    # w_u = A .* ω .* cos.(αₘ) .* cosh.(k*(h0+z)) ./ sinh.(k*h0)
 
     t1s = FΓ ⋅ T1s_cs
     t1m2 = t1s ⋅ t1s    
@@ -657,11 +670,22 @@ function main(params)
   execTime[1] = time()  # tick()
   execTime[3] = time()   
   tick()
-  createpvd(pltName*"tSol", append=true) do pvd    
+  createpvd(pltName*"tSol", append=true) do pvd        
     cnt=0
-    for (t, uh) in solnht                       
+    # for (t, uh) in solnht                       
+    next = iterate(solnht)            
+    while next !== nothing
+      
+      (iSol, iState) = next
+      (t, uh) = iSol      
+      (_, (_, _, _, _, iBuff)) = iState
+      ((_, _, _, iNLCache), _) = (iBuff)
+      # @show propertynames(iNLCache.result)
+
       cnt = cnt+1          
       @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
+      @printf("Converged? : %s \t Iterations : %5i \n",
+        iNLCache.result.x_converged, iNLCache.result.iterations)
       tprt = @sprintf("%d",floor(Int64,t*1000000))
 
       xNew = X + uh
@@ -674,6 +698,8 @@ function main(params)
       # push!(daSave1, lDa)
 
       @printf(daFile1, "%15.3f",t)
+      @printf(daFile1, ", %2i, %5i", 
+        iNLCache.result.x_converged, iNLCache.result.iterations)
       # [print(daFile1, string(val)*", \t") for val in lDa]
       [@printf(daFile1, ", %15.3f, %15.3f, %15.3f, %15.3f", 
         rPrb[i][1], xNewPrb[i][1], xNewPrb[i][2], σT[i]*A_str)
@@ -702,6 +728,8 @@ function main(params)
       println()
       execTime[3] = time()  
       tick()
+
+      next = iterate(solnht, iState)
     end
   end  
   execTime[2] = time()  
