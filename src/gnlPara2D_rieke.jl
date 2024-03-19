@@ -11,6 +11,7 @@ using Gridap.ODEs
 using Plots
 using DataFrames:DataFrame
 using DataFrames:Matrix
+using WriteVTK
 using TickTock
 using Parameters
 using LineSearches: BackTracking
@@ -53,6 +54,8 @@ Warmup and Test params
   # Parameter Domain
   nx = 100
   order = 1
+
+  outFreeSurface = false
 
   # Time Parameters
   t0 = 0.0
@@ -109,7 +112,7 @@ function main(params)
   
   # Time Parameters
   @unpack t0, simT, simΔt, outΔt, maxIter = params
-
+  @unpack outFreeSurface = params
 
   ## Wave input
   # ---------------------Start---------------------  
@@ -157,6 +160,27 @@ function main(params)
   # Triangulations
   Ω = Interior(model)
   Γ = Boundary(model)
+
+
+  ## Domain to output surface elevation in Paraview
+  # ---------------------Start---------------------
+  model_fs = CartesianDiscreteModel((0, 1.2*L), (nx))
+  Ω_fs = Interior(model_fs)
+
+  Ψu_fs = FESpace(Ω_fs, 
+    ReferenceFE(lagrangian, Float64, 1), 
+    conformity=:H1)  
+  
+  X_fs(r) = r[1]
+  Xh_fs = interpolate_everywhere(X_fs, Ψu_fs)  
+  Xprb_fs = Xh_fs.free_values
+  
+  function getEta_fs(t)    
+    ηprb = waveAiry1D_eta.(Ref(sp), Ref(t), Xprb_fs, 0.0) 
+    
+    return FEFunction(Ψu_fs, ηprb)
+  end
+  # ----------------------End----------------------  
 
 
   ## Reference config Catenary
@@ -644,22 +668,37 @@ function main(params)
   # ----------------------End----------------------
 
 
-  ## Save initial solution
-  # ---------------------Start---------------------
-  createpvd(pltName*"tSol") do pvd
-    uh = U0    
-    @printf("Time : %10.3f s \t Counter : %5i \n", t0, 0)          
-    tprt = @sprintf("%d",floor(Int64,t0*1000))                        
-  
-    xNew = X + uh
-  
-    pvd[t0] = createvtk(Ω,    
-      pltName*"tSol_$tprt"*".vtu",
-      cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-        "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
-        "spr"=>spng(uh) ])
-        # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
+  pvd = paraview_collection(pltName*"tSol", append=false)
+  if(outFreeSurface)
+    if(isdir(pltName*"fs/"))
+      rm(pltName*"fs/", recursive = true)
+    end
+    mkpath(pltName*"fs/")
+    pvd_fs = paraview_collection(pltName*"fs/fs_tSol", append=false)
   end
+
+
+  ## Save initial solution
+  # ---------------------Start---------------------  
+  uh = U0    
+  @printf("Time : %10.3f s \t Counter : %5i \n", t0, 0)          
+  tprt = @sprintf("%d",floor(Int64,t0*1000))                        
+
+  xNew = X + uh
+
+  pvd[t0] = createvtk(Ω,    
+    pltName*"tSol_$tprt"*".vtu",
+    cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
+      "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+      "spr"=>spng(uh) ])
+      # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
+
+  if(outFreeSurface)
+    pvd_fs[t0] =createvtk(Ω_fs,    
+      pltName*"fs/fs_tSol_$tprt"*".vtu",
+      cellfields=["X"=>X_fs, "eta"=> getEta_fs(t0)])
+  end
+  
   # ----------------------End----------------------
 
 
@@ -670,68 +709,68 @@ function main(params)
   execTime[1] = time()  # tick()
   execTime[3] = time()   
   tick()
-  createpvd(pltName*"tSol", append=true) do pvd        
-    cnt=0
-    # for (t, uh) in solnht                       
-    next = iterate(solnht)            
-    while next !== nothing
-      
-      (iSol, iState) = next
-      (t, uh) = iSol      
-      (_, (_, _, _, _, iBuff)) = iState
-      ((_, _, _, iNLCache), _) = (iBuff)
-      # @show propertynames(iNLCache.result)
+  cnt=0
+  # for (t, uh) in solnht                       
+  next = iterate(solnht)            
+  while next !== nothing
+    
+    (iSol, iState) = next
+    (t, uh) = iSol      
+    (_, (_, _, _, _, iBuff)) = iState
+    ((_, _, _, iNLCache), _) = (iBuff)
+    # @show propertynames(iNLCache.result)
 
-      cnt = cnt+1          
-      @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
-      @printf("Conv : %10s \t Iter    : %5i \n",
-        iNLCache.result.x_converged, iNLCache.result.iterations)
-      tprt = @sprintf("%d",floor(Int64,t*1000000))
+    cnt = cnt+1          
+    @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
+    @printf("Conv : %10s \t Iter    : %5i \n",
+      iNLCache.result.x_converged, iNLCache.result.iterations)
+    tprt = @sprintf("%d",floor(Int64,t*1000000))
 
-      xNew = X + uh
-      σT = getPrincipalStress(uh, rPrb)      
-      xNewPrb = xNew.(rPrb)
+    xNew = X + uh
+    σT = getPrincipalStress(uh, rPrb)      
+    xNewPrb = xNew.(rPrb)
 
-      # lDa = [t, xPrb[1][1]
-      #   xNew(xPrb[1])[1], xNew(xPrb[1])[2], σT[1], σT[1]*A_str,
-      #   xNew(xPrb[end])[1], xNew(xPrb[end])[2], σT[end], σT[end]*A_str]        
-      # push!(daSave1, lDa)
+    
+    @printf(daFile1, "%15.3f",t)
+    @printf(daFile1, ", %2i, %5i", 
+      iNLCache.result.x_converged, iNLCache.result.iterations)
+    # [print(daFile1, string(val)*", \t") for val in lDa]
+    [@printf(daFile1, ", %15.3f, %15.3f, %15.3f, %15.3f", 
+      rPrb[i][1], xNewPrb[i][1], xNewPrb[i][2], σT[i]*A_str)
+      for i in 1:nPrb]
+    @printf(daFile1, "\n")
 
-      @printf(daFile1, "%15.3f",t)
-      @printf(daFile1, ", %2i, %5i", 
-        iNLCache.result.x_converged, iNLCache.result.iterations)
-      # [print(daFile1, string(val)*", \t") for val in lDa]
-      [@printf(daFile1, ", %15.3f, %15.3f, %15.3f, %15.3f", 
-        rPrb[i][1], xNewPrb[i][1], xNewPrb[i][2], σT[i]*A_str)
-        for i in 1:nPrb]
-      @printf(daFile1, "\n")
+          
+    if(cnt%outMod == 0)               
 
-            
-      if(cnt%outMod == 0)               
+      println("Paraview output")        
 
-        println("Paraview output")        
+      pvd[t] = createvtk(Ω,    
+        pltName*"tSol_$tprt"*".vtu",
+        cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
+          "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+          "spr"=>spng(uh) ])
+          # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
 
-        pvd[t] = createvtk(Ω,    
-          pltName*"tSol_$tprt"*".vtu",
-          cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-            "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
-            "spr"=>spng(uh) ])
-            # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
-     
+      if(outFreeSurface)
+        pvd_fs[t] =createvtk(Ω_fs,    
+          pltName*"fs/fs_tSol_$tprt"*".vtu",
+          cellfields=["X"=>X_fs, "eta"=> getEta_fs(t)])
       end
-      execTime[4] = time()  
-      tock()
-      @printf(daFile0, 
-        "Step Time: \t %5i \t %10.3f \t %10.3f \t %5i \t %2i \n", 
-        cnt, t, execTime[4]-execTime[3], 
-        iNLCache.result.iterations, iNLCache.result.x_converged)
-      println("-x-x-x-")
-      println()
-      execTime[3] = time()  
-      tick()
-
-      next = iterate(solnht, iState)
+    
     end
+    execTime[4] = time()  
+    tock()
+    @printf(daFile0, 
+      "Step Time: \t %5i \t %10.3f \t %10.3f \t %5i \t %2i \n", 
+      cnt, t, execTime[4]-execTime[3], 
+      iNLCache.result.iterations, iNLCache.result.x_converged)
+    println("-x-x-x-")
+    println()
+    execTime[3] = time()  
+    tick()
+
+    next = iterate(solnht, iState)
   end  
   execTime[2] = time()  
   tock()
@@ -739,6 +778,10 @@ function main(params)
     "\nTotal Time: \t %5i \t %.3f \n", 
     round(simT/simΔt), execTime[2]-execTime[1])
 
+  vtk_save(pvd)
+  if(outFreeSurface)
+    vtk_save(pvd_fs)
+  end
   close(daFile0)
   close(daFile1)
   # close(daFile2)
