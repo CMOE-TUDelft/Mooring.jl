@@ -172,14 +172,12 @@ function main(params)
     conformity=:H1)  
   
   X_fs(r) = r[1]
-  Xh_fs = interpolate_everywhere(X_fs, Ψu_fs)  
-  Xprb_fs = Xh_fs.free_values
   
-  function getEta_fs(t)    
-    ηprb = waveAiry1D_eta.(Ref(sp), Ref(t), Xprb_fs, 0.0) 
-    
-    return FEFunction(Ψu_fs, ηprb)
+  function getEta_fs(t,x)    
+    lx = x ⋅ VectorValue(1.0)
+    return waveAiry1D_eta(sp, t, lx, 0.0)         
   end
+  getEta_fs(t) = x -> getEta_fs(t,x)
   # ----------------------End----------------------  
 
 

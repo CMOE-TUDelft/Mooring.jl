@@ -56,6 +56,8 @@ params = gnlPara2D.Test_params(
   # Parameter Domain
   nx = 100,
 
+  outFreeSurface = true,
+
   # Time Parameters
   t0 = 0.0,
   simT = 50.0,
