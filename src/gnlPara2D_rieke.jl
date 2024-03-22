@@ -305,6 +305,12 @@ function main(params)
       for lT in sT ]     
   
   end
+
+  function getPrincipalStress2(lT)
+    
+    return (lT[1] + lT[4])/2 + sqrt( ((lT[1] - lT[4])/2)^2 + lT[2]^2 )
+  
+  end
   # ----------------------End----------------------
 
 
@@ -584,8 +590,8 @@ function main(params)
 
   resD(t, u, ψu) =  
     ∫( ( (ψu ⋅ ∂tt(u)) * ρcDry )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ addedMass_n_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ addedMass_t_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
+    # ∫( ( -ψu ⋅ addedMass_n_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
+    # ∫( ( -ψu ⋅ addedMass_t_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedDamp_fnc(∂t(u), u) )*JJ_cs )dΩ +
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
@@ -724,9 +730,18 @@ function main(params)
       iNLCache.result.x_converged, iNLCache.result.iterations)
     tprt = @sprintf("%d",floor(Int64,t*1000000))
 
+    # xNew = X + uh
+    # σT = getPrincipalStress(uh, rPrb)      
+    # xNewPrb = xNew.(rPrb)
+    
     xNew = X + uh
-    σT = getPrincipalStress(uh, rPrb)      
-    xNewPrb = xNew.(rPrb)
+    cache_xNew = Gridap.Arrays.return_cache(xNew, rPrb)
+    xNewPrb = evaluate!(cache_xNew, xNew, rPrb)
+
+    sT_uh = stressσ(uh)
+    cache_sT = Gridap.Arrays.return_cache(sT_uh, rPrb)      
+    sTPrb = evaluate!(cache_sT, sT_uh, rPrb)
+    σT = getPrincipalStress2.(sTPrb)      
 
     
     @printf(daFile1, "%15.3f",t)
