@@ -24,6 +24,7 @@ using WaveSpec.Constants
 using WaveSpec.Jonswap
 using WaveSpec.WaveTimeSeries
 using WaveSpec.Currents
+using Interpolations
 
 
 
@@ -82,6 +83,7 @@ Warmup and Test params
   Hs = 3 #m
   Tp = 12 #s
   nω = 257 #including 0
+  seed = -1
 
   # Current
   strCur = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
@@ -116,12 +118,12 @@ function main(params)
 
   ## Wave input
   # ---------------------Start---------------------  
-  @unpack Hs, Tp, h0, nω = params
+  @unpack Hs, Tp, h0, nω, seed = params
   ω, S, A = jonswap(Hs, Tp,
     plotflag=false, nω = nω)
 
   k = dispersionRelAng.(h0, ω; msg=false)
-  α = randomPhase(ω)
+  α = randomPhase(ω, seed = seed)
 
   sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
   #η, ϕ, u, w = waveAiry1D(sp, t, 0.1, -0.1)
@@ -223,13 +225,53 @@ function main(params)
   @show Xh_fl = X(Point(L))
   @show (Xh_fl[1], Xh_fl[2]-h0)
   @unpack startRamp = params
-  function getFairLeadEnd(x,t)    
-    η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
-    tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
-    # return VectorValue(0.0, η*tRamp)
-    return VectorValue(px*tRamp, py*tRamp)
+  # Create interpolable obj for this
+  function createInterpObj(sp, t, x, z)
+    η, px, py = waveAiry1D_pPos(sp, t, x, z)    
+
+    tRamp = timeRamp.(t, startRamp[1], startRamp[2])
+
+    itp = Interpolations.interpolate(
+        η.*tRamp, 
+        BSpline(Cubic(Line(OnGrid()))) )
+    sitp_η = scale(itp, t)
+
+    itp = Interpolations.interpolate(
+        px.*tRamp, 
+        BSpline(Cubic(Line(OnGrid()))) )
+    sitp_px = scale(itp, t)
+
+    itp = Interpolations.interpolate(
+        py.*tRamp, 
+        BSpline(Cubic(Line(OnGrid()))) )
+    sitp_py = scale(itp, t)
+
+    return sitp_η, sitp_px, sitp_py
   end
+
+  sitp_η, sitp_px, sitp_py = 
+    createInterpObj( sp, 
+      t0:simΔt/2.0:(1.2*simT) , 
+      Xh_fl[1], Xh_fl[2]-h0 )
+
+  function getFairLeadEnd(x,t)    
+
+    # tRamp already done in createInterpObj
+    px = sitp_px(t)
+    py = sitp_py(t)
+
+    # return VectorValue(0.0, η)
+    return VectorValue(px, py)
+  end
+
+  # function getFairLeadEnd(x,t)    
+  #   η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
+  #   tRamp = timeRamp(t, startRamp[1], startRamp[2])
+
+  #   # return VectorValue(0.0, η*tRamp)
+  #   return VectorValue(px*tRamp, py*tRamp)
+  # end
   
   # function getFairLeadEnd(x,t)    
   #   fairLead_η = 1.5 #m2
@@ -577,6 +619,7 @@ function main(params)
 
   ## Weak form: Dynamic
   # ---------------------Start---------------------
+  # Simplest Form
   # resD(t, u, ψu) =  
   # ∫( 
   #   ( 
@@ -588,8 +631,31 @@ function main(params)
   # )dΩ 
 
 
-  resD(t, u, ψu) =  
-    ∫( ( (ψu ⋅ ∂tt(u)) * ρcDry )*JJ_cs )dΩ +
+  # Form 1
+  # resD(t, u, ψu) =  
+  #   ∫( ( (ψu ⋅ ∂tt(u)) * ρcDry )*JJ_cs )dΩ +
+  #   # ∫( ( -ψu ⋅ addedMass_n_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
+  #   # ∫( ( -ψu ⋅ addedMass_t_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
+  #   ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedDamp_fnc(∂t(u), u) )*JJ_cs )dΩ +
+  #   ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
+  #   ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
+  #   ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedSpring_fnc(u) )*JJ_cs )dΩ +
+  #   ∫( ( -ψu ⋅ drag_n_ΓX(t, ∂t(u), u) )*JJ_cs )dΩ +
+  #   ∫( ( -ψu ⋅ drag_t_ΓX(t, ∂t(u), u) )*JJ_cs )dΩ 
+  #   # ∫( ( -ψu ⋅ drag_ΓX(∂t(u), u) )*JJ_cs )dΩ 
+  #   # ∫( (  )*JJ_cs )dΩ +
+  #   # ∫( (  )*JJ_cs )dΩ +
+  #   # ∫( (  )*JJ_cs )dΩ   
+
+  # op_D = TransientFEOperator(resD, U, Ψu; order=2)
+
+
+  # Form 2: No added mass
+  massD(t, ∂ₜₜu, ψu) =  
+    ∫( ( (ψu ⋅ ∂ₜₜu) * ρcDry )*JJ_cs )dΩ
+  # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
+  
+  resD(t, u, ψu) =      
     # ∫( ( -ψu ⋅ addedMass_n_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
     # ∫( ( -ψu ⋅ addedMass_t_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedDamp_fnc(∂t(u), u) )*JJ_cs )dΩ +
@@ -603,8 +669,8 @@ function main(params)
     # ∫( (  )*JJ_cs )dΩ +
     # ∫( (  )*JJ_cs )dΩ   
 
-
-  op_D = TransientFEOperator(resD, U, Ψu; order=2)
+  op_D = TransientSemilinearFEOperator(massD, resD, U, Ψu; 
+    order=2, constant_mass=true)
   # ----------------------End----------------------
 
 
@@ -654,10 +720,15 @@ function main(params)
 
   # nls = NewtonRaphsonSolver(LUSolver(), 1e-8, 100)
 
+  # Implicit solver
   ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)    
-
+  
   solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t)) 
   # solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t,U0tt)) 
+
+  # # Explicit solver
+  # ode_solver = RungeKutta(nls, nls, simΔt, :EXRK_Midpoint_2_2)
+  # solnht = solve(ode_solver, op_D, t0, simT, (U0,)) 
   # ----------------------End----------------------
 
 

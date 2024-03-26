@@ -79,6 +79,7 @@ params = gnlPara2D.Test_params(
   Hs = Hs,
   Tp = Tp,
   nω = nω,
+  seed = 1234,
 
   # Current
   strCur = strCur
