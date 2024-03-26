@@ -8,6 +8,7 @@ using Revise
 using Gridap
 using Gridap.Algebra
 using Gridap.ODEs
+using Gridap.Arrays: testitem, return_cache
 using Plots
 using DataFrames:DataFrame
 using DataFrames:Matrix
@@ -779,20 +780,26 @@ function main(params)
 
   ## Execute
   # ---------------------Start---------------------
+
+  # Interpolation: save cache
+  xNew = X + uh
+  save_cache1, save_cache2 = Gridap.Arrays.return_cache(xNew, rPrb)
+  save_f_cache = save_cache2[2]
+
   @show outMod = floor(Int64,outΔt/simΔt);
   execTime = zeros(Float64, 1, 10)
   execTime[1] = time()  # tick()
   execTime[3] = time()   
   tick()
   cnt=0
+
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
   while next !== nothing
     
     (iSol, iState) = next
     (t, uh) = iSol      
-    (_, (_, _, _, _, iBuff)) = iState
-    ((_, _, _, iNLCache), _) = (iBuff)
+    iNLCache = iState[2][5][1][4]
     # @show propertynames(iNLCache.result)
 
     cnt = cnt+1          
@@ -801,16 +808,30 @@ function main(params)
       iNLCache.result.x_converged, iNLCache.result.iterations)
     tprt = @sprintf("%d",floor(Int64,t*1000000))
 
+    # Interpolation: easiest method
     # xNew = X + uh
     # σT = getPrincipalStress(uh, rPrb)      
     # xNewPrb = xNew.(rPrb)
     
-    xNew = X + uh
-    cache_xNew = Gridap.Arrays.return_cache(xNew, rPrb)
+    # Interpolation: using return_cache()
+    # xNew = X + uh
+    # cache_xNew = Gridap.Arrays.return_cache(xNew, rPrb)
+    # xNewPrb = evaluate!(cache_xNew, xNew, rPrb)
+
+    # Interpolation: open return_cache(), re-use sub_cache
+    xNew = X + uh   
+    cell_f = get_array(xNew)
+    cell_f_cache = array_cache(cell_f)    
+    cache2 = cell_f_cache, save_f_cache, cell_f, xNew
+    cache_xNew = (save_cache1, cache2)
     xNewPrb = evaluate!(cache_xNew, xNew, rPrb)
+    
 
     sT_uh = stressσ(uh)
-    cache_sT = Gridap.Arrays.return_cache(sT_uh, rPrb)      
+    cell_f = get_array(sT_uh)
+    cell_f_cache = array_cache(cell_f)
+    cache2 = cell_f_cache, save_f_cache, cell_f, sT_uh
+    cache_sT = (save_cache1, cache2)
     sTPrb = evaluate!(cache_sT, sT_uh, rPrb)
     σT = getPrincipalStress2.(sTPrb)      
 
