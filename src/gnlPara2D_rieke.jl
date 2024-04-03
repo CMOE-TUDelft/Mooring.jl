@@ -234,18 +234,18 @@ function main(params)
     tRamp = timeRamp.(t, startRamp[1], startRamp[2])
 
     itp = Interpolations.interpolate(
-        η.*tRamp, 
-        BSpline(Cubic(Line(OnGrid()))) )
+      η.*tRamp, 
+      BSpline(Cubic(Line(OnGrid()))) )
     sitp_η = scale(itp, t)
 
     itp = Interpolations.interpolate(
-        px.*tRamp, 
-        BSpline(Cubic(Line(OnGrid()))) )
+      px.*tRamp, 
+      BSpline(Cubic(Line(OnGrid()))) )
     sitp_px = scale(itp, t)
 
     itp = Interpolations.interpolate(
-        py.*tRamp, 
-        BSpline(Cubic(Line(OnGrid()))) )
+      py.*tRamp, 
+      BSpline(Cubic(Line(OnGrid()))) )
     sitp_py = scale(itp, t)
 
     return sitp_η, sitp_px, sitp_py
@@ -359,14 +359,14 @@ function main(params)
 
   ## Cell state
   # ---------------------Start---------------------  
-  function new_J(J_csin, Jin)
-    return true, Jin
-  end
+  # function new_J(J_csin, Jin)
+  #   return true, Jin
+  # end
 
   function create_cellState(Jin, loc)
     local J_cs
     J_cs = CellState(Jin(loc), dΩ)  
-    update_state!(new_J, J_cs, Jin)    
+    update_state!( (a,b) -> (true, b), J_cs, Jin)    
 
     return J_cs
   end
@@ -439,6 +439,26 @@ function main(params)
   # ----------------------End----------------------  
 
 
+  ## Wave velocity vector CellField
+  # ---------------------Start---------------------
+  function getWaveVel(r, t, xNew_loc)
+
+    xqp = xNew_loc(r)
+    tRamp = timeRamp(t, startRamp[1], startRamp[2])
+
+    w_u, w_w = waveAiry1D_vel(sp, t, 
+      xqp[1], xqp[2]-sp.h0 )
+
+    return VectorValue(w_u, w_w) * tRamp
+  end
+
+  getWaveVel_cf(t, xNew_loc) = 
+    CellField( r -> getWaveVel(r, t, xNew_loc), Ω )  
+  waveVel_cs = 
+    create_cellState( getWaveVel_cf(t0, Xh), loc)  
+  # ----------------------End----------------------  
+
+
   ## Function form drag
   # ---------------------Start---------------------
   @unpack C_dn, d_dn, C_dt, d_dt = params
@@ -454,8 +474,9 @@ function main(params)
 
     return VectorValue( strCur.itp( pz ), 0.0 ) 
   end
-  UCur_h = interpolate_everywhere(getCurrentField, Ψu)
-  UCur_cs = create_cellState( UCur_h, loc )
+  UCur_cs = create_cellState( 
+    CellField( r -> getCurrentField(r), Ω), 
+    loc )
 
   function drag_ΓX_intp(v,u)  #No wave and current
     # Slow basic version
@@ -500,25 +521,15 @@ function main(params)
 
     tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
-    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    # Wave vel
-    # lx = Xh_x_cs 
-    # lz = Xh_z_cs 
-    # nothing, nothing, w_u, w_w = waveAiry1D(sp, t, -0.1, -0.5)
-
-    # lazy_map((x,z) -> waveAiry1D(sp,t,x,z), (lx,lz) )
-
-    # αₘ = sp.k * lx - sp.ω*t + sp.α
-    # w_u = A .* ω .* cos.(αₘ) .* cosh.(k*(h0+z)) ./ sinh.(k*h0)
+    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)    
 
     t1s = FΓ ⋅ T1s_cs
     t1m2 = t1s ⋅ t1s    
     #t1 = t1s / ((t1s ⋅ t1s).^0.5)
 
-    sΛ = (t1m2.^0.5) / T1m_cs
+    sΛ = (t1m2.^0.5) / T1m_cs    
     
-    vr = UCur_cs * tRamp - v
+    vr = UCur_cs*tRamp + waveVel_cs - v
     vn = vr - (vr ⋅ t1s) * t1s / t1m2
     # vn = (v ⋅ t1s) * t1s / t1m2 - v 
     vnm = (vn ⋅ vn).^0.5
@@ -529,7 +540,7 @@ function main(params)
 
   function drag_t_ΓX(t, v, u)
 
-    local FΓ, t1s, t1m2, sΛ, vt, vtm, tRamp
+    local FΓ, t1s, t1m2, sΛ, vr, vt, vtm, tRamp
 
     tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
@@ -541,7 +552,8 @@ function main(params)
 
     sΛ = (t1m2.^0.5) / T1m_cs
     
-    vt = ((UCur_cs * tRamp - v) ⋅ t1s) * t1s / t1m2
+    vr = UCur_cs*tRamp + waveVel_cs - v
+    vt = (vr ⋅ t1s) * t1s / t1m2
     # vt = -(v ⋅ t1s) * t1s / t1m2    
     vtm = (vt ⋅ vt).^0.5
 
@@ -722,14 +734,12 @@ function main(params)
   # nls = NewtonRaphsonSolver(LUSolver(), 1e-8, 100)
 
   # Implicit solver
-  ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)    
+  ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)
+  # GenAlpha 1.0 Midpoint: Diverges quickly
+  # GenAlpha 0.0 Fully implicit: Stable
   
   solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t)) 
   # solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t,U0tt)) 
-
-  # # Explicit solver
-  # ode_solver = RungeKutta(nls, nls, simΔt, :EXRK_Midpoint_2_2)
-  # solnht = solve(ode_solver, op_D, t0, simT, (U0,)) 
   # ----------------------End----------------------
 
 
@@ -785,6 +795,7 @@ function main(params)
   xNew = X + uh
   save_cache1, save_cache2 = Gridap.Arrays.return_cache(xNew, rPrb)
   save_f_cache = save_cache2[2]
+  
 
   @show outMod = floor(Int64,outΔt/simΔt);
   execTime = zeros(Float64, 1, 10)
@@ -792,11 +803,15 @@ function main(params)
   execTime[3] = time()   
   tick()
   cnt=0
-
+  
+  # Update waveVel(tn) before solving t(n+1)
+  update_state!( (a,b) -> (true, b), waveVel_cs, 
+    getWaveVel_cf(t0, xNew) ) 
+  
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
   while next !== nothing
-    
+
     (iSol, iState) = next
     (t, uh) = iSol      
     iNLCache = iState[2][5][1][4]
@@ -864,6 +879,8 @@ function main(params)
       end
     
     end
+
+
     execTime[4] = time()  
     tock()
     @printf(daFile0, 
@@ -875,6 +892,10 @@ function main(params)
     execTime[3] = time()  
     tick()
 
+    # Update waveVel(tn) before solving t(n+1)
+    update_state!( (a,b) -> (true, b), waveVel_cs, 
+      getWaveVel_cf(t, xNew) ) 
+    
     next = iterate(solnht, iState)
   end  
   execTime[2] = time()  
