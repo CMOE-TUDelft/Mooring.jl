@@ -884,7 +884,7 @@ function main(params)
     execTime[4] = time()  
     tock()
     @printf(daFile0, 
-      "Step Time: \t %5i \t %10.3f \t %10.3f \t %5i \t %2i \n", 
+      "%5i, %10.3f, %10.3f, %5i, %2i \n", 
       cnt, t, execTime[4]-execTime[3], 
       iNLCache.result.iterations, iNLCache.result.x_converged)
     println("-x-x-x-")
