@@ -9,7 +9,6 @@ using Gridap
 using Gridap.Algebra
 using Gridap.ODEs
 using Gridap.Arrays: testitem, return_cache
-using Plots
 using DataFrames:DataFrame
 using DataFrames:Matrix
 using WriteVTK
@@ -25,7 +24,6 @@ using WaveSpec.Constants
 using WaveSpec.Jonswap
 using WaveSpec.WaveTimeSeries
 using WaveSpec.Currents
-using Interpolations
 
 
 
