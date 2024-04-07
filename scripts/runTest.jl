@@ -13,7 +13,7 @@ params = gnlPara2D.Test_params(
   resDir = datadir("sims","run"),
   
   # Parameter Domain
-  nx = 5,
+  nx = 10,
   order = 1,
 
   # Time Parameters

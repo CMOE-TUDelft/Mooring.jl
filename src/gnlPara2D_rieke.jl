@@ -83,6 +83,7 @@ Warmup and Test params
   Tp = 12 #s
   nω = 257 #including 0
   seed = -1
+  ωc = -1
 
   # Current
   strCur = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
@@ -103,29 +104,49 @@ function main(params)
   pltName = resDir*"/gnl_"
 
 
+  ## Terminal Output
+  # ---------------------Start---------------------  
+  outFile0 = open( pltName*"aout.dat", "w" )
+  outFile1 = open( pltName*"arunTime.dat", "w" )
+  
+  printTer(a::String,b) = printTerAndFile(a,b,outFile0)
+  printTer(a::String) = printTerAndFile(a,outFile0)
+  printTer() = printTerAndFile("",outFile0)
+  # ----------------------End----------------------  
+
+
   # Material properties
   @unpack E, ρcDry, L, A_str = params
   ρw = 1025 #Kg/m3 density of water
   μₘ = 0.5*E
   ρcSub = ρcDry - ρw
-  @show L
-
+  printTer("[VAL] Length = ", L)
+  printTer()
   
   # Time Parameters
-  @unpack t0, simT, simΔt, outΔt, maxIter = params
+  @unpack t0, simT, simΔt, outΔt, maxIter, startRamp = params
   @unpack outFreeSurface = params
+  outMod = floor(Int64,outΔt/simΔt);
+  
+  printTer("[VAL] (t0, simT) = ",(t0, simT))
+  printTer("[VAL] (simΔt, outΔt) = ",(simΔt, outΔt))
+  printTer("[VAL] StartRamp = ",startRamp)
+  printTer("[VAL] outMod = ", outMod)
+  printTer()
 
   ## Wave input
   # ---------------------Start---------------------  
-  @unpack Hs, Tp, h0, nω, seed = params
-  ω, S, A = jonswap(Hs, Tp,
-    plotflag=false, nω = nω)
+  @unpack h0 = params
 
-  k = dispersionRelAng.(h0, ω; msg=false)
-  α = randomPhase(ω, seed = seed)
-
-  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
+  sp = getInputSpec(params)
   #η, ϕ, u, w = waveAiry1D(sp, t, 0.1, -0.1)
+
+  printTer("[VAL] h0 = ", h0)
+  printTer("[VAL] Hs = ", sp.Hs)
+  printTer("[VAL] Tp = ", sp.Tp)
+  printTer("[VAL] nw = ", sp.nω)
+  printTer("[VAL] wc = ", sp.ω[end])
+  printTer()
   # ----------------------End----------------------  
 
 
@@ -142,7 +163,8 @@ function main(params)
   add_tag_from_tags!(labels_Ω,"fairLead",[2]) 
   writevtk(model, pltName*"model")
 
-  daFile0 = open( pltName*"aout.dat", "w" )
+  printTer("[VAL] nx = ", nx)
+  printTer()
   # ----------------------End----------------------  
 
 
@@ -221,9 +243,10 @@ function main(params)
   gAnch(x, t::Real) = VectorValue(0.0, 0.0)
   gAnch(t::Real) = x -> gAnch(x, t)
 
-  @show Xh_fl = X(Point(L))
-  @show (Xh_fl[1], Xh_fl[2]-h0)
-  @unpack startRamp = params
+  Xh_fl = X(Point(L))
+  printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]))
+  printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]-h0))
+  printTer()
 
   # Create interpolable obj for this
   function createInterpObj(sp, t, x, z)
@@ -293,7 +316,7 @@ function main(params)
   degree = 2*order
   dΩ = Measure(Ω,degree)
   dΓ = Measure(Γ,degree)
-  @show nΓ = get_normal_vector(Γ)  
+  nΓ = get_normal_vector(Γ)  
 
 
   # Initial solution
@@ -387,10 +410,8 @@ function main(params)
   ## Spring bed
   # ---------------------Start---------------------
   @unpack bed_tanhRamp, bed_springK = params
-  @show bed_tanhRamp, bed_springK
   bedK1 = ρcSub*g
   bedK2 = ρcSub*g * bed_springK
-  println("Bed spring constant = ", bedK2, " N/m3/m")
   bedRamp = bed_tanhRamp
   spng(u) = 0.5+0.5*(tanh∘( bedRamp*excursion(u) ))
   excursion(u) = VectorValue(0.0,-1.0) ⋅ (Xh+u)
@@ -415,6 +436,11 @@ function main(params)
 
     return -lspng * (0.05*bedK2*vz)
   end
+
+  printTer("[VAL] bed_tanhRamp", bed_tanhRamp)
+  printTer("[VAL] bed_springK", bed_springK)
+  printTer("[VAL] Bed spring constant (N/m3/m) = ", bedK2)
+  printTer()
   # ----------------------End----------------------
 
 
@@ -461,8 +487,12 @@ function main(params)
   # ---------------------Start---------------------
   @unpack C_dn, d_dn, C_dt, d_dt = params
   @unpack strCur = params
-  @show D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
-  @show D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
+  D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
+  D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
+  
+  printTer("[VAL] D_dn = ", D_dn)
+  printTer("[VAL] D_dt = ", D_dt)
+  printTer()
 
   # Constant Currents
   function getCurrentField(r)
@@ -564,8 +594,12 @@ function main(params)
   ## Function form added-mass
   # ---------------------Start---------------------
   @unpack C_an, C_at, = params
-  @show D_an = ρw * C_an
-  @show D_at = ρw * C_at   
+  D_an = ρw * C_an
+  D_at = ρw * C_at   
+
+  printTer("[VAL] D_an = ", D_an)
+  printTer("[VAL] D_at = ", D_at)
+  printTer()
 
   function addedMass_n_ΓX(a, u)
 
@@ -702,8 +736,9 @@ function main(params)
   
   (uh_S, cache) = solve!(U0, nls, op_S)
 
-  println("Length Catenary solution = ", calcLen(J) )  
-  println("Length Static Solution = ", calcLen(JNew(uh_S)) )  
+  printTer("[RES] Length Catenary solution = ", calcLen(J) )  
+  printTer("[RES] Length Static Solution = ", calcLen(JNew(uh_S)) )  
+  printTer()
 
   xNew = Xh + uh_S
 
@@ -747,7 +782,6 @@ function main(params)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
-  # daFile2 = open( pltName*"data2.dat", "w" )
   
   # ----------------------End----------------------
 
@@ -795,7 +829,6 @@ function main(params)
   save_f_cache = save_cache2[2]
   
 
-  @show outMod = floor(Int64,outΔt/simΔt);
   execTime = zeros(Float64, 1, 10)
   execTime[1] = time()  # tick()
   execTime[3] = time()   
@@ -881,7 +914,7 @@ function main(params)
 
     execTime[4] = time()  
     tock()
-    @printf(daFile0, 
+    @printf(outFile1, 
       "%5i, %10.3f, %10.3f, %5i, %2i \n", 
       cnt, t, execTime[4]-execTime[3], 
       iNLCache.result.iterations, iNLCache.result.x_converged)
@@ -898,17 +931,18 @@ function main(params)
   end  
   execTime[2] = time()  
   tock()
-  @printf(daFile0, 
-    "\nTotal Time: \t %5i \t %.3f \n", 
+  @printf(outFile0, 
+    "\n[TIM] Total Time: \t %5i \t %.3f \n", 
     round(simT/simΔt), execTime[2]-execTime[1])
 
   vtk_save(pvd)
   if(outFreeSurface)
     vtk_save(pvd_fs)
   end
-  close(daFile0)
+
+  close(outFile0)
+  close(outFile1)
   close(daFile1)
-  # close(daFile2)
   # ----------------------End----------------------
 
     
@@ -923,6 +957,41 @@ Aux functions
 
 """
 # ---------------------Start---------------------
+
+function printTerAndFile(str::String, 
+    val::Union{AbstractArray,Tuple,Real}, outFile::IOStream)
+  
+  println(str, val)
+  println(outFile, str, val)
+  # @printf("%s %15.6f\n", str, val)
+  # @printf(outFile,"%s %15.6f\n", str, val)
+end
+
+function printTerAndFile(str::String, outFile::IOStream)
+  println(str)
+  println(outFile, str)
+end
+
+
+function getInputSpec(params)
+
+  @unpack Hs, Tp, h0, nω, seed, ωc = params
+
+  if(ωc < 0)
+    ω, S, A = jonswap(Hs, Tp,
+      plotflag=false, nω = nω)
+  else
+    ω, S, A = jonswap(Hs, Tp,
+      plotflag=false, nω = nω, ωc = ωc)
+  end
+
+  k = dispersionRelAng.(h0, ω; msg=false)
+  α = randomPhase(ω, seed = seed)
+
+  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
+  return sp
+end
+
 
 function setInitXZ(initCSV)
   
