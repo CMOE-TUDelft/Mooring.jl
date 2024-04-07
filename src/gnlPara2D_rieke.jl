@@ -9,7 +9,6 @@ using Gridap
 using Gridap.Algebra
 using Gridap.ODEs
 using Gridap.Arrays: testitem, return_cache
-using Plots
 using DataFrames:DataFrame
 using DataFrames:Matrix
 using WriteVTK
@@ -25,7 +24,6 @@ using WaveSpec.Constants
 using WaveSpec.Jonswap
 using WaveSpec.WaveTimeSeries
 using WaveSpec.Currents
-using Interpolations
 
 
 
@@ -85,6 +83,7 @@ Warmup and Test params
   Tp = 12 #s
   nω = 257 #including 0
   seed = -1
+  ωc = -1
 
   # Current
   strCur = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
@@ -105,29 +104,49 @@ function main(params)
   pltName = resDir*"/gnl_"
 
 
+  ## Terminal Output
+  # ---------------------Start---------------------  
+  outFile0 = open( pltName*"aout.dat", "w" )
+  outFile1 = open( pltName*"arunTime.dat", "w" )
+  
+  printTer(a::String,b) = printTerAndFile(a,b,outFile0)
+  printTer(a::String) = printTerAndFile(a,outFile0)
+  printTer() = printTerAndFile("",outFile0)
+  # ----------------------End----------------------  
+
+
   # Material properties
   @unpack E, ρcDry, L, A_str = params
   ρw = 1025 #Kg/m3 density of water
   μₘ = 0.5*E
   ρcSub = ρcDry - ρw
-  @show L
-
+  printTer("[VAL] Length = ", L)
+  printTer()
   
   # Time Parameters
-  @unpack t0, simT, simΔt, outΔt, maxIter = params
+  @unpack t0, simT, simΔt, outΔt, maxIter, startRamp = params
   @unpack outFreeSurface = params
+  outMod = floor(Int64,outΔt/simΔt);
+  
+  printTer("[VAL] (t0, simT) = ",(t0, simT))
+  printTer("[VAL] (simΔt, outΔt) = ",(simΔt, outΔt))
+  printTer("[VAL] StartRamp = ",startRamp)
+  printTer("[VAL] outMod = ", outMod)
+  printTer()
 
   ## Wave input
   # ---------------------Start---------------------  
-  @unpack Hs, Tp, h0, nω, seed = params
-  ω, S, A = jonswap(Hs, Tp,
-    plotflag=false, nω = nω)
+  @unpack h0 = params
 
-  k = dispersionRelAng.(h0, ω; msg=false)
-  α = randomPhase(ω, seed = seed)
-
-  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
+  sp = getInputSpec(params)
   #η, ϕ, u, w = waveAiry1D(sp, t, 0.1, -0.1)
+
+  printTer("[VAL] h0 = ", h0)
+  printTer("[VAL] Hs = ", sp.Hs)
+  printTer("[VAL] Tp = ", sp.Tp)
+  printTer("[VAL] nw = ", sp.nω)
+  printTer("[VAL] wc = ", sp.ω[end])
+  printTer()
   # ----------------------End----------------------  
 
 
@@ -144,7 +163,8 @@ function main(params)
   add_tag_from_tags!(labels_Ω,"fairLead",[2]) 
   writevtk(model, pltName*"model")
 
-  daFile0 = open( pltName*"aout.dat", "w" )
+  printTer("[VAL] nx = ", nx)
+  printTer()
   # ----------------------End----------------------  
 
 
@@ -223,9 +243,10 @@ function main(params)
   gAnch(x, t::Real) = VectorValue(0.0, 0.0)
   gAnch(t::Real) = x -> gAnch(x, t)
 
-  @show Xh_fl = X(Point(L))
-  @show (Xh_fl[1], Xh_fl[2]-h0)
-  @unpack startRamp = params
+  Xh_fl = X(Point(L))
+  printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]))
+  printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]-h0))
+  printTer()
 
   # Create interpolable obj for this
   function createInterpObj(sp, t, x, z)
@@ -234,18 +255,18 @@ function main(params)
     tRamp = timeRamp.(t, startRamp[1], startRamp[2])
 
     itp = Interpolations.interpolate(
-        η.*tRamp, 
-        BSpline(Cubic(Line(OnGrid()))) )
+      η.*tRamp, 
+      BSpline(Cubic(Line(OnGrid()))) )
     sitp_η = scale(itp, t)
 
     itp = Interpolations.interpolate(
-        px.*tRamp, 
-        BSpline(Cubic(Line(OnGrid()))) )
+      px.*tRamp, 
+      BSpline(Cubic(Line(OnGrid()))) )
     sitp_px = scale(itp, t)
 
     itp = Interpolations.interpolate(
-        py.*tRamp, 
-        BSpline(Cubic(Line(OnGrid()))) )
+      py.*tRamp, 
+      BSpline(Cubic(Line(OnGrid()))) )
     sitp_py = scale(itp, t)
 
     return sitp_η, sitp_px, sitp_py
@@ -295,7 +316,7 @@ function main(params)
   degree = 2*order
   dΩ = Measure(Ω,degree)
   dΓ = Measure(Γ,degree)
-  @show nΓ = get_normal_vector(Γ)  
+  nΓ = get_normal_vector(Γ)  
 
 
   # Initial solution
@@ -359,14 +380,14 @@ function main(params)
 
   ## Cell state
   # ---------------------Start---------------------  
-  function new_J(J_csin, Jin)
-    return true, Jin
-  end
+  # function new_J(J_csin, Jin)
+  #   return true, Jin
+  # end
 
   function create_cellState(Jin, loc)
     local J_cs
     J_cs = CellState(Jin(loc), dΩ)  
-    update_state!(new_J, J_cs, Jin)    
+    update_state!( (a,b) -> (true, b), J_cs, Jin)    
 
     return J_cs
   end
@@ -389,10 +410,8 @@ function main(params)
   ## Spring bed
   # ---------------------Start---------------------
   @unpack bed_tanhRamp, bed_springK = params
-  @show bed_tanhRamp, bed_springK
   bedK1 = ρcSub*g
   bedK2 = ρcSub*g * bed_springK
-  println("Bed spring constant = ", bedK2, " N/m3/m")
   bedRamp = bed_tanhRamp
   spng(u) = 0.5+0.5*(tanh∘( bedRamp*excursion(u) ))
   excursion(u) = VectorValue(0.0,-1.0) ⋅ (Xh+u)
@@ -417,6 +436,11 @@ function main(params)
 
     return -lspng * (0.05*bedK2*vz)
   end
+
+  printTer("[VAL] bed_tanhRamp", bed_tanhRamp)
+  printTer("[VAL] bed_springK", bed_springK)
+  printTer("[VAL] Bed spring constant (N/m3/m) = ", bedK2)
+  printTer()
   # ----------------------End----------------------
 
 
@@ -439,12 +463,36 @@ function main(params)
   # ----------------------End----------------------  
 
 
+  ## Wave velocity vector CellField
+  # ---------------------Start---------------------
+  function getWaveVel(r, t, xNew_loc)
+
+    xqp = xNew_loc(r)
+    tRamp = timeRamp(t, startRamp[1], startRamp[2])
+
+    w_u, w_w = waveAiry1D_vel(sp, t, 
+      xqp[1], xqp[2]-sp.h0 )
+
+    return VectorValue(w_u, w_w) * tRamp
+  end
+
+  getWaveVel_cf(t, xNew_loc) = 
+    CellField( r -> getWaveVel(r, t, xNew_loc), Ω )  
+  waveVel_cs = 
+    create_cellState( getWaveVel_cf(t0, Xh), loc)  
+  # ----------------------End----------------------  
+
+
   ## Function form drag
   # ---------------------Start---------------------
   @unpack C_dn, d_dn, C_dt, d_dt = params
   @unpack strCur = params
-  @show D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
-  @show D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
+  D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
+  D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
+  
+  printTer("[VAL] D_dn = ", D_dn)
+  printTer("[VAL] D_dt = ", D_dt)
+  printTer()
 
   # Constant Currents
   function getCurrentField(r)
@@ -454,8 +502,9 @@ function main(params)
 
     return VectorValue( strCur.itp( pz ), 0.0 ) 
   end
-  UCur_h = interpolate_everywhere(getCurrentField, Ψu)
-  UCur_cs = create_cellState( UCur_h, loc )
+  UCur_cs = create_cellState( 
+    CellField( r -> getCurrentField(r), Ω), 
+    loc )
 
   function drag_ΓX_intp(v,u)  #No wave and current
     # Slow basic version
@@ -500,25 +549,15 @@ function main(params)
 
     tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
-    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    # Wave vel
-    # lx = Xh_x_cs 
-    # lz = Xh_z_cs 
-    # nothing, nothing, w_u, w_w = waveAiry1D(sp, t, -0.1, -0.5)
-
-    # lazy_map((x,z) -> waveAiry1D(sp,t,x,z), (lx,lz) )
-
-    # αₘ = sp.k * lx - sp.ω*t + sp.α
-    # w_u = A .* ω .* cos.(αₘ) .* cosh.(k*(h0+z)) ./ sinh.(k*h0)
+    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)    
 
     t1s = FΓ ⋅ T1s_cs
     t1m2 = t1s ⋅ t1s    
     #t1 = t1s / ((t1s ⋅ t1s).^0.5)
 
-    sΛ = (t1m2.^0.5) / T1m_cs
+    sΛ = (t1m2.^0.5) / T1m_cs    
     
-    vr = UCur_cs * tRamp - v
+    vr = UCur_cs*tRamp + waveVel_cs - v
     vn = vr - (vr ⋅ t1s) * t1s / t1m2
     # vn = (v ⋅ t1s) * t1s / t1m2 - v 
     vnm = (vn ⋅ vn).^0.5
@@ -529,7 +568,7 @@ function main(params)
 
   function drag_t_ΓX(t, v, u)
 
-    local FΓ, t1s, t1m2, sΛ, vt, vtm, tRamp
+    local FΓ, t1s, t1m2, sΛ, vr, vt, vtm, tRamp
 
     tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
@@ -541,7 +580,8 @@ function main(params)
 
     sΛ = (t1m2.^0.5) / T1m_cs
     
-    vt = ((UCur_cs * tRamp - v) ⋅ t1s) * t1s / t1m2
+    vr = UCur_cs*tRamp + waveVel_cs - v
+    vt = (vr ⋅ t1s) * t1s / t1m2
     # vt = -(v ⋅ t1s) * t1s / t1m2    
     vtm = (vt ⋅ vt).^0.5
 
@@ -554,8 +594,12 @@ function main(params)
   ## Function form added-mass
   # ---------------------Start---------------------
   @unpack C_an, C_at, = params
-  @show D_an = ρw * C_an
-  @show D_at = ρw * C_at   
+  D_an = ρw * C_an
+  D_at = ρw * C_at   
+
+  printTer("[VAL] D_an = ", D_an)
+  printTer("[VAL] D_at = ", D_at)
+  printTer()
 
   function addedMass_n_ΓX(a, u)
 
@@ -692,8 +736,9 @@ function main(params)
   
   (uh_S, cache) = solve!(U0, nls, op_S)
 
-  println("Length Catenary solution = ", calcLen(J) )  
-  println("Length Static Solution = ", calcLen(JNew(uh_S)) )  
+  printTer("[RES] Length Catenary solution = ", calcLen(J) )  
+  printTer("[RES] Length Static Solution = ", calcLen(JNew(uh_S)) )  
+  printTer()
 
   xNew = Xh + uh_S
 
@@ -722,14 +767,12 @@ function main(params)
   # nls = NewtonRaphsonSolver(LUSolver(), 1e-8, 100)
 
   # Implicit solver
-  ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)    
+  ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)
+  # GenAlpha 1.0 Midpoint: Diverges quickly
+  # GenAlpha 0.0 Fully implicit: Stable
   
   solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t)) 
   # solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t,U0tt)) 
-
-  # # Explicit solver
-  # ode_solver = RungeKutta(nls, nls, simΔt, :EXRK_Midpoint_2_2)
-  # solnht = solve(ode_solver, op_D, t0, simT, (U0,)) 
   # ----------------------End----------------------
 
 
@@ -739,7 +782,6 @@ function main(params)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
-  # daFile2 = open( pltName*"data2.dat", "w" )
   
   # ----------------------End----------------------
 
@@ -785,18 +827,22 @@ function main(params)
   xNew = X + uh
   save_cache1, save_cache2 = Gridap.Arrays.return_cache(xNew, rPrb)
   save_f_cache = save_cache2[2]
+  
 
-  @show outMod = floor(Int64,outΔt/simΔt);
   execTime = zeros(Float64, 1, 10)
   execTime[1] = time()  # tick()
   execTime[3] = time()   
   tick()
   cnt=0
-
+  
+  # Update waveVel(tn) before solving t(n+1)
+  update_state!( (a,b) -> (true, b), waveVel_cs, 
+    getWaveVel_cf(t0, xNew) ) 
+  
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
   while next !== nothing
-    
+
     (iSol, iState) = next
     (t, uh) = iSol      
     iNLCache = iState[2][5][1][4]
@@ -864,10 +910,12 @@ function main(params)
       end
     
     end
+
+
     execTime[4] = time()  
     tock()
-    @printf(daFile0, 
-      "Step Time: \t %5i \t %10.3f \t %10.3f \t %5i \t %2i \n", 
+    @printf(outFile1, 
+      "%5i, %10.3f, %10.3f, %5i, %2i \n", 
       cnt, t, execTime[4]-execTime[3], 
       iNLCache.result.iterations, iNLCache.result.x_converged)
     println("-x-x-x-")
@@ -875,21 +923,26 @@ function main(params)
     execTime[3] = time()  
     tick()
 
+    # Update waveVel(tn) before solving t(n+1)
+    update_state!( (a,b) -> (true, b), waveVel_cs, 
+      getWaveVel_cf(t, xNew) ) 
+    
     next = iterate(solnht, iState)
   end  
   execTime[2] = time()  
   tock()
-  @printf(daFile0, 
-    "\nTotal Time: \t %5i \t %.3f \n", 
+  @printf(outFile0, 
+    "\n[TIM] Total Time: \t %5i \t %.3f \n", 
     round(simT/simΔt), execTime[2]-execTime[1])
 
   vtk_save(pvd)
   if(outFreeSurface)
     vtk_save(pvd_fs)
   end
-  close(daFile0)
+
+  close(outFile0)
+  close(outFile1)
   close(daFile1)
-  # close(daFile2)
   # ----------------------End----------------------
 
     
@@ -904,6 +957,41 @@ Aux functions
 
 """
 # ---------------------Start---------------------
+
+function printTerAndFile(str::String, 
+    val::Union{AbstractArray,Tuple,Real}, outFile::IOStream)
+  
+  println(str, val)
+  println(outFile, str, val)
+  # @printf("%s %15.6f\n", str, val)
+  # @printf(outFile,"%s %15.6f\n", str, val)
+end
+
+function printTerAndFile(str::String, outFile::IOStream)
+  println(str)
+  println(outFile, str)
+end
+
+
+function getInputSpec(params)
+
+  @unpack Hs, Tp, h0, nω, seed, ωc = params
+
+  if(ωc < 0)
+    ω, S, A = jonswap(Hs, Tp,
+      plotflag=false, nω = nω)
+  else
+    ω, S, A = jonswap(Hs, Tp,
+      plotflag=false, nω = nω, ωc = ωc)
+  end
+
+  k = dispersionRelAng.(h0, ω; msg=false)
+  α = randomPhase(ω, seed = seed)
+
+  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
+  return sp
+end
+
 
 function setInitXZ(initCSV)
   
