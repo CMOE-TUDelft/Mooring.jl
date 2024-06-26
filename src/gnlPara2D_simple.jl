@@ -88,6 +88,10 @@ Warmup and Test params
   # Current
   strCur = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
 
+  # Forced fairlead motion
+  ffm_η = 0.1 #m
+  ffm_ω = 0.5 #Hz
+
 end
 
 
@@ -277,15 +281,15 @@ function main(params)
       t0:simΔt/2.0:(1.2*simT) , 
       Xh_fl[1], Xh_fl[2]-h0 )
 
-  function getFairLeadEnd(x,t)    
+  # function getFairLeadEnd(x,t)    
 
-    # tRamp already done in createInterpObj
-    px = sitp_px(t)
-    py = sitp_py(t)
+  #   # tRamp already done in createInterpObj
+  #   px = sitp_px(t)
+  #   py = sitp_py(t)
 
-    # return VectorValue(0.0, η)
-    return VectorValue(px, py)
-  end
+  #   # return VectorValue(0.0, η)
+  #   return VectorValue(px, py)
+  # end
 
   # function getFairLeadEnd(x,t)    
   #   η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
@@ -295,15 +299,17 @@ function main(params)
   #   return VectorValue(px*tRamp, py*tRamp)
   # end
   
-  # function getFairLeadEnd(x,t)    
-  #   fairLead_η = 1.5 #m2
-  #   fairLead_ω = 1 #rad/s
+  @unpack ffm_η, ffm_ω = params
+  function getFairLeadEnd(x,t)    
+    # ffm_η = 1.5 #m2
+    # ffm_ω = 1 #rad/s
 
-  #   tRamp = timeRamp(t, startRamp[1], startRamp[2])
+    tRamp = timeRamp(t, startRamp[1], startRamp[2])
 
-  #   return VectorValue( -tRamp*fairLead_η*sin(fairLead_ω*t), 
-  #   tRamp*fairLead_η*(1-cos(fairLead_ω*t)) )
-  # end    
+    return VectorValue( 
+      tRamp*ffm_η*sin(ffm_ω*t),
+      0.0 )
+  end    
   
   gFairLead(x, t::Real) = getFairLeadEnd(x,t)    
   gFairLead(t::Real) = x -> gFairLead(x, t)
@@ -657,8 +663,8 @@ function main(params)
     ∫( ( -ψu ⋅ drag_t_ΓX(0.0, VectorValue(0.0,0.0), u) )*JJ_cs )dΩ 
 
 
-  # op_S = FEOperator(res0, US, Ψu)
-  op_S = FEOperator(res, US, Ψu)
+  op_S = FEOperator(res0, US, Ψu)
+  # op_S = FEOperator(res, US, Ψu)
   # ----------------------End----------------------
 
 
@@ -712,10 +718,10 @@ function main(params)
 
 
   # Define operator
-  # op_D = TransientSemilinearFEOperator(massD0, resD0, U, Ψu; 
-  #   order=2, constant_mass=true)
-  op_D = TransientSemilinearFEOperator(massD, resD, U, Ψu; 
+  op_D = TransientSemilinearFEOperator(massD0, resD0, U, Ψu; 
     order=2, constant_mass=true)
+  # op_D = TransientSemilinearFEOperator(massD, resD, U, Ψu; 
+  #   order=2, constant_mass=true)
 
   # ----------------------End----------------------
 
@@ -779,7 +785,7 @@ function main(params)
 
   ## Save quantities
   # ---------------------Start---------------------  
-  rPrb = Point.(0.0:L/20:L)
+  rPrb = Point.(0.0:L/5:L)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
@@ -924,9 +930,9 @@ function main(params)
     execTime[3] = time()  
     tick()
 
-    # Update waveVel(tn) before solving t(n+1)
-    update_state!( (a,b) -> (true, b), waveVel_cs, 
-      getWaveVel_cf(t, xNew) ) 
+    # # Update waveVel(tn) before solving t(n+1)
+    # update_state!( (a,b) -> (true, b), waveVel_cs, 
+    #   getWaveVel_cf(t, xNew) ) 
     
     next = iterate(solnht, iState)
   end  
