@@ -339,6 +339,7 @@ function main(params)
   GInv = inv(G)
 
   Q = J ⋅ GInv
+  QTrans = Q'
 
   P = (J ⋅ J')/ (J ⊙ J)  # Only true for q=1 d=2
 
@@ -469,11 +470,11 @@ function main(params)
 
   end
 
-  function stressK_fnc(Q, P, ∇u)
+  function stressK_fnc(QTr, P, ∇u)
     
     local FΓ, EDir, ETang
     
-    FΓ = ( ∇u' ⋅ Q ) + TensorValue(1.0,0.0,0.0,1.0)
+    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
 
     # FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
 
@@ -482,6 +483,28 @@ function main(params)
     ETang = P ⋅ EDir ⋅ P
 
     return 2*μₘ * (FΓ ⋅ ETang)
+
+  end
+
+
+  function stressσ_fnc(QTr, P, J, ∇u)      
+    
+    local FΓ, EDir, ETang, stressS, JNew, sΛ
+    
+    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+
+    # FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+
+    EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+
+    ETang = P ⋅ EDir ⋅ P
+
+    stressS = 2*μₘ * ETang
+
+    JNew = J  + ∇u'
+    sΛ = ((JNew ⊙ JNew) ./ (J ⊙ J)).^0.5
+
+    return ( FΓ ⋅ stressS ⋅ FΓ' ) / sΛ
 
   end
   # ----------------------End----------------------  
@@ -898,7 +921,7 @@ function main(params)
     xNewPrb = evaluate!(cache_xNew, xNew, rPrb)
     
 
-    sT_uh = stressσ(uh)
+    sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
     cell_f = get_array(sT_uh)
     cell_f_cache = array_cache(cell_f)
     cache2 = cell_f_cache, save_f_cache, cell_f, sT_uh
@@ -906,7 +929,7 @@ function main(params)
     sTPrb = evaluate!(cache_sT, sT_uh, rPrb)
     σT = getPrincipalStress2.(sTPrb)      
 
-    
+
     @printf(daFile1, "%15.3f",t)
     @printf(daFile1, ", %2i, %5i", 
       iNLCache.result.x_converged, iNLCache.result.iterations)
