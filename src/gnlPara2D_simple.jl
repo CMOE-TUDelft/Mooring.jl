@@ -300,11 +300,13 @@ function main(params)
   # end
   
   @unpack ffm_η, ffm_ω = params
+  printTer("[VAL] ffm_η", ffm_η)
+  printTer("[VAL] ffm_ω", ffm_ω)
   function getFairLeadEnd(x,t)    
     # ffm_η = 1.5 #m2
     # ffm_ω = 1 #rad/s
 
-    tRamp = timeRamp(t, startRamp[1], startRamp[2])
+    tRamp = timeRamp(t, startRamp[1], startRamp[2])    
 
     return VectorValue( 
       tRamp*ffm_η*sin(ffm_ω*t),
@@ -462,6 +464,22 @@ function main(params)
     EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
 
     ETang = P_cs ⋅ EDir ⋅ P_cs
+
+    return 2*μₘ * (FΓ ⋅ ETang)
+
+  end
+
+  function stressK_fnc(Q, P, ∇u)
+    
+    local FΓ, EDir, ETang
+    
+    FΓ = ( ∇u' ⋅ Q ) + TensorValue(1.0,0.0,0.0,1.0)
+
+    # FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+
+    EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+
+    ETang = P ⋅ EDir ⋅ P
 
     return 2*μₘ * (FΓ ⋅ ETang)
 
@@ -649,8 +667,8 @@ function main(params)
   # ---------------------Start---------------------
 
   # Form 0: Simplest
-  res0(u, ψu) =      
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
+  res0(u, ψu) =          
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
   
   
@@ -677,7 +695,7 @@ function main(params)
   # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
   
   resD0(t, u, ψu) =      
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
     # ∫( (  )*JJ_cs )dΩ      
 

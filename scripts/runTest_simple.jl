@@ -11,11 +11,11 @@ include(srcdir("gnlPara2D_simple.jl"))
 resDir = datadir("sims_202406","run")
 
 ffm_η = 0.1 #m
-ffm_f = 0.5 #Hz
+ffm_f = 0.2 #Hz
 
 # Warmup run
 params = gnlPara2D.Test_params( 
-  initCSV = "moordyn/test32/initShape.csv",
+  initCSV = "models/initShape.csv",
   resDir = resDir,
 
   # Material properties
@@ -25,7 +25,7 @@ params = gnlPara2D.Test_params(
   ρcDry = 7.8e3, #kg/m3 Density of steel  
   
   # Parameter Domain
-  nx = 20,
+  nx = 80,
   order = 1,
 
   outFreeSurface = false,
@@ -33,16 +33,16 @@ params = gnlPara2D.Test_params(
   # Time Parameters
   t0 = 0.0,
   simT = 100/ffm_f,
-  simΔt = 0.02,
-  outΔt = 0.5,
+  simΔt = 0.05,
+  outΔt = 1.25,
   maxIter = 100,
   
   # Time signal ramp up (t0 t1)
   startRamp = (0.0, 10/ffm_f),
 
   # Forced fairlead motion
-  ffm_η = 0.1, #m
-  ffm_ω = 2*pi*ffm_f #Hz
+  ffm_η = ffm_η, #m
+  ffm_ω = 2*pi*ffm_f #rad/s
 
 )
 gnlPara2D.main(params)
