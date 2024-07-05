@@ -252,54 +252,7 @@ function main(params)
   Xh_fl = X(Point(L))
   printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]))
   printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]-h0))
-  printTer()
-
-  # # Create interpolable obj for this
-  # function createInterpObj(sp, t, x, z)
-  #   η, px, py = waveAiry1D_pPos(sp, t, x, z)    
-
-  #   tRamp = timeRamp.(t, startRamp[1], startRamp[2])
-
-  #   itp = Interpolations.interpolate(
-  #     η.*tRamp, 
-  #     BSpline(Cubic(Line(OnGrid()))) )
-  #   sitp_η = scale(itp, t)
-
-  #   itp = Interpolations.interpolate(
-  #     px.*tRamp, 
-  #     BSpline(Cubic(Line(OnGrid()))) )
-  #   sitp_px = scale(itp, t)
-
-  #   itp = Interpolations.interpolate(
-  #     py.*tRamp, 
-  #     BSpline(Cubic(Line(OnGrid()))) )
-  #   sitp_py = scale(itp, t)
-
-  #   return sitp_η, sitp_px, sitp_py
-  # end
-
-  # sitp_η, sitp_px, sitp_py = 
-  #   createInterpObj( sp, 
-  #     t0:simΔt/2.0:(1.2*simT) , 
-  #     Xh_fl[1], Xh_fl[2]-h0 )
-
-  # function getFairLeadEnd(x,t)    
-
-  #   # tRamp already done in createInterpObj
-  #   px = sitp_px(t)
-  #   py = sitp_py(t)
-
-  #   # return VectorValue(0.0, η)
-  #   return VectorValue(px, py)
-  # end
-
-  # function getFairLeadEnd(x,t)    
-  #   η, px, py = waveAiry1D_pPos(sp, t, Xh_fl[1], Xh_fl[2]-h0)
-  #   tRamp = timeRamp(t, startRamp[1], startRamp[2])
-
-  #   # return VectorValue(0.0, η*tRamp)
-  #   return VectorValue(px*tRamp, py*tRamp)
-  # end
+  printTer()  
   
   @unpack ffm_η, ffm_ω = params
   printTer("[VAL] ffm_η ", ffm_η)
@@ -371,15 +324,7 @@ function main(params)
   stressK(u) = 2*μₘ * (FΓ(u) ⋅ ETang(u))
   stressS(u) = 2*μₘ * ETang(u)
   stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u) 
-  
-  
-  function getPrincipalStress(uh, lp)
-
-    sT = stressσ(uh).(lp)
-    sTP = [ (lT[1] + lT[4])/2 + sqrt( ((lT[1] - lT[4])/2)^2 + lT[2]^2 )
-      for lT in sT ]     
-  
-  end
+    
 
   function getPrincipalStress2(lT)
     
@@ -418,41 +363,6 @@ function main(params)
   # ----------------------End----------------------
   
   
-  ## Spring bed
-  # ---------------------Start---------------------
-  @unpack bed_tanhRamp, bed_springK = params
-  bedK1 = ρcSub*g
-  bedK2 = ρcSub*g * bed_springK
-  bedRamp = bed_tanhRamp
-  spng(u) = 0.5+0.5*(tanh∘( bedRamp*excursion(u) ))
-  excursion(u) = VectorValue(0.0,-1.0) ⋅ (Xh+u)
-  bedForce(u) = spng(u) * (bedK1 + bedK2*excursion(u)) 
-
-  function bedSpring_fnc(u)
-    local exc, lspng
-
-    exc = VectorValue(0.0,-1.0) ⋅ (Xh_cs+u)
-    lspng = 0.5 + 0.5*(tanh∘( bedRamp*exc ))
-
-    return lspng * (bedK1 + bedK2*exc) 
-  end
-
-  function bedDamp_fnc(v, u)
-    local exc, lspng, vz
-
-    exc = VectorValue(0.0,-1.0) ⋅ (Xh_cs + u)
-    lspng = 0.5 + 0.5*(tanh∘( bedRamp*exc ))
-
-    vz = VectorValue(0.0,1.0) ⋅ (v)
-
-    return -lspng * (0.05*bedK2*vz)
-  end
-
-  printTer("[VAL] bed_tanhRamp", bed_tanhRamp)
-  printTer("[VAL] bed_springK", bed_springK)
-  printTer("[VAL] Bed spring constant (N/m3/m) = ", bedK2)
-  printTer()
-  # ----------------------End----------------------
 
 
   ## Function form stressK
@@ -525,183 +435,7 @@ function main(params)
 
   end
   # ----------------------End----------------------  
-
-
-  ## Wave velocity vector CellField
-  # ---------------------Start---------------------
-  function getWaveVel(r, t, xNew_loc)
-
-    xqp = xNew_loc(r)
-    tRamp = timeRamp(t, startRamp[1], startRamp[2])
-
-    w_u, w_w = waveAiry1D_vel(sp, t, 
-      xqp[1], xqp[2]-sp.h0 )
-
-    return VectorValue(w_u, w_w) * tRamp
-  end
-
-  getWaveVel_cf(t, xNew_loc) = 
-    CellField( r -> getWaveVel(r, t, xNew_loc), Ω )  
-  waveVel_cs = 
-    create_cellState( getWaveVel_cf(t0, Xh), loc)  
-  # ----------------------End----------------------  
-
-
-  ## Function form drag
-  # ---------------------Start---------------------
-  @unpack C_dn, d_dn, C_dt, d_dt = params
-  @unpack strCur = params
-  D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
-  D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
   
-  printTer("[VAL] D_dn = ", D_dn)
-  printTer("[VAL] D_dt = ", D_dt)
-  printTer()
-
-  # Constant Currents
-  function getCurrentField(r)
-    pz = Xh(r) ⋅ VectorValue(0.0,1.0) - strCur.h0
-    pz = min(pz, 0.0)
-    pz = max(pz, -strCur.h0)
-
-    return VectorValue( strCur.itp( pz ), 0.0 ) 
-  end
-  UCur_cs = create_cellState( 
-    CellField( r -> getCurrentField(r), Ω), 
-    loc )
-
-  function drag_ΓX_intp(v,u)  #No wave and current
-    # Slow basic version
-    # Useful for plotting
-
-    local vn, vnm, vt, vtm
-    
-    vt = -(v ⋅ t1(u)) * t1(u)
-    vtm = (vt ⋅ vt).^0.5
-    vn = -v - vt
-    vnm = (vn ⋅ vn).^0.5    
-
-    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ(u) 
-
-  end
-
-  function drag_ΓX(v, u) #No wave and current
-
-    local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm
-
-    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    t1s = FΓ ⋅ T1s_cs
-    t1m2 = t1s ⋅ t1s    
-    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
-
-    sΛ = (t1m2.^0.5) / T1m_cs
-    
-    vt = -(v ⋅ t1s) * t1s / t1m2
-    vtm = (vt ⋅ vt).^0.5
-    vn = -v - vt
-    vnm = (vn ⋅ vn).^0.5    
-
-    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ 
-
-  end
-
-  function drag_n_ΓX(t, v, u)
-
-    local FΓ, t1s, t1m2, vn, vnm, sΛ, vr, tRamp
-    # local w_u, w_w, lx, lz
-
-    tRamp = timeRamp(t, startRamp[1], startRamp[2])
-
-    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)    
-
-    t1s = FΓ ⋅ T1s_cs
-    t1m2 = t1s ⋅ t1s    
-    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
-
-    sΛ = (t1m2.^0.5) / T1m_cs    
-    
-    vr = UCur_cs*tRamp + waveVel_cs - v
-    vn = vr - (vr ⋅ t1s) * t1s / t1m2
-    # vn = (v ⋅ t1s) * t1s / t1m2 - v 
-    vnm = (vn ⋅ vn).^0.5
-
-    return D_dn * vn * vnm * sΛ 
-
-  end
-
-  function drag_t_ΓX(t, v, u)
-
-    local FΓ, t1s, t1m2, sΛ, vr, vt, vtm, tRamp
-
-    tRamp = timeRamp(t, startRamp[1], startRamp[2])
-
-    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    t1s = FΓ ⋅ T1s_cs
-    t1m2 = t1s ⋅ t1s    
-    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
-
-    sΛ = (t1m2.^0.5) / T1m_cs
-    
-    vr = UCur_cs*tRamp + waveVel_cs - v
-    vt = (vr ⋅ t1s) * t1s / t1m2
-    # vt = -(v ⋅ t1s) * t1s / t1m2    
-    vtm = (vt ⋅ vt).^0.5
-
-    return D_dt * vt * vtm * sΛ 
-
-  end
-  # ----------------------End----------------------  
-
-
-  ## Function form added-mass
-  # ---------------------Start---------------------
-  @unpack C_an, C_at, = params
-  D_an = ρw * C_an
-  D_at = ρw * C_at   
-
-  printTer("[VAL] D_an = ", D_an)
-  printTer("[VAL] D_at = ", D_at)
-  printTer()
-
-  function addedMass_n_ΓX(a, u)
-
-    local FΓ, t1s, t1m2, an, sΛ
-
-    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    t1s = FΓ ⋅ T1s_cs
-    t1m2 = t1s ⋅ t1s    
-    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
-
-    sΛ = (t1m2.^0.5) / T1m_cs
-    
-    an = (a ⋅ t1s) * t1s / t1m2 - a    
-
-    return D_an * an * sΛ
-
-  end
-
-  function addedMass_t_ΓX(a, u)
-
-    local FΓ, t1s, t1m2, sΛ, at
-
-    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    t1s = FΓ ⋅ T1s_cs
-    t1m2 = t1s ⋅ t1s    
-    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
-
-    sΛ = (t1m2.^0.5) / T1m_cs
-    
-    at = -(a ⋅ t1s) * t1s / t1m2
-    
-    return D_at * at * sΛ 
-
-  end
-  # ----------------------End----------------------  
-
 
   ## Weak form: Static
   # ---------------------Start---------------------
@@ -709,16 +443,7 @@ function main(params)
   # Form 0: Simplest
   res0(u, ψu) =          
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ #+
-    # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
-  
-  
-  # Form 2: Default
-  res(u, ψu) =      
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedSpring_fnc(u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ drag_n_ΓX(0.0, VectorValue(0.0,0.0), u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ drag_t_ΓX(0.0, VectorValue(0.0,0.0), u) )*JJ_cs )dΩ 
+    # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ   
 
 
   op_S = FEOperator(res0, US, Ψu)
@@ -737,42 +462,7 @@ function main(params)
   resD0(t, u, ψu) =      
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ #+
     # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
-    # ∫( (  )*JJ_cs )dΩ      
-
-
-  # Form 1
-  # resD(t, u, ψu) =  
-  #   ∫( ( (ψu ⋅ ∂tt(u)) * ρcDry )*JJ_cs )dΩ +
-  #   # ∫( ( -ψu ⋅ addedMass_n_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
-  #   # ∫( ( -ψu ⋅ addedMass_t_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
-  #   ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedDamp_fnc(∂t(u), u) )*JJ_cs )dΩ +
-  #   ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
-  #   ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
-  #   ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedSpring_fnc(u) )*JJ_cs )dΩ +
-  #   ∫( ( -ψu ⋅ drag_n_ΓX(t, ∂t(u), u) )*JJ_cs )dΩ +
-  #   ∫( ( -ψu ⋅ drag_t_ΓX(t, ∂t(u), u) )*JJ_cs )dΩ 
-  #   # ∫( ( -ψu ⋅ drag_ΓX(∂t(u), u) )*JJ_cs )dΩ 
-  #   # ∫( (  )*JJ_cs )dΩ   
-
-  # op_D = TransientFEOperator(resD, U, Ψu; order=2)
-
-
-  # Form 2: Default, No added mass
-  massD(t, ∂ₜₜu, ψu) =  
-    ∫( ( (ψu ⋅ ∂ₜₜu) * ρcDry )*JJ_cs )dΩ
-  # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
-  
-  resD(t, u, ψu) =      
-    # ∫( ( -ψu ⋅ addedMass_n_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
-    # ∫( ( -ψu ⋅ addedMass_t_ΓX(∂tt(u), u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedDamp_fnc(∂t(u), u) )*JJ_cs )dΩ +
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ stressK_fnc(u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * bedSpring_fnc(u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ drag_n_ΓX(t, ∂t(u), u) )*JJ_cs )dΩ +
-    ∫( ( -ψu ⋅ drag_t_ΓX(t, ∂t(u), u) )*JJ_cs )dΩ 
-    # ∫( ( -ψu ⋅ drag_ΓX(∂t(u), u) )*JJ_cs )dΩ 
-    # ∫( (  )*JJ_cs )dΩ     
+    # ∫( (  )*JJ_cs )dΩ        
 
 
   # Define operator
@@ -872,8 +562,7 @@ function main(params)
   pvd[t0] = createvtk(Ω,    
     pltName*"tSol_$tprt"*".vtu",
     cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-      "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
-      "spr"=>spng(uh) ])
+      "ETang"=>ETang(uh), "sigma"=>stressσ(uh)])
       # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
 
   if(outFreeSurface)
@@ -900,9 +589,6 @@ function main(params)
   tick()
   cnt=0
   
-  # Update waveVel(tn) before solving t(n+1)
-  update_state!( (a,b) -> (true, b), waveVel_cs, 
-    getWaveVel_cf(t0, xNew) ) 
   
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
@@ -934,33 +620,35 @@ function main(params)
     cell_f = get_array(xNew)
     cell_f_cache = array_cache(cell_f)    
     cache2 = cell_f_cache, save_f_cache, cell_f, xNew
-    cache_xNew = (save_cache1, cache2)
-    xNewPrb = evaluate!(cache_xNew, xNew, rPrb)
+    # cache_xNew = (save_cache1, cache2)
+    xNewPrb = evaluate!((save_cache1, cache2), xNew, rPrb)
     
 
-    # sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
-    # cell_f = get_array(sT_uh)
-    # cell_f_cache = array_cache(cell_f)
-    # cache2 = cell_f_cache, save_f_cache, cell_f, sT_uh
-    # cache_sT = (save_cache1, cache2)
-    # sTPrb = evaluate!(cache_sT, sT_uh, rPrb)
-    # σT = getPrincipalStress2.(sTPrb)
-
-    sT_uh = ETang_fnc∘(QTrans, P, J, ∇(uh) )
+    sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
     cell_f = get_array(sT_uh)
     cell_f_cache = array_cache(cell_f)
     cache2 = cell_f_cache, save_f_cache, cell_f, sT_uh
-    cache_sT = (save_cache1, cache2)
-    sTPrb = evaluate!(cache_sT, sT_uh, rPrb)
-    sETang_prb = getPrincipalStress2.(sTPrb)
+    # cache_sT = (save_cache1, cache2)
+    sTPrb = evaluate!((save_cache1, cache2), sT_uh, rPrb)
+    sTPrb_princ = getPrincipalStress2.(sTPrb)
+
+
+    ETang_uh = ETang_fnc∘(QTrans, P, J, ∇(uh) )
+    cell_f = get_array(ETang_uh)
+    cell_f_cache = array_cache(cell_f)
+    cache2 = cell_f_cache, save_f_cache, cell_f, ETang_uh
+    # cache_sT = (save_cache1, cache2)
+    ETangPrb = evaluate!((save_cache1, cache2), ETang_uh, rPrb)
+    ETangPrb_princ = getPrincipalStress2.(ETangPrb)
     
 
-    @printf(daFile1, "%15.3f",t)
+    @printf(daFile1, "%15.6f",t)
     @printf(daFile1, ", %2i, %5i", 
       iNLCache.result.x_converged, iNLCache.result.iterations)
     # [print(daFile1, string(val)*", \t") for val in lDa]
-    [@printf(daFile1, ", %15.3f, %15.3f, %15.3f, %20.10e", 
-      rPrb[i][1], xNewPrb[i][1], xNewPrb[i][2], sETang_prb[i])
+    [@printf(daFile1, ", %15.6f, %15.6f, %15.6f, %20.10e, %20.10e", 
+      rPrb[i][1], xNewPrb[i][1], xNewPrb[i][2], 
+      ETangPrb_princ[i], sTPrb_princ[i])
       for i in 1:nPrb]
     @printf(daFile1, "\n")
 
@@ -972,8 +660,7 @@ function main(params)
       pvd[t] = createvtk(Ω,    
         pltName*"tSol_$tprt"*".vtu",
         cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-          "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
-          "spr"=>spng(uh) ])
+          "ETang"=>ETang(uh), "sigma"=>stressσ(uh)])
           # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
 
       if(outFreeSurface)
@@ -1039,37 +726,44 @@ function main(params)
       xlabel = "t/T")
   end
 
+  nVals = 5
 
   prbi = round(Int64, (nPrb+1)/2)
   plt1 = plot()
-  plot!( plt1, daF[:,1]/fT, daF[:,3+(prbi-1)*4+2], label = nothing, linewidth=3 )
+  plot!( plt1, daF[:,1]/fT, daF[:,3+(prbi-1)*nVals+2], 
+    label = nothing, linewidth=3 )
   plot!( plt1, title = "X Coord", ylabel = "(m)" )
   setGridlines(plt1)
 
   prbi = round(Int64, (nPrb+1)/2)
   plt2 = plot()
-  plot!( plt2, daF[:,1]/fT, daF[:,3+(prbi-1)*4+3], label = nothing, linewidth=3 )
+  plot!( plt2, daF[:,1]/fT, daF[:,3+(prbi-1)*nVals+3], 
+    label = nothing, linewidth=3 )
   plot!( plt2, title = "Z Coord", ylabel = "(m)" )
   setGridlines(plt2)
 
   prbi = 1
   plt3 = plot()
-  plot!( plt3, daF[:,1]/fT, daF[:,3+(prbi-1)*4+4], label = nothing, linewidth=3 )
-  plot!( plt3, title = "Sig at Anchor", ylabel = "ETang" )
+  plot!( plt3, daF[:,1]/fT, daF[:,3+(prbi-1)*nVals+4], 
+    label = nothing, linewidth=3 )
+  plot!( plt3, title = "ETang at Anchor", ylabel = "ETang" )
   setGridlines(plt3)
 
   prbi = nPrb
   plt4 = plot()
-  plot!( plt4, daF[:,1]/fT, daF[:,3+(prbi-1)*4+4], label = nothing, linewidth=3 )
-  plot!( plt4, title = "Sig at FairLead", ylabel = "ETang" )
+  plot!( plt4, daF[:,1]/fT, daF[:,3+(prbi-1)*nVals+4], 
+    label = nothing, linewidth=3 )
+  plot!( plt4, title = "ETang at FairLead", ylabel = "ETang" )
   setGridlines(plt4)
 
 
   prbi1 = 1
   prbi2 = nPrb
   plt5 = plot()
-  plot!( plt5, daF[:,1]/fT, daF[:,3+(prbi2-1)*4+4]-daF[:,3+(prbi1-1)*4+4], label = nothing, linewidth=3 )
-  plot!( plt5, title = "Sig FairLead-Anchor", ylabel = "ETang" )
+  plot!( plt5, daF[:,1]/fT, 
+    daF[:,3+(prbi2-1)*nVals+4]-daF[:,3+(prbi1-1)*nVals+4], 
+    label = nothing, linewidth=3 )
+  plot!( plt5, title = "ETang FairLead-Anchor", ylabel = "ETang" )
   setGridlines(plt5)
 
   savefig(plt1, pltName*"plot_posX.png")
