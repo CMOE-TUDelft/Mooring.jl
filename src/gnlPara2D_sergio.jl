@@ -435,6 +435,43 @@ function main(params)
 
   end
   # ----------------------End----------------------  
+
+
+
+  ## Function form drag
+  # ---------------------Start---------------------
+  @unpack C_dn, d_dn, C_dt, d_dt = params  
+  D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
+  D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
+  
+  printTer("[VAL] D_dn = ", D_dn)
+  printTer("[VAL] D_dt = ", D_dt)
+  printTer()
+  
+  
+  function drag_ΓX(QTr, T1s, T1m, v, ∇u) #No wave and current
+
+    local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm
+
+    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+
+    t1s = FΓ ⋅ T1s
+    t1m2 = t1s ⋅ t1s    
+    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
+
+    sΛ = (t1m2.^0.5) / T1m
+    
+    vt = -(v ⋅ t1s) * t1s / t1m2
+    vtm = (vt ⋅ vt).^0.5
+    vn = -v - vt
+    vnm = (vn ⋅ vn).^0.5    
+
+    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ 
+
+  end    
+  # ----------------------End----------------------
+
+
   
 
   ## Weak form: Static
@@ -465,12 +502,24 @@ function main(params)
     # ∫( (  )*JJ_cs )dΩ        
 
 
-  # Define operator
-  op_D = TransientSemilinearFEOperator(massD0, resD0, U, Ψu; 
-    order=2, constant_mass=true)
-  # op_D = TransientSemilinearFEOperator(massD, resD, U, Ψu; 
-  #   order=2, constant_mass=true)
+  # Form 1: Self drag only
+  massD1(t, ∂ₜₜu, ψu) =  
+    ∫( ( (ψu ⋅ ∂ₜₜu) * ρcDry )*JJ_cs )dΩ
+  # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
+  
+  resD1(t, u, ψu) =      
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ +
+    # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
+    # ∫( ( -ψu ⋅ drag_ΓX(QTrans_cs, ∂t(u), ∇(u)) )*JJ_cs )dΩ 
+    ∫( ( -ψu ⋅ (drag_ΓX∘(QTrans_cs, T1s_cs, T1m_cs, ∂t(u), ∇(u))) )*JJ_cs )dΩ 
+    # ∫( (  )*JJ_cs )dΩ        
 
+    
+  # Define operator
+  # op_D = TransientSemilinearFEOperator(massD0, resD0, U, Ψu; 
+  #   order=2, constant_mass=true)
+  op_D = TransientSemilinearFEOperator(massD1, resD1, U, Ψu; 
+    order=2, constant_mass=true)
   # ----------------------End----------------------
 
 
@@ -522,9 +571,12 @@ function main(params)
   # nls = NewtonRaphsonSolver(LUSolver(), 1e-8, 100)
 
   # Implicit solver
-  ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)
-  # GenAlpha 1.0 Midpoint: Diverges quickly
-  # GenAlpha 0.0 Fully implicit: Stable
+  ode_solver = GeneralizedAlpha2(nls, simΔt, 1.0)
+  # GenAlpha is always stable
+  # GenAlpha 1.0 Midpoint 
+  #   No dissipation case: Can Diverge due to high freq
+  # GenAlpha 0.0 Fully implicit
+  #   Asymptotic annhilition: Highly dissipative
   
   solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t)) 
   # solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t,U0tt)) 
@@ -533,7 +585,11 @@ function main(params)
 
   ## Save quantities
   # ---------------------Start---------------------  
-  rPrb = Point.(0.0:L/10:L)
+  rPrbMat = vcat(
+    [0.98984375*L, 0.99*L, 0.99984375*L],
+    [0:L/10:L;])
+  # rPrb = Point.(0.0:L/10:L)
+  rPrb = Point.(rPrbMat)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
@@ -562,8 +618,8 @@ function main(params)
   pvd[t0] = createvtk(Ω,    
     pltName*"tSol_$tprt"*".vtu",
     cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-      "ETang"=>ETang(uh), "sigma"=>stressσ(uh)])
-      # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
+      "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+      "gradU"=>∇(uh)])      
 
   if(outFreeSurface)
     pvd_fs[t0] =createvtk(Ω_fs,    
@@ -580,7 +636,7 @@ function main(params)
   # Interpolation: save cache
   xNew = X + uh
   save_cache1, save_cache2 = Gridap.Arrays.return_cache(xNew, rPrb)
-  save_f_cache = save_cache2[2]
+  save_f_cache2 = save_cache2[2]
   
 
   execTime = zeros(Float64, 1, 10)
@@ -616,30 +672,27 @@ function main(params)
     # xNewPrb = evaluate!(cache_xNew, xNew, rPrb)
 
     # Interpolation: open return_cache(), re-use sub_cache
-    xNew = X + uh   
-    cell_f = get_array(xNew)
-    cell_f_cache = array_cache(cell_f)    
-    cache2 = cell_f_cache, save_f_cache, cell_f, xNew
-    # cache_xNew = (save_cache1, cache2)
+    xNew = X + uh           
+    cache2 = assemble_cache(xNew, save_f_cache2)
     xNewPrb = evaluate!((save_cache1, cache2), xNew, rPrb)
     
 
     sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
-    cell_f = get_array(sT_uh)
-    cell_f_cache = array_cache(cell_f)
-    cache2 = cell_f_cache, save_f_cache, cell_f, sT_uh
-    # cache_sT = (save_cache1, cache2)
+    cache2 = assemble_cache(sT_uh, save_f_cache2)
     sTPrb = evaluate!((save_cache1, cache2), sT_uh, rPrb)
     sTPrb_princ = getPrincipalStress2.(sTPrb)
 
 
     ETang_uh = ETang_fnc∘(QTrans, P, J, ∇(uh) )
-    cell_f = get_array(ETang_uh)
-    cell_f_cache = array_cache(cell_f)
-    cache2 = cell_f_cache, save_f_cache, cell_f, ETang_uh
-    # cache_sT = (save_cache1, cache2)
+    cache2 = assemble_cache(ETang_uh, save_f_cache2)
     ETangPrb = evaluate!((save_cache1, cache2), ETang_uh, rPrb)
     ETangPrb_princ = getPrincipalStress2.(ETangPrb)
+
+
+    # gradU = ∇(uh)
+    # cache2 = assemble_cache(gradU, save_f_cache2)
+    # gradUPrb = evaluate!((save_cache1, cache2), gradU, rPrb)
+    # @show gradUPrb[1]
     
 
     @printf(daFile1, "%15.6f",t)
@@ -660,8 +713,8 @@ function main(params)
       pvd[t] = createvtk(Ω,    
         pltName*"tSol_$tprt"*".vtu",
         cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-          "ETang"=>ETang(uh), "sigma"=>stressσ(uh)])
-          # "drag_ΓX" => drag_ΓX_intp(uh,uh) ])
+          "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+          "gradU"=>∇(uh)])
 
       if(outFreeSurface)
         pvd_fs[t] =createvtk(Ω_fs,    
@@ -850,6 +903,17 @@ function setInitXZ(initCSV)
   # return Xh
 
   return interpX, interpZ
+
+end
+
+
+function assemble_cache(xNew, save_f_cache2)
+
+  cell_f = get_array(xNew)
+  cell_f_cache = array_cache(cell_f)    
+  cache2 = cell_f_cache, save_f_cache2, cell_f, xNew
+
+  return cache2
 
 end
 # ----------------------End----------------------
