@@ -26,6 +26,8 @@ using WaveSpec.WaveTimeSeries
 using WaveSpec.Currents
 using Plots
 
+include( srcdir("aux","gnlStructs.jl") )
+include( srcdir("aux","gnlCommon.jl") )
 
 
 """
@@ -41,21 +43,16 @@ Warmup and Test params
   # Material properties
   E = 64.2986e9 #N
   L = 75 #m
-  A_str = 2*(π*0.048*0.048/4) #m2 Str cross-section area
-  ρcDry = 7.8e3 #kg/m3 Density of steel  
-
-  # Bed parameter
-  bed_tanhRamp = 1e3
-  bed_springK = 50 #30kN/m4
-  # Based on Marco's suggestion of 30kN/m2/m in the OrcaFlex manual
-  # Following certain tests from Rieke database,
-  # I choose to keep this value as bed_springK = 50 
-  # => actual spring constant of 3.32 MN/m3/m
+  A_str = π*0.048*0.048/4 #m2 Str cross-section area
+  ρcDry = 7.8e3 #kg/m3 Density of steel    
 
   # Parameter Domain
   nx = 100
-  order = 1
+  order = 1  
 
+  # bedSpring setup
+  bedObj = bedSpringStruct( 0.048, π*0.048*0.048/4 )
+  
   outFreeSurface = false
 
   # Time Parameters
@@ -127,8 +124,8 @@ function main(params)
   μₘ = 0.5*E
   ρcSub = ρcDry - ρw
   printTer("[VAL] Length = ", L)
-  printTer()
-  
+  printTer()  
+
   # Time Parameters
   @unpack t0, simT, simΔt, outΔt, maxIter, startRamp = params
   @unpack outFreeSurface = params
@@ -158,7 +155,7 @@ function main(params)
 
   ## Mesh setup: Regular
   # ---------------------Start---------------------  
-  @unpack nx = params
+  @unpack nx, order = params
   domain = (0, L)
   partition = (nx)      
   model = CartesianDiscreteModel(domain, partition)
@@ -170,6 +167,7 @@ function main(params)
   writevtk(model, pltName*"model")
 
   printTer("[VAL] nx = ", nx)
+  printTer("[VAL] order = ", order)
   printTer()
   # ----------------------End----------------------  
 
@@ -223,8 +221,6 @@ function main(params)
 
   ## Define Test Fnc
   # ---------------------Start---------------------
-  @unpack order = params
-
   reffe = ReferenceFE(lagrangian, 
     VectorValue{2,Float64}, order)
   Ψu = TestFESpace(Ω, reffe, 
@@ -438,6 +434,35 @@ function main(params)
 
 
 
+  ## bedSpring function    
+  @unpack bedObj = params  
+  bedObj.stillWei = ρcSub*g  
+  # ---------------------Start---------------------  
+  function bedSpring_fnc(QTr, T1s, T1m, X, u, ∇u, v)
+    local exc, lspng
+    local FΓ, t1s, t1m2, sΛ        
+  
+    exc = VectorValue(0.0,-1.0) ⋅ (X + u)
+    lspng = 0.5 + 0.5*( tanh( bedObj.tanh_ramp * exc ) )
+
+    vz = VectorValue(0.0, 1.0) ⋅ v
+  
+    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+    t1s = FΓ ⋅ T1s
+    t1m2 = t1s ⋅ t1s    
+  
+    sΛ = (t1m2.^0.5) / T1m      
+  
+    return lspng * bedObj.stillWei  + 
+      # lspng * bedObj.kn * bedObj.od / bedObj.A * exc * sΛ -
+      # lspng * bedObj.dampRatio* bedObj.kn * bedObj.od / bedObj.A * vz * sΛ
+      lspng * bedObj.kn * bedObj.od / bedObj.A * sΛ * ( exc - bedObj.dampRatio * vz )
+  
+  end
+  # ----------------------End----------------------  
+
+
+
   ## Function form drag
   # ---------------------Start---------------------
   @unpack C_dn, d_dn, C_dt, d_dt = params  
@@ -449,7 +474,7 @@ function main(params)
   printTer()
   
   
-  function drag_ΓX(QTr, T1s, T1m, v, ∇u) #No wave and current
+  function drag_ΓX(QTr, T1s, T1m, ∇u, v) #No wave and current
 
     local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm
 
@@ -472,15 +497,20 @@ function main(params)
   # ----------------------End----------------------
 
 
-  
 
+  ## Tuples for cellstates
+  csTup1 = (QTrans_cs, T1s_cs, T1m_cs)
+
+  
   ## Weak form: Static
   # ---------------------Start---------------------
 
   # Form 0: Simplest
   res0(u, ψu) =          
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ #+
-    # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ   
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ + 
+    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
+      (bedSpring_fnc∘(csTup1..., Xh_cs, u, ∇(u), 0.0*u)) )*JJ_cs )dΩ 
 
 
   op_S = FEOperator(res0, US, Ψu)
@@ -489,18 +519,7 @@ function main(params)
 
 
   ## Weak form: Dynamic
-  # ---------------------Start---------------------
-  
-  # Form 0: Simplest
-  massD0(t, ∂ₜₜu, ψu) =  
-    ∫( ( (ψu ⋅ ∂ₜₜu) * ρcDry )*JJ_cs )dΩ
-  # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
-  
-  resD0(t, u, ψu) =      
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ #+
-    # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
-    # ∫( (  )*JJ_cs )dΩ        
-
+  # ---------------------Start---------------------    
 
   # Form 1: Self drag only
   massD1(t, ∂ₜₜu, ψu) =  
@@ -509,9 +528,10 @@ function main(params)
   
   resD1(t, u, ψu) =      
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ +
-    # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
-    # ∫( ( -ψu ⋅ drag_ΓX(QTrans_cs, ∂t(u), ∇(u)) )*JJ_cs )dΩ 
-    ∫( ( -ψu ⋅ (drag_ΓX∘(QTrans_cs, T1s_cs, T1m_cs, ∂t(u), ∇(u))) )*JJ_cs )dΩ 
+    ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
+    ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
+      (bedSpring_fnc∘(csTup1..., Xh_cs, u, ∇(u), ∂t(u))) )*JJ_cs )dΩ +    
+    ∫( ( -ψu ⋅ (drag_ΓX∘(csTup1..., ∇(u), ∂t(u))) )*JJ_cs )dΩ 
     # ∫( (  )*JJ_cs )dΩ        
 
     
@@ -569,14 +589,18 @@ function main(params)
     iterations=maxIter, ftol = 1e-8, xtol = 1e-8)
 
   # nls = NewtonRaphsonSolver(LUSolver(), 1e-8, 100)
+  
 
   # Implicit solver
-  ode_solver = GeneralizedAlpha2(nls, simΔt, 1.0)
+  ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)
   # GenAlpha is always stable
   # GenAlpha 1.0 Midpoint 
   #   No dissipation case: Can Diverge due to high freq
   # GenAlpha 0.0 Fully implicit
   #   Asymptotic annhilition: Highly dissipative
+  #   T < 10*Δt is dissipated
+  # GenAlpha 0.4 
+  #   Used in OrcaFlex implicit
   
   solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t)) 
   # solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t,U0tt)) 
@@ -829,93 +853,5 @@ function main(params)
 end
 
 
-
-
-"""
-Aux functions
-=============
-
-"""
-# ---------------------Start---------------------
-
-function printTerAndFile(str::String, 
-    val::Union{AbstractArray,Tuple,Real}, outFile::IOStream)
-  
-  println(str, val)
-  println(outFile, str, val)
-  # @printf("%s %15.6f\n", str, val)
-  # @printf(outFile,"%s %15.6f\n", str, val)
-end
-
-function printTerAndFile(str::String, outFile::IOStream)
-  println(str)
-  println(outFile, str)
-end
-
-
-function getInputSpec(params)
-
-  @unpack Hs, Tp, h0, nω, seed, ωc = params
-
-  if(ωc < 0)
-    ω, S, A = jonswap(Hs, Tp,
-      plotflag=false, nω = nω)
-  else
-    ω, S, A = jonswap(Hs, Tp,
-      plotflag=false, nω = nω, ωc = ωc)
-  end
-
-  k = dispersionRelAng.(h0, ω; msg=false)
-  α = randomPhase(ω, seed = seed)
-
-  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
-  return sp
-end
-
-
-function setInitXZ(initCSV)
-  
-  initXZ = CSV.read(initCSV, DataFrame, header=false)
-  initXZ = Matrix(initXZ)
-
-  dx = initXZ[2:end,:].-initXZ[1:end-1,:]
-  dx = [0 0; dx]
-
-  ds = zeros(size(dx,1))
-  r = zeros(size(dx,1))
-
-  for i in axes(dx,1)
-    ds[i] = norm(dx[i,:])
-  end
-
-  for i in 2:length(ds)
-    r[i] = r[i-1] + ds[i]
-  end
-
-  r = r / r[end]
-
-  interpX = linear_interpolation(r, initXZ[:,1])
-  interpZ = linear_interpolation(r, initXZ[:,2])
-  
-  # X(r) = VectorValue(interpX(r), interpZ(r))
-  # Xh = interpolate_everywhere(X, Ψu)
-
-  # return Xh
-
-  return interpX, interpZ
-
-end
-
-
-function assemble_cache(xNew, save_f_cache2)
-
-  cell_f = get_array(xNew)
-  cell_f_cache = array_cache(cell_f)    
-  cache2 = cell_f_cache, save_f_cache2, cell_f, xNew
-
-  return cache2
-
-end
-# ----------------------End----------------------
 
 end

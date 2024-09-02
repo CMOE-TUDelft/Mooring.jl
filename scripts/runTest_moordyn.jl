@@ -6,53 +6,54 @@ using WaveSpec
 using .Constants
 using .Currents
 
-include(srcdir("gnlPara2D_sergio.jl"))
+include(srcdir("gnlPara2D_moordyn.jl"))
+include(srcdir("aux","gnlStructs.jl"))
 
-resDir = datadir("sims_sergio_202407",
+resDir = datadir("sims_202409",
   "run")
 
 ffm_η = 0.1 #m
 ffm_f = 0.80 #Hz
-ϵ0 = 0.01
+ϵ0 = 0.0
+
+dia = 0.048
+A_str = π*dia*dia/4
 
 # Warmup run
 params = gnlPara2D.Test_params( 
-  initCSV = "models/initVertical.csv",
+  initCSV = "models/catShape_xfl60_zfl20.csv",
   resDir = resDir,
-
-  # # Material properties
-  # E = 100e9, #N
-  # L = 10, #m
-  # A_str = 0.01, #m2 Str cross-section area
-  # ρcDry = 980, #kg/m3 Density of steel  
-
+  
   # Material properties
-  E = 1e9, #N
-  L = 100, #m
-  A_str = 0.01, #m2 Str cross-section area
-  ρcDry = 1414.5, #kg/m3 Density of steel  
+  E = 64.2986e9, #N
+  L = 75, #m
+  A_str = A_str, #m2 Str cross-section area
+  ρcDry = 7.8e3, #kg/m3 Dry Density of steel   
   
   # Parameter Domain
   nx = 200,
-  order = 1,
+  order = 1,  
+
+  # bedSpring setup
+  bedObj = bedSpringStruct( dia, A_str ),
 
   outFreeSurface = false,
 
   # Time Parameters
   t0 = 0.0,
-  simT = 100/ffm_f,
+  simT = 10/ffm_f,
   simΔt = 1/ffm_f/80.0,
-  outΔt = 1/ffm_f,
+  outΔt = 1/ffm_f/4.0,
   maxIter = 300,
 
   # Drag coeff
   C_dn = 0.1, # Normal drag coeff
-  d_dn = sqrt(4*0.01/pi), #m Normal drag projection diameter
+  d_dn = sqrt(4*dia/pi), #m Normal drag projection diameter
   C_dt = 0.0, # Tangent drag coff
-  d_dt = sqrt(4*0.01/pi), #m Tangent drag projection diameter
+  d_dt = sqrt(4*dia/pi), #m Tangent drag projection diameter
   
   # Time signal ramp up (t0 t1)
-  startRamp = (0.0, 10/ffm_f),
+  startRamp = (0.0, 2/ffm_f),
 
   # Forced fairlead motion
   ffm_η = ffm_η, #m
