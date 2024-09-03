@@ -21,7 +21,7 @@ A_str = π*dia*dia/4
 
 # Warmup run
 params = gnlPara2D.Test_params( 
-  initCSV = "models/catShape_xfl60_zfl20.csv",
+  # initCSV = "models/catShape_xfl60_zfl20.csv",
   resDir = resDir,
   
   # Material properties
@@ -29,6 +29,9 @@ params = gnlPara2D.Test_params(
   L = 75, #m
   A_str = A_str, #m2 Str cross-section area
   ρcDry = 7.8e3, #kg/m3 Dry Density of steel   
+
+  # Fairlead position
+  xz_fl = (60, 20),
   
   # Parameter Domain
   nx = 200,
@@ -47,7 +50,7 @@ params = gnlPara2D.Test_params(
   maxIter = 300,
 
   # Drag coeff
-  C_dn = 0.1, # Normal drag coeff
+  C_dn = 0.0, # Normal drag coeff
   d_dn = sqrt(4*dia/pi), #m Normal drag projection diameter
   C_dt = 0.0, # Tangent drag coff
   d_dt = sqrt(4*dia/pi), #m Tangent drag projection diameter

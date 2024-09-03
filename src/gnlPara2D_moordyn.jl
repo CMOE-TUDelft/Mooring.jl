@@ -11,6 +11,7 @@ using Gridap.ODEs
 using Gridap.Arrays: testitem, return_cache
 using DataFrames:DataFrame
 using DataFrames:Matrix
+using Roots: find_zero
 using WriteVTK
 using TickTock
 using Parameters
@@ -37,7 +38,7 @@ Warmup and Test params
 """
 @with_kw struct Test_params
 
-  initCSV::String = "models/catShape_xfl60_zfl20.csv" 
+  # initCSV::String = "models/catShape_xfl60_zfl20.csv" 
   resDir = "data/"
 
   # Material properties
@@ -45,6 +46,8 @@ Warmup and Test params
   L = 75 #m
   A_str = π*0.048*0.048/4 #m2 Str cross-section area
   ρcDry = 7.8e3 #kg/m3 Density of steel    
+
+  xz_fl = (60, 20)
 
   # Parameter Domain
   nx = 100
@@ -60,7 +63,7 @@ Warmup and Test params
   simT = 0.04
   simΔt = 0.02
   outΔt = 0.2
-  maxIter = 100
+  maxIter = 200
 
   # Drag coeff
   C_dn = 2.6 # Normal drag coeff
@@ -103,7 +106,7 @@ main()
 """
 function main(params)
 
-  @unpack initCSV, resDir = params
+  @unpack resDir = params
   pltName = resDir*"/gnl_"
 
 
@@ -118,8 +121,9 @@ function main(params)
   # ----------------------End----------------------  
 
 
-  # Material properties
+  # Line properties
   @unpack E, ρcDry, L, A_str, ϵ0 = params
+  @unpack xz_fl = params
   ρw = 1025 #Kg/m3 density of water
   μₘ = 0.5*E
   ρcSub = ρcDry - ρw
@@ -208,11 +212,24 @@ function main(params)
   # ----------------------End----------------------  
 
 
-  ## Reference config Catenary
-  # ---------------------Start---------------------    
-  interpX, interpZ = setInitXZ(initCSV)
+  # ## Reference config Catenary
+  # # ---------------------Start---------------------    
+  # interpX, interpZ = setInitXZ(initCSV)
 
-  X(r) = VectorValue( interpX(r[1]/L), interpZ(r[1]/L) )
+  # X(r) = VectorValue( interpX(r[1]/L), interpZ(r[1]/L) )
+
+  # writevtk(Ω, pltName*"referenceDomain",
+  #   cellfields=["X"=>X])
+  # # ----------------------End----------------------  
+
+
+  ## Reference config parabola
+  # ---------------------Start---------------------        
+  @show pA, pB = getParabola(xz_fl[1],xz_fl[2],L)
+
+  X(r) = VectorValue( 
+    r[1]/L*xz_fl[1], 
+    pA * (r[1]/L*xz_fl[1])^2 + pB*(r[1]/L*xz_fl[1]) )
 
   writevtk(Ω, pltName*"referenceDomain",
     cellfields=["X"=>X])
@@ -851,7 +868,6 @@ function main(params)
 
     
 end
-
 
 
 end

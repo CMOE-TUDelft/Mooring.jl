@@ -74,6 +74,24 @@ function setInitXZ(initCSV)
 end
 
 
+function getParabola(xend,zend,L)
+
+  dx = xend /100
+  x = 0:dx:xend
+
+  b(a) = zend/xend - a*xend  
+  yy(a) = 2*a.*x .+ b(a)
+  y(a) = sqrt.(1.0 .+ yy(a).*yy(a))
+
+  lineLen(a) = gaussQuad1D(y(a), dx)
+  errLen(a) = lineLen(a) - L
+  
+  a = find_zero(errLen, 0.1)  
+
+  return a,b(a)
+end
+
+
 function assemble_cache(xNew, save_f_cache2)
 
   cell_f = get_array(xNew)
