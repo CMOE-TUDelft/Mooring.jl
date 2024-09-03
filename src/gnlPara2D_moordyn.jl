@@ -128,6 +128,7 @@ function main(params)
   μₘ = 0.5*E
   ρcSub = ρcDry - ρw
   printTer("[VAL] Length = ", L)
+  printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
 
   # Time Parameters
@@ -585,7 +586,8 @@ function main(params)
 
   writevtk(Ω, pltName*"staticRes",
     cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh_S, 
-      "ETang"=>ETang(uh_S), "sigma"=>stressσ(uh_S) ])
+      "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh_S) ), 
+      "sigma"=>stressσ_fnc(QTrans, P, J, ∇(uh_S) ) ])
   # ----------------------End----------------------  
 
 
@@ -626,9 +628,7 @@ function main(params)
 
   ## Save quantities
   # ---------------------Start---------------------  
-  rPrbMat = vcat(
-    [0.98984375*L, 0.99*L, 0.99984375*L],
-    [0:L/10:L;])
+  rPrbMat = [0:L/20:L;]
   # rPrb = Point.(0.0:L/10:L)
   rPrb = Point.(rPrbMat)
   nPrb = length(rPrb)
@@ -659,7 +659,8 @@ function main(params)
   pvd[t0] = createvtk(Ω,    
     pltName*"tSol_$tprt"*".vtu",
     cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-      "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+      "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
+      "sigma"=>stressσ_fnc(QTrans, P, J, ∇(uh) ),
       "gradU"=>∇(uh)])      
 
   if(outFreeSurface)
@@ -754,7 +755,8 @@ function main(params)
       pvd[t] = createvtk(Ω,    
         pltName*"tSol_$tprt"*".vtu",
         cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-          "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+          "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
+          "sigma"=>stressσ_fnc(QTrans, P, J, ∇(uh) ),
           "gradU"=>∇(uh)])
 
       if(outFreeSurface)
@@ -822,18 +824,18 @@ function main(params)
 
   nVals = 5
 
-  prbi = round(Int64, (nPrb+1)/2)
+  prbi = nPrb-1
   plt1 = plot()
   plot!( plt1, daF[:,1]/fT, daF[:,3+(prbi-1)*nVals+2], 
     label = nothing, linewidth=3 )
-  plot!( plt1, title = "X Coord", ylabel = "(m)" )
+  plot!( plt1, title = "X Coord (FL-1)", ylabel = "(m)" )
   setGridlines(plt1)
 
-  prbi = round(Int64, (nPrb+1)/2)
+  prbi = nPrb-1
   plt2 = plot()
   plot!( plt2, daF[:,1]/fT, daF[:,3+(prbi-1)*nVals+3], 
     label = nothing, linewidth=3 )
-  plot!( plt2, title = "Z Coord", ylabel = "(m)" )
+  plot!( plt2, title = "Z Coord (FL-1)", ylabel = "(m)" )
   setGridlines(plt2)
 
   prbi = 1
@@ -851,20 +853,18 @@ function main(params)
   setGridlines(plt4)
 
 
-  prbi1 = 1
-  prbi2 = nPrb
+  prbi = nPrb-1
   plt5 = plot()
-  plot!( plt5, daF[:,1]/fT, 
-    daF[:,3+(prbi2-1)*nVals+4]-daF[:,3+(prbi1-1)*nVals+4], 
+  plot!( plt5, daF[:,1]/fT, daF[:,3+(prbi-1)*nVals+4], 
     label = nothing, linewidth=3 )
-  plot!( plt5, title = "ETang FairLead-Anchor", ylabel = "ETang" )
+  plot!( plt5, title = "ETang at FairLead - 1", ylabel = "ETang" )
   setGridlines(plt5)
 
   savefig(plt1, pltName*"plot_posX.png")
   savefig(plt2, pltName*"plot_posZ.png")
   savefig(plt3, pltName*"plot_ETang_Anchor.png")
   savefig(plt4, pltName*"plot_ETang_FairLead.png")
-  savefig(plt5, pltName*"plot_ETang_FairLeadVsAnchor.png")
+  savefig(plt5, pltName*"plot_ETang_FairLeadNear.png")
 
     
 end

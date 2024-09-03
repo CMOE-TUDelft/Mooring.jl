@@ -13,7 +13,7 @@ resDir = datadir("sims_202409",
   "run")
 
 ffm_η = 0.1 #m
-ffm_f = 0.80 #Hz
+ffm_f = 1.0 #Hz
 ϵ0 = 0.0
 
 dia = 0.048
@@ -34,7 +34,7 @@ params = gnlPara2D.Test_params(
   xz_fl = (60, 20),
   
   # Parameter Domain
-  nx = 200,
+  nx = 100,
   order = 1,  
 
   # bedSpring setup
@@ -44,13 +44,13 @@ params = gnlPara2D.Test_params(
 
   # Time Parameters
   t0 = 0.0,
-  simT = 10/ffm_f,
-  simΔt = 1/ffm_f/80.0,
+  simT = 20/ffm_f,
+  simΔt = 1/ffm_f/100.0,
   outΔt = 1/ffm_f/4.0,
   maxIter = 300,
 
   # Drag coeff
-  C_dn = 0.0, # Normal drag coeff
+  C_dn = 0.01, # Normal drag coeff
   d_dn = sqrt(4*dia/pi), #m Normal drag projection diameter
   C_dt = 0.0, # Tangent drag coff
   d_dt = sqrt(4*dia/pi), #m Tangent drag projection diameter
