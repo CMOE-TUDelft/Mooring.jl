@@ -13,7 +13,7 @@ resDir = datadir("sims_202409",
   "run")
 
 ffm_η = 0.1 #m
-ffm_f = 1.0 #Hz
+ffm_f = 0.50 #Hz
 ϵ0 = 0.0
 
 dia = 0.048
@@ -34,7 +34,7 @@ params = gnlPara2D.Test_params(
   xz_fl = (60, 20),
   
   # Parameter Domain
-  nx = 100,
+  nx = 400,
   order = 1,  
 
   # bedSpring setup

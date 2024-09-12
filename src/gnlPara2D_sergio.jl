@@ -571,12 +571,15 @@ function main(params)
   # nls = NewtonRaphsonSolver(LUSolver(), 1e-8, 100)
 
   # Implicit solver
-  ode_solver = GeneralizedAlpha2(nls, simΔt, 1.0)
+  ode_solver = GeneralizedAlpha2(nls, simΔt, 0.0)
   # GenAlpha is always stable
   # GenAlpha 1.0 Midpoint 
   #   No dissipation case: Can Diverge due to high freq
   # GenAlpha 0.0 Fully implicit
   #   Asymptotic annhilition: Highly dissipative
+  #   T < 10*Δt is dissipated
+  # GenAlpha 0.4 
+  #   Used in OrcaFlex implicit
   
   solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t)) 
   # solnht = solve(ode_solver, op_D, t0, simT, (U0,U0t,U0tt)) 
@@ -656,6 +659,7 @@ function main(params)
     # @show propertynames(iNLCache.result)
 
     cnt = cnt+1          
+    @printf("Progress : %10.3f % \n", t/simT*100)          
     @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
     @printf("Conv : %10s \t Iter    : %5i \n",
       iNLCache.result.x_converged, iNLCache.result.iterations)
