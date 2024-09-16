@@ -698,7 +698,7 @@ function main(params)
     # @show propertynames(iNLCache.result)
 
     cnt = cnt+1          
-    @printf("Progress : %10.3f % \n", t/simT*100)          
+    @printf("Progress : %10.3f %% \n", t/simT*100)          
     @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
     @printf("Conv : %10s \t Iter    : %5i \n",
       iNLCache.result.x_converged, iNLCache.result.iterations)
