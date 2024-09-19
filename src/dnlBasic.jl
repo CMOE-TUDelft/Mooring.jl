@@ -2,8 +2,10 @@ module dnlBasic
 
 using Printf
 using Plots
+using Plots.PlotMeasures
 using LinearAlgebra
 using Roots: find_zero
+using LaTeXStrings
 
 
 struct pronySeries
@@ -47,7 +49,7 @@ pDn = pronySeries(
 
 
 ## Time-parameters
-Δt = 1e-2
+Δt = 1e-1
 tEnd = 3600
 t0 = 0
 t = [t0:Δt:tEnd;]
@@ -149,11 +151,14 @@ function setGridlines(plt)
   plot!(plt, grid=:true, gridcolor=:black, 
     gridalpha=0.5, gridlinestyle=:dot,
     gridlinewidth = 1)    
-  plot!( plt, dpi = 330,
+  plot!( plt, 
     titlefontsize=15,
     tickfontsize=13, 
     labelfontsize=15,
     legendfontsize = 13)    
+  plot!(plt, size = (600, 400), dpi = 330,
+    left_margin=2mm, right_margin=5mm,
+    bottom_margin=2mm, top_margin=2mm)
   plot!( plt, 
     xlabel = "t (s)")
 end
@@ -162,12 +167,18 @@ plt1 = plot()
 plt = plt1
 plot!( plt, t, ϵve, 
   label = nothing, linewidth=3)
-setGridlines(plt)
-yticks_vals = 0:0.005:0.01
+yticks_vals = 0:0.001:0.006
+# yticks_labels = [@sprintf("%.1e", y) for y in yticks_vals] 
+yticks_labels = [1e3*y for y in yticks_vals] 
+xticks_vals = 0:600:3600
+xticks_labels = xticks_vals
 plot!(plt, 
-  yticks = (yticks_vals,yticks_vals),
-  ylims=[0.0, 0.01])
-plot!(plt, xlims=[0,1800])
+  ylabel = L"Viscoelastic Strain $\epsilon_{ve} \times 10^{-3}$",
+  yticks = (yticks_vals,yticks_labels),
+  xticks = (xticks_vals,xticks_labels),
+  ylims=[0.0, 0.006], xlims=[-150,3600])
+plot!(plt, title = "Strain Profile")
+setGridlines(plt)
 savefig(plt, "plt1.png")
 
 
@@ -175,12 +186,15 @@ plt2 = plot()
 plt = plt2
 plot!( plt, t, ϵve, 
   label = nothing, linewidth=3)
-setGridlines(plt)
-yticks_vals = 0:0.0005:0.001
+yticks_vals = 0:0.001:0.006
+# yticks_labels = [@sprintf("%.1e", y) for y in yticks_vals] 
+yticks_labels = [1e3*y for y in yticks_vals] 
 plot!(plt, 
-  yticks = (yticks_vals,yticks_vals),
-  ylims=[0.0, 0.001])
-plot!(plt, xlims=[1800,3600])
+  ylabel = L"Viscoelastic Strain $\epsilon_{ve} \times 10^{-3}$",
+  yticks = (yticks_vals,yticks_labels),
+  ylims=[0.0, 0.006], xlims=[1800, 3600])
+plot!(plt, title = "Relaxation Stage")
+setGridlines(plt)
 savefig(plt, "plt2.png")
 
 
@@ -188,12 +202,18 @@ plt3 = plot()
 plt = plt3
 plot!( plt, t, σCalc, 
   label = nothing, linewidth=3)
-setGridlines(plt)
 yticks_vals = 0:5e6:20e6
+# yticks_labels = [@sprintf("%.1e", y) for y in yticks_vals] 
+yticks_labels = [1e-6*y for y in yticks_vals] 
+xticks_vals = 0:600:3600
+xticks_labels = xticks_vals
 plot!(plt, 
-  yticks = (yticks_vals,yticks_vals),
-  ylims=[0.0, 20e6])
-plot!(plt, xlims=[0,3600])
+  ylabel = L"Stress $\sigma$ (MPa)",
+  yticks = (yticks_vals,yticks_labels),
+  xticks = (xticks_vals,xticks_labels),
+  ylims=[0.0, 20e6], xlims=[-150, 3600])
+plot!(plt, title = "Stress Profile")
+setGridlines(plt)
 savefig(plt, "plt3.png")
 
 end
