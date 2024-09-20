@@ -5,9 +5,10 @@ using Parameters
 using WaveSpec
 using .Constants
 using .Currents
+using Mooring.bedSpring
 
 include(srcdir("gnlPara2D_moordyn.jl"))
-include(srcdir("aux","gnlStructs.jl"))
+
 
 resDir = datadir("sims_202409",
   "run")

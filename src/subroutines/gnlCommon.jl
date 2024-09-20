@@ -1,3 +1,35 @@
+module gnlCommon
+
+using Revise
+using Gridap
+using Gridap.Algebra
+using Gridap.ODEs
+using Gridap.Arrays: testitem, return_cache
+using Roots: find_zero
+using DataFrames:DataFrame
+using DataFrames:Matrix
+using WriteVTK
+using TickTock
+using Parameters
+using LineSearches: BackTracking
+using LineSearches: Static
+using LinearAlgebra
+using CSV
+using Interpolations
+using Printf
+using WaveSpec.Constants
+using WaveSpec.Jonswap
+using WaveSpec.WaveTimeSeries
+using WaveSpec.Currents
+using Plots
+
+
+
+export printTerAndFile, getInputSpec, setInitXZ
+export getParabola, assemble_cache
+
+
+
 """
 Aux functions
 =============
@@ -102,3 +134,5 @@ function assemble_cache(xNew, save_f_cache2)
 
 end
 # ----------------------End----------------------
+
+end

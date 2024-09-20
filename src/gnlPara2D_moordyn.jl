@@ -11,7 +11,6 @@ using Gridap.ODEs
 using Gridap.Arrays: testitem, return_cache
 using DataFrames:DataFrame
 using DataFrames:Matrix
-using Roots: find_zero
 using WriteVTK
 using TickTock
 using Parameters
@@ -27,9 +26,8 @@ using WaveSpec.WaveTimeSeries
 using WaveSpec.Currents
 using Plots
 
-include( srcdir("aux","gnlStructs.jl") )
-include( srcdir("aux","gnlCommon.jl") )
-
+using Mooring.bedSpring
+using Mooring.gnlCommon
 
 """
 Warmup and Test params
@@ -130,6 +128,9 @@ function main(params)
   printTer("[VAL] Length = ", L)
   printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
+
+  @unpack bedObj = params  
+  bedObj.stillWei = ρcSub*g  
 
   # Time Parameters
   @unpack t0, simT, simΔt, outΔt, maxIter, startRamp = params
@@ -452,35 +453,6 @@ function main(params)
 
 
 
-  ## bedSpring function    
-  @unpack bedObj = params  
-  bedObj.stillWei = ρcSub*g  
-  # ---------------------Start---------------------  
-  function bedSpring_fnc(QTr, T1s, T1m, X, u, ∇u, v)
-    local exc, lspng
-    local FΓ, t1s, t1m2, sΛ        
-  
-    exc = VectorValue(0.0,-1.0) ⋅ (X + u)
-    lspng = 0.5 + 0.5*( tanh( bedObj.tanh_ramp * exc ) )
-
-    vz = VectorValue(0.0, 1.0) ⋅ v
-  
-    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
-    t1s = FΓ ⋅ T1s
-    t1m2 = t1s ⋅ t1s    
-  
-    sΛ = (t1m2.^0.5) / T1m      
-  
-    return lspng * bedObj.stillWei  + 
-      # lspng * bedObj.kn * bedObj.od / bedObj.A * exc * sΛ -
-      # lspng * bedObj.dampRatio* bedObj.kn * bedObj.od / bedObj.A * vz * sΛ
-      lspng * bedObj.kn * bedObj.od / bedObj.A * sΛ * ( exc - bedObj.dampRatio * vz )
-  
-  end
-  # ----------------------End----------------------  
-
-
-
   ## Function form drag
   # ---------------------Start---------------------
   @unpack C_dn, d_dn, C_dt, d_dt = params  
@@ -519,7 +491,17 @@ function main(params)
   ## Tuples for cellstates
   csTup1 = (QTrans_cs, T1s_cs, T1m_cs)
 
-  
+
+
+  ## Parsing functions
+  # ---------------------Start---------------------
+  bedSpring_fnc(X, QTr, T1s, T1m, u, ∇u, v) = 
+    bedSpring.bedSpring_fnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
+
+  # ----------------------End----------------------
+
+
+
   ## Weak form: Static
   # ---------------------Start---------------------
 
@@ -528,7 +510,7 @@ function main(params)
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ + 
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
-      (bedSpring_fnc∘(csTup1..., Xh_cs, u, ∇(u), 0.0*u)) )*JJ_cs )dΩ 
+      (bedSpring_fnc∘(Xh_cs, csTup1...,u, ∇(u), 0.0*u)) )*JJ_cs )dΩ 
 
 
   op_S = FEOperator(res0, US, Ψu)
@@ -548,7 +530,7 @@ function main(params)
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
-      (bedSpring_fnc∘(csTup1..., Xh_cs, u, ∇(u), ∂t(u))) )*JJ_cs )dΩ +    
+      (bedSpring_fnc∘(Xh_cs, csTup1..., u, ∇(u), ∂t(u))) )*JJ_cs )dΩ +    
     ∫( ( -ψu ⋅ (drag_ΓX∘(csTup1..., ∇(u), ∂t(u))) )*JJ_cs )dΩ 
     # ∫( (  )*JJ_cs )dΩ        
 
@@ -563,6 +545,7 @@ function main(params)
 
   ## Static Solution
   # ---------------------Start---------------------
+  tick()
   fx_U(r) = 0.01*sin(π*r[1])
   fy_U(r) = 0.0*sin(2*π*r[1])
   Ua(r) = VectorValue(fx_U(r), fy_U(r))  
@@ -580,6 +563,7 @@ function main(params)
 
   printTer("[RES] Length Catenary solution = ", calcLen(J) )  
   printTer("[RES] Length Static Solution = ", calcLen(JNew(uh_S)) )  
+  tock()
   printTer()
 
   xNew = Xh + uh_S
