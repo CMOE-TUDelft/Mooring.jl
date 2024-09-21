@@ -39,7 +39,7 @@ params = gnlPara2D.Test_params(
   order = 1,  
 
   # bedSpring setup
-  bedObj = bedSpringStruct( dia, A_str ),
+  bedObj = bedSpring.Bed( dia, A_str ),
 
   outFreeSurface = false,
 

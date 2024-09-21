@@ -12,7 +12,7 @@ Custom Structs
 
 """
 # ---------------------Start---------------------
-struct segStruct
+struct Seg
   
 	ρcDry::Real	
 	E::Real
@@ -23,7 +23,7 @@ struct segStruct
 	μm::Real
 
 
-  function segStruct( ρcDry, E, L, A, ρcSub )
+  function Seg( ρcDry, E, L, A, ρcSub )
 
     μm = 0.5*E
     
@@ -31,7 +31,7 @@ struct segStruct
   end
 
 
-	function segStruct( params )
+	function Seg( params )
 
 		@unpack E, ρcDry, L, A_str, ρw = params
 		ρcSub = ρcDry - ρw

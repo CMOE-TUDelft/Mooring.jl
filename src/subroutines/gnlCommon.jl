@@ -127,7 +127,10 @@ function getParabola(xend,zend,L)
     r[1]/L*xend, 
     pA * (r[1]/L*xend)^2 + pB*(r[1]/L*xend) )
 
-  return X
+  
+  printMsg = @sprintf("[VAL] (pA, pB) = %15.6e, %15.6e", pA, pB)
+  
+  return X, printMsg
 end
 
 
