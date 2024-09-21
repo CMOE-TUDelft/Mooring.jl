@@ -120,7 +120,14 @@ function getParabola(xend,zend,L)
   
   a = find_zero(errLen, 0.1)  
 
-  return a,b(a)
+  pA = a
+  pB = b(a)  
+
+  X(r) = VectorValue( 
+    r[1]/L*xend, 
+    pA * (r[1]/L*xend)^2 + pB*(r[1]/L*xend) )
+
+  return X
 end
 
 

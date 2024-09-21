@@ -2,6 +2,7 @@ module stressLinear
 
 using Revise
 using Gridap
+using Parameters
 
 
 
@@ -27,6 +28,16 @@ struct segStruct
     μm = 0.5*E
     
     new(ρcDry, E, L, A, ρcSub, μm)
+  end
+
+
+	function segStruct( params )
+
+		@unpack E, ρcDry, L, A_str, ρw = params
+		ρcSub = ρcDry - ρw
+    μm = 0.5*E
+    
+    new(ρcDry, E, L, A_str, ρcSub, μm)
   end
 end
 # ----------------------End----------------------

@@ -37,6 +37,8 @@ Warmup and Test params
 """
 @with_kw struct Test_params
 
+  ρw = 1025 #Kg/m3 density of water    
+
   # initCSV::String = "models/catShape_xfl60_zfl20.csv" 
   resDir = "data/"
 
@@ -120,19 +122,17 @@ function main(params)
   # ----------------------End----------------------  
 
 
+  @unpack ρw = params #Kg/m3 density of water    
+
   # Line properties
-  @unpack E, ρcDry, L, A_str, ϵ0 = params
-  @unpack xz_fl = params
-  ρw = 1025 #Kg/m3 density of water
-  μₘ = 0.5*E
-  ρcSub = ρcDry - ρw
-  seg = stressLinear.segStruct(ρcDry, E, L, A_str, ρcDry - ρw)
-  printTer("[VAL] Length = ", L)
+  @unpack ϵ0, xz_fl = params  
+  seg = stressLinear.segStruct( params )
+  printTer("[VAL] Length = ", seg.L)
   printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
 
   @unpack bedObj = params  
-  bedObj.stillWei = ρcSub*g  
+  bedObj.stillWei = seg.ρcSub*g  
 
   # Time Parameters
   @unpack t0, simT, simΔt, outΔt, maxIter, startRamp = params
@@ -164,7 +164,7 @@ function main(params)
   ## Mesh setup: Regular
   # ---------------------Start---------------------  
   @unpack nx, order = params
-  domain = (0, L)
+  domain = (0, seg.L)
   partition = (nx)      
   model = CartesianDiscreteModel(domain, partition)
 
@@ -199,7 +199,7 @@ function main(params)
 
   ## Domain to output surface elevation in Paraview
   # ---------------------Start---------------------
-  model_fs = CartesianDiscreteModel((0, 1.2*L), (nx))
+  model_fs = CartesianDiscreteModel((0, 1.2*seg.L), (nx))
   Ω_fs = Interior(model_fs)
 
   Ψu_fs = FESpace(Ω_fs, 
@@ -229,11 +229,7 @@ function main(params)
 
   ## Reference config parabola
   # ---------------------Start---------------------        
-  @show pA, pB = getParabola(xz_fl[1],xz_fl[2],L)
-
-  X(r) = VectorValue( 
-    r[1]/L*xz_fl[1], 
-    pA * (r[1]/L*xz_fl[1])^2 + pB*(r[1]/L*xz_fl[1]) )
+  @show X = getParabola(xz_fl[1],xz_fl[2], seg.L)  
 
   writevtk(Ω, pltName*"referenceDomain",
     cellfields=["X"=>X])
@@ -254,7 +250,7 @@ function main(params)
   # ---------------------Start---------------------
   # Dirichlet BC
   gAnch_S(x) = VectorValue(0.0, 0.0)  
-  gFairLead_S(x) = VectorValue(0.0, ϵ0*L)  
+  gFairLead_S(x) = VectorValue(0.0, ϵ0*seg.L)  
 
   US = TrialFESpace(Ψu, [gAnch_S, gFairLead_S])
   # ----------------------End----------------------
@@ -266,7 +262,7 @@ function main(params)
   gAnch(x, t::Real) = VectorValue(0.0, 0.0)
   gAnch(t::Real) = x -> gAnch(x, t)
 
-  Xh_fl = X(Point(L))
+  Xh_fl = X(Point(seg.L))
   printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]))
   printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]-h0))
   printTer()  
@@ -282,7 +278,7 @@ function main(params)
 
     return VectorValue( 
       tRamp*ffm_η*sin(ffm_ω*t),
-      ϵ0*L )
+      ϵ0*seg.L )
   end    
   
   gFairLead(x, t::Real) = getFairLeadEnd(x,t)    
@@ -301,7 +297,7 @@ function main(params)
 
   # Initial solution
   Xh = interpolate_everywhere(X, Ψu)
-  FWeih = interpolate_everywhere(VectorValue(0.0, -ρcSub*g), Ψu)
+  FWeih = interpolate_everywhere(VectorValue(0.0, -seg.ρcSub*g), Ψu)
   
   ## Geometric quantities
   # ---------------------Start---------------------  
@@ -338,8 +334,8 @@ function main(params)
   ETang(u) = P ⋅ EDir(u) ⋅ P
 
   # Stress tensors
-  stressK(u) = 2*μₘ * (FΓ(u) ⋅ ETang(u))
-  stressS(u) = 2*μₘ * ETang(u)
+  stressK(u) = 2*seg.μm * (FΓ(u) ⋅ ETang(u))
+  stressS(u) = 2*seg.μm * ETang(u)
   stressσ(u) = ( FΓ(u) ⋅ stressS(u) ⋅ FΓ(u)' ) / sΛ(u) 
     
 
@@ -384,8 +380,8 @@ function main(params)
   ## Function form drag
   # ---------------------Start---------------------
   @unpack C_dn, d_dn, C_dt, d_dt = params  
-  D_dn = 0.5 * ρw * C_dn * d_dn / A_str #kg/m4
-  D_dt = 0.5 * ρw * C_dt * π * d_dt / A_str #kg/m4
+  D_dn = 0.5 * ρw * C_dn * d_dn / seg.A #kg/m4
+  D_dt = 0.5 * ρw * C_dt * π * d_dt / seg.A #kg/m4
   
   printTer("[VAL] D_dn = ", D_dn)
   printTer("[VAL] D_dt = ", D_dt)
@@ -459,7 +455,7 @@ function main(params)
 
   # Form 1: Self drag only
   massD1(t, ∂ₜₜu, ψu) =  
-    ∫( ( (ψu ⋅ ∂ₜₜu) * ρcDry )*JJ_cs )dΩ
+    ∫( ( (ψu ⋅ ∂ₜₜu) * seg.ρcDry )*JJ_cs )dΩ
   # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
   
   resD1(t, u, ψu) =      
@@ -548,7 +544,7 @@ function main(params)
 
   ## Save quantities
   # ---------------------Start---------------------  
-  rPrbMat = [0:L/20:L;]
+  rPrbMat = [0:seg.L/20:seg.L;]
   # rPrb = Point.(0.0:L/10:L)
   rPrb = Point.(rPrbMat)
   nPrb = length(rPrb)
