@@ -14,9 +14,11 @@ using Tables
 
 include( srcdir("subroutines","gnlCommon.jl") )
 include( srcdir("subroutines","bedSpring.jl") )
+include( srcdir("subroutines","stressLinear.jl") )
 
-export bedSpring
 export gnlCommon
+export bedSpring
+export stressLinear
 
 
 end

@@ -28,6 +28,7 @@ using Plots
 
 using Mooring.bedSpring
 using Mooring.gnlCommon
+using Mooring.stressLinear
 
 """
 Warmup and Test params
@@ -125,6 +126,7 @@ function main(params)
   ρw = 1025 #Kg/m3 density of water
   μₘ = 0.5*E
   ρcSub = ρcDry - ρw
+  seg = stressLinear.segStruct(ρcDry, E, L, A_str, ρcDry - ρw)
   printTer("[VAL] Length = ", L)
   printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
@@ -377,80 +379,6 @@ function main(params)
   T1_cs = create_cellState(T1, loc)
   # ----------------------End----------------------
   
-  
-
-
-  ## Function form stressK
-  # ---------------------Start---------------------
-  # stressK function for speed
-  function stressK_fnc(u)
-    
-    local FΓ, EDir, ETang
-    
-    FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
-
-    ETang = P_cs ⋅ EDir ⋅ P_cs
-
-    return 2*μₘ * (FΓ ⋅ ETang)
-
-  end
-
-  function stressK_fnc(QTr, P, ∇u)
-    
-    local FΓ, EDir, ETang
-    
-    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
-
-    # FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
-
-    ETang = P ⋅ EDir ⋅ P
-
-    return 2*μₘ * (FΓ ⋅ ETang)
-
-  end
-
-
-  function stressσ_fnc(QTr, P, J, ∇u)      
-    
-    local FΓ, EDir, ETang, stressS, JNew, sΛ
-    
-    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
-
-    # FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
-
-    ETang = P ⋅ EDir ⋅ P
-
-    stressS = 2*μₘ * ETang
-
-    JNew = J  + ∇u'
-    sΛ = ((JNew ⊙ JNew) ./ (J ⊙ J)).^0.5
-
-    return ( FΓ ⋅ stressS ⋅ FΓ' ) / sΛ
-
-  end
-
-
-  function ETang_fnc(QTr, P, J, ∇u)      
-    
-    local FΓ, EDir
-    
-    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
-
-    # FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-
-    EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
-
-    return P ⋅ EDir ⋅ P
-
-  end
-  # ----------------------End----------------------  
-
 
 
   ## Function form drag
@@ -498,6 +426,14 @@ function main(params)
   bedSpring_fnc(X, QTr, T1s, T1m, u, ∇u, v) = 
     bedSpring.bedSpring_fnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
 
+  stressK_fnc(QTr, P, ∇u) = 
+    stressLinear.stressK_fnc(seg, QTr, P, ∇u)
+  
+  stressσ_fnc(QTr, P, J, ∇u ) = 
+    stressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
+  
+  ETang_fnc(QTr, P, J, ∇u ) = 
+    stressLinear.ETang_fnc( QTr, P, J, ∇u )
   # ----------------------End----------------------
 
 
@@ -571,7 +507,7 @@ function main(params)
   writevtk(Ω, pltName*"staticRes",
     cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh_S, 
       "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh_S) ), 
-      "sigma"=>stressσ_fnc(QTrans, P, J, ∇(uh_S) ) ])
+      "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh_S) ) ])
   # ----------------------End----------------------  
 
 
@@ -644,7 +580,7 @@ function main(params)
     pltName*"tSol_$tprt"*".vtu",
     cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
       "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
-      "sigma"=>stressσ_fnc(QTrans, P, J, ∇(uh) ),
+      "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
       "gradU"=>∇(uh)])      
 
   if(outFreeSurface)
@@ -741,7 +677,7 @@ function main(params)
         pltName*"tSol_$tprt"*".vtu",
         cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
           "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
-          "sigma"=>stressσ_fnc(QTrans, P, J, ∇(uh) ),
+          "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
           "gradU"=>∇(uh)])
 
       if(outFreeSurface)
