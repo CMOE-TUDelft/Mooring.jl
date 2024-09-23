@@ -1,4 +1,4 @@
-module bedSpring
+module BedSpring
 
 using Revise
 using Gridap

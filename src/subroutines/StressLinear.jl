@@ -1,4 +1,4 @@
-module stressLinear
+module StressLinear
 
 using Revise
 using Gridap

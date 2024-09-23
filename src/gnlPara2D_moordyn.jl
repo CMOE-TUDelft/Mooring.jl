@@ -26,9 +26,9 @@ using WaveSpec.WaveTimeSeries
 using WaveSpec.Currents
 using Plots
 
-using Mooring.bedSpring
-using Mooring.gnlCommon
-using Mooring.stressLinear
+using Mooring.BedSpring
+using Mooring.GnlCommon
+using Mooring.StressLinear
 
 include(srcdir("subroutines","testParams.jl"))
 
@@ -60,7 +60,7 @@ function main(params)
 
   # Line properties
   @unpack ϵ0, xz_fl = params  
-  seg = stressLinear.Seg( params )
+  seg = StressLinear.Seg( params )
   printTer("[VAL] Length = ", seg.L)
   printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
@@ -355,21 +355,21 @@ function main(params)
   ## Parsing functions
   # ---------------------Start---------------------
   bedSpring_fnc(X, QTr, T1s, T1m, u, ∇u, v) = 
-    bedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
+    BedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
 
   stressK_fnc(QTr, P, ∇u) = 
-    stressLinear.stressK_fnc(seg, QTr, P, ∇u)
+    StressLinear.stressK_fnc(seg, QTr, P, ∇u)
   
   stressσ_fnc(QTr, P, J, ∇u ) = 
-    stressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
+    StressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
   
   ETang_fnc(QTr, P, J, ∇u ) = 
-    stressLinear.ETang_fnc( QTr, P, J, ∇u )
+    StressLinear.ETang_fnc( QTr, P, J, ∇u )
   # ----------------------End----------------------
 
 
 
-  ## Weak form: Static
+  ## Weak form: Static 
   # ---------------------Start---------------------
 
   # Form 0: Simplest

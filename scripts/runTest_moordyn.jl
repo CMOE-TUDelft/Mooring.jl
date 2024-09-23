@@ -5,7 +5,7 @@ using Parameters
 using WaveSpec
 using .Constants
 using .Currents
-using Mooring.bedSpring
+using Mooring.BedSpring
 
 include(srcdir("gnlPara2D_moordyn.jl"))
 
@@ -39,7 +39,7 @@ params = gnlPara2D.Test_params(
   order = 1,  
 
   # bedSpring setup
-  bedObj = bedSpring.Bed( dia, A_str ),
+  bedObj = BedSpring.Bed( dia, A_str ),
 
   outFreeSurface = false,
 

@@ -1,4 +1,4 @@
-module gnlCommon
+module GnlCommon
 
 using Revise
 using Gridap
