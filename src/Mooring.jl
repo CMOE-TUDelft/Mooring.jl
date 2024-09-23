@@ -12,10 +12,12 @@ using Tables
 
 include( srcdir("subroutines","GnlCommon.jl") )
 include( srcdir("subroutines","BedSpring.jl") )
+include( srcdir("subroutines","Drag.jl") )
 include( srcdir("subroutines","StressLinear.jl") )
 
 export GnlCommon
 export BedSpring
+export Drag
 export StressLinear
 
 

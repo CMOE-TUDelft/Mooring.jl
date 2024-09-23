@@ -27,6 +27,7 @@ using WaveSpec.Currents
 using Plots
 
 using Mooring.BedSpring
+using Mooring.Drag
 using Mooring.GnlCommon
 using Mooring.StressLinear
 
@@ -60,13 +61,15 @@ function main(params)
 
   # Line properties
   @unpack ϵ0, xz_fl = params  
-  seg = StressLinear.Seg( params )
+  seg = StressLinear.Segment( params )
   printTer("[VAL] Length = ", seg.L)
   printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
 
   @unpack bedObj = params  
-  bedObj.stillWei = seg.ρcSub*g  
+  bedObj = BedSpring.setStillWei!(bedObj, seg.ρcSub*g)    
+  printTer("[VAL] Bed StillWei = ", bedObj.stillWei)
+  printTer()
 
   # Time Parameters
   @unpack t0, simT, simΔt, outΔt, maxIter, startRamp = params

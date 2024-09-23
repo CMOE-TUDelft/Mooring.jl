@@ -4,6 +4,8 @@ using Revise
 using Gridap
 using Parameters
 
+using Mooring.Drag
+
 
 
 """
@@ -12,32 +14,31 @@ Custom Structs
 
 """
 # ---------------------Start---------------------
-struct Seg
+@with_kw struct Segment
   
 	ρcDry::Real	
 	E::Real
 	L::Real
-	A::Real
+	A::Real	
 
 	ρcSub::Real
-	μm::Real
+	μm::Real  
 
+  function Segment( ρcDry, E, L, A, ρcSub )
 
-  function Seg( ρcDry, E, L, A, ρcSub )
-
-    μm = 0.5*E
+    μm = 0.5*E    
     
     new(ρcDry, E, L, A, ρcSub, μm)
   end
 
 
-	function Seg( params )
+	function Segment( params )
 
 		@unpack E, ρcDry, L, A_str, ρw = params
-		ρcSub = ρcDry - ρw
-    μm = 0.5*E
+
+		ρcSub = ρcDry - ρw    
     
-    new(ρcDry, E, L, A_str, ρcSub, μm)
+    Segment(ρcDry, E, L, A_str, ρcSub)
   end
 end
 # ----------------------End----------------------
