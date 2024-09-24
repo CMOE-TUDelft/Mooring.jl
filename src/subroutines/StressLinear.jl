@@ -24,22 +24,24 @@ Custom Structs
 	ρcSub::Real
 	μm::Real  
 
-  function Segment( ρcDry, E, L, A, ρcSub )
-
-    μm = 0.5*E    
-    
-    new(ρcDry, E, L, A, ρcSub, μm)
-  end
+end
 
 
-	function Segment( params )
+function Segment( ρcDry, E, L, A, ρcSub )
 
-		@unpack E, ρcDry, L, A_str, ρw = params
+  μm = 0.5*E    
+  
+  Segment(ρcDry, E, L, A, ρcSub, μm)
+end
 
-		ρcSub = ρcDry - ρw    
-    
-    Segment(ρcDry, E, L, A_str, ρcSub)
-  end
+
+function Segment( params )
+
+  @unpack E, ρcDry, L, A_str, ρw = params
+
+  ρcSub = ρcDry - ρw    
+  
+  Segment(ρcDry, E, L, A_str, ρcSub)
 end
 # ----------------------End----------------------
 
