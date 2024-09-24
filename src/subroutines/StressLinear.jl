@@ -20,28 +20,41 @@ Custom Structs
 	E::Real
 	L::Real
 	A::Real	
+  nd::Real
 
 	ρcSub::Real
-	μm::Real  
+	μm::Real   
+  
+  dragProp::Drag.DragProperties #Default Drag.NoDrag
 
 end
 
 
-function Segment( ρcDry, E, L, A, ρcSub )
+function Segment( ρcDry, E, L, A, nd, ρcSub;
+  dragProp = Drag.DragProperties(Drag.NoDrag()) )
 
   μm = 0.5*E    
   
-  Segment(ρcDry, E, L, A, ρcSub, μm)
+  Segment(ρcDry, E, L, A, nd, ρcSub, μm, dragProp)
 end
 
 
 function Segment( params )
 
-  @unpack E, ρcDry, L, A_str, ρw = params
+  @unpack E, ρcDry, L, A_str, ρw, nd, dragType = params
 
   ρcSub = ρcDry - ρw    
-  
-  Segment(ρcDry, E, L, A_str, ρcSub)
+
+  if( typeof(dragType) == Drag.NoDrag )    
+    return Segment(ρcDry, E, L, A_str, nd, ρcSub )
+  end  
+
+  dragProp = Drag.DragProperties(
+    dragType, ρw, nd, A_str
+  )
+
+  Segment(ρcDry, E, L, A_str, nd, ρcSub;
+    dragProp = dragProp )
 end
 # ----------------------End----------------------
 

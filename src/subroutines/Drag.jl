@@ -14,6 +14,7 @@ Custom Structs
 # ---------------------Start---------------------
 abstract type DragType end
 
+struct NoDrag <:DragType end
 struct ChainStudless <: DragType end
 struct ChainStudlink <: DragType end
 
@@ -55,6 +56,14 @@ struct ChainStudlink <: DragType end
       Ca_n, Ca_t, Cfd_n, Cfd_t )
   
   end
+end
+
+
+function DragProperties( dragType::NoDrag )
+
+  DragProperties( NoDrag(), 0.0, 0.0, 0.0, 0.0, 1.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0 )
 end
 
 

@@ -29,6 +29,7 @@ params = gnlPara2D.Test_params(
   E = 64.2986e9, #N
   L = 75, #m
   A_str = A_str, #m2 Str cross-section area
+  nd = dia,  #m Nominal diameter
   ρcDry = 7.8e3, #kg/m3 Dry Density of steel   
 
   # Fairlead position

@@ -14,7 +14,9 @@ Warmup and Test params
   E = 64.2986e9 #N
   L = 75 #m
   A_str = π*0.048*0.048/4 #m2 Str cross-section area
+  nd = 0.048  #m Nominal diameter
   ρcDry = 7.8e3 #kg/m3 Density of steel    
+  dragType = Drag.NoDrag()  
 
   xz_fl = (60, 20)
 
@@ -23,7 +25,7 @@ Warmup and Test params
   order = 1  
 
   # bedSpring setup
-  bedObj = bedSpring.Bed( 0.048, π*0.048*0.048/4 )
+  bedObj = BedSpring.Bed( 0.048, π*0.048*0.048/4 )
   
   outFreeSurface = false
 
