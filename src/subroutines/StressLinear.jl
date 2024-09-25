@@ -41,19 +41,11 @@ end
 
 function Segment( params )
 
-  @unpack E, ρcDry, L, A_str, ρw, nd, dragType = params
+  @unpack E, ρcDry, L, AStr, ρw, nd, dragProp = params
 
-  ρcSub = ρcDry - ρw    
+  ρcSub = ρcDry - ρw        
 
-  if( typeof(dragType) == Drag.NoDrag )    
-    return Segment(ρcDry, E, L, A_str, nd, ρcSub )
-  end  
-
-  dragProp = Drag.DragProperties(
-    dragType, ρw, nd, A_str
-  )
-
-  Segment(ρcDry, E, L, A_str, nd, ρcSub;
+  Segment(ρcDry, E, L, AStr, nd, ρcSub;
     dragProp = dragProp )
 end
 # ----------------------End----------------------

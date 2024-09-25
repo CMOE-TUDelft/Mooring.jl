@@ -54,6 +54,7 @@ function main(params)
   printTer(a::String,b) = printTerAndFile(a,b,outFile0)
   printTer(a::String) = printTerAndFile(a,outFile0)
   printTer() = printTerAndFile("",outFile0)
+  showTer(a::Any) = showTerAndFile(a,outFile0)  
   # ----------------------End----------------------  
 
 
@@ -62,7 +63,8 @@ function main(params)
   # Line properties
   @unpack ϵ0, xz_fl = params  
   seg = StressLinear.Segment( params )
-  printTer("[VAL] Length = ", seg.L)
+  printTer("[SHOW] seg"); showTer(seg)  
+  printTer("[SHOW] seg.dragProp"); showTer(seg.dragProp)  
   printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
 
@@ -81,6 +83,7 @@ function main(params)
   printTer("[VAL] StartRamp = ",startRamp)
   printTer("[VAL] outMod = ", outMod)
   printTer()
+
 
   ## Wave input
   # ---------------------Start---------------------  
@@ -312,41 +315,6 @@ function main(params)
   T1m_cs = create_cellState(T1m, loc)
   T1_cs = create_cellState(T1, loc)
   # ----------------------End----------------------
-  
-
-
-  ## Function form drag
-  # ---------------------Start---------------------
-  @unpack C_dn, d_dn, C_dt, d_dt = params  
-  D_dn = 0.5 * ρw * C_dn * d_dn / seg.A #kg/m4
-  D_dt = 0.5 * ρw * C_dt * π * d_dt / seg.A #kg/m4
-  
-  printTer("[VAL] D_dn = ", D_dn)
-  printTer("[VAL] D_dt = ", D_dt)
-  printTer()
-  
-  
-  function drag_ΓX(QTr, T1s, T1m, ∇u, v) #No wave and current
-
-    local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm
-
-    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
-
-    t1s = FΓ ⋅ T1s
-    t1m2 = t1s ⋅ t1s    
-    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
-
-    sΛ = (t1m2.^0.5) / T1m
-    
-    vt = -(v ⋅ t1s) * t1s / t1m2
-    vtm = (vt ⋅ vt).^0.5
-    vn = -v - vt
-    vnm = (vn ⋅ vn).^0.5    
-
-    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ 
-
-  end    
-  # ----------------------End----------------------
 
 
 
@@ -368,6 +336,9 @@ function main(params)
   
   ETang_fnc(QTr, P, J, ∇u ) = 
     StressLinear.ETang_fnc( QTr, P, J, ∇u )
+
+  drag_ΓX(Qtr, T1s, T1m, ∇u, v) = 
+    Drag.drag_ΓX(seg.dragProp, Qtr, T1s, T1m, ∇u, v)
   # ----------------------End----------------------
 
 
