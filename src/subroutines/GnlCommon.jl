@@ -1,4 +1,4 @@
-module gnlCommon
+module GnlCommon
 
 using Revise
 using Gridap
@@ -25,7 +25,8 @@ using Plots
 
 
 
-export printTerAndFile, getInputSpec, setInitXZ
+export printTerAndFile, showTerAndFile
+export getInputSpec, setInitXZ
 export getParabola, assemble_cache
 
 
@@ -49,6 +50,21 @@ end
 function printTerAndFile(str::String, outFile::IOStream)
   println(str)
   println(outFile, str)
+end
+
+
+# function showTerAndFile(varName::Symbol, var::Any, outFile::IOStream)
+#   @show var
+#   println(outFile, varName)
+#   show(outFile, var)
+#   println(outFile)
+# end
+# showTer(varName::Symbol, var::Any) = 
+  #   showTerAndFile(varName,var,outFile0)
+function showTerAndFile(var::Any, outFile::IOStream)
+  @show var
+  show(outFile, var)
+  println(outFile)
 end
 
 

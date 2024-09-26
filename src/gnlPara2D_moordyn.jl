@@ -26,9 +26,10 @@ using WaveSpec.WaveTimeSeries
 using WaveSpec.Currents
 using Plots
 
-using Mooring.bedSpring
-using Mooring.gnlCommon
-using Mooring.stressLinear
+using Mooring.BedSpring
+using Mooring.Drag
+using Mooring.GnlCommon
+using Mooring.StressLinear
 
 include(srcdir("subroutines","testParams.jl"))
 
@@ -53,20 +54,24 @@ function main(params)
   printTer(a::String,b) = printTerAndFile(a,b,outFile0)
   printTer(a::String) = printTerAndFile(a,outFile0)
   printTer() = printTerAndFile("",outFile0)
+  showTer(a::Any) = showTerAndFile(a,outFile0)  
   # ----------------------End----------------------  
 
 
-  @unpack ρw = params #Kg/m3 density of water    
+  @unpack ρw = params #Kg/m3 density of water      
 
   # Line properties
   @unpack ϵ0, xz_fl = params  
-  seg = stressLinear.Seg( params )
-  printTer("[VAL] Length = ", seg.L)
+  seg = StressLinear.Segment( params )
+  printTer("[SHOW] seg"); showTer(seg)  
+  printTer("[SHOW] seg.dragProp"); showTer(seg.dragProp)  
   printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
 
   @unpack bedObj = params  
-  bedObj.stillWei = seg.ρcSub*g  
+  bedObj = BedSpring.setStillWei!(bedObj, seg.ρcSub*g)    
+  printTer("[VAL] Bed StillWei = ", bedObj.stillWei)
+  printTer()
 
   # Time Parameters
   @unpack t0, simT, simΔt, outΔt, maxIter, startRamp = params
@@ -78,6 +83,7 @@ function main(params)
   printTer("[VAL] StartRamp = ",startRamp)
   printTer("[VAL] outMod = ", outMod)
   printTer()
+
 
   ## Wave input
   # ---------------------Start---------------------  
@@ -309,41 +315,6 @@ function main(params)
   T1m_cs = create_cellState(T1m, loc)
   T1_cs = create_cellState(T1, loc)
   # ----------------------End----------------------
-  
-
-
-  ## Function form drag
-  # ---------------------Start---------------------
-  @unpack C_dn, d_dn, C_dt, d_dt = params  
-  D_dn = 0.5 * ρw * C_dn * d_dn / seg.A #kg/m4
-  D_dt = 0.5 * ρw * C_dt * π * d_dt / seg.A #kg/m4
-  
-  printTer("[VAL] D_dn = ", D_dn)
-  printTer("[VAL] D_dt = ", D_dt)
-  printTer()
-  
-  
-  function drag_ΓX(QTr, T1s, T1m, ∇u, v) #No wave and current
-
-    local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm
-
-    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
-
-    t1s = FΓ ⋅ T1s
-    t1m2 = t1s ⋅ t1s    
-    #t1 = t1s / ((t1s ⋅ t1s).^0.5)
-
-    sΛ = (t1m2.^0.5) / T1m
-    
-    vt = -(v ⋅ t1s) * t1s / t1m2
-    vtm = (vt ⋅ vt).^0.5
-    vn = -v - vt
-    vnm = (vn ⋅ vn).^0.5    
-
-    return (D_dn * vn * vnm + D_dt * vt * vtm) * sΛ 
-
-  end    
-  # ----------------------End----------------------
 
 
 
@@ -355,21 +326,24 @@ function main(params)
   ## Parsing functions
   # ---------------------Start---------------------
   bedSpring_fnc(X, QTr, T1s, T1m, u, ∇u, v) = 
-    bedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
+    BedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
 
   stressK_fnc(QTr, P, ∇u) = 
-    stressLinear.stressK_fnc(seg, QTr, P, ∇u)
+    StressLinear.stressK_fnc(seg, QTr, P, ∇u)
   
   stressσ_fnc(QTr, P, J, ∇u ) = 
-    stressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
+    StressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
   
   ETang_fnc(QTr, P, J, ∇u ) = 
-    stressLinear.ETang_fnc( QTr, P, J, ∇u )
+    StressLinear.ETang_fnc( QTr, P, J, ∇u )
+
+  drag_ΓX(Qtr, T1s, T1m, ∇u, v) = 
+    Drag.drag_ΓX(seg.dragProp, Qtr, T1s, T1m, ∇u, v)
   # ----------------------End----------------------
 
 
 
-  ## Weak form: Static
+  ## Weak form: Static 
   # ---------------------Start---------------------
 
   # Form 0: Simplest

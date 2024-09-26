@@ -1,6 +1,7 @@
-module bedSpring
+module BedSpring
 
 using Revise
+using Parameters
 using Gridap
 
 
@@ -11,7 +12,7 @@ Custom Structs
 
 """
 # ---------------------Start---------------------
-mutable struct Bed
+@with_kw struct Bed
   kn::Real 
   # Based on Marco's suggestion of 30kN/m2/m in the OrcaFlex manual  
   od::Real
@@ -22,7 +23,7 @@ mutable struct Bed
 
   cnst1::Real
 
-  function Bed( od::Real, A::Real,     
+  function Bed( od::Real, A::Real;
     kn = 30e3, tanh_ramp = 1e3,
     dampRatio = 0.05,
     stillWei::Real=0.0 )    
@@ -42,7 +43,14 @@ Functions
 
 """
 # ---------------------Start---------------------
-function forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
+function setStillWei!(bedObj::Bed, stillWei)
+  @unpack kn, od, A, tanh_ramp, dampRatio = bedObj  
+
+  Bed(od, A; kn, tanh_ramp, dampRatio, stillWei)
+end
+
+
+function forceFnc(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
   
   local exc, lspng
   local FΓ, t1s, t1m2, sΛ        

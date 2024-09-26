@@ -5,7 +5,8 @@ using Parameters
 using WaveSpec
 using .Constants
 using .Currents
-using Mooring.bedSpring
+using Mooring.BedSpring
+using Mooring.Drag
 
 include(srcdir("gnlPara2D_moordyn.jl"))
 
@@ -18,7 +19,8 @@ ffm_f = 0.50 #Hz
 ϵ0 = 0.0
 
 dia = 0.048
-A_str = π*dia*dia/4
+AStr = π*dia*dia/4
+
 
 # Warmup run
 params = gnlPara2D.Test_params( 
@@ -28,8 +30,12 @@ params = gnlPara2D.Test_params(
   # Material properties
   E = 64.2986e9, #N
   L = 75, #m
-  A_str = A_str, #m2 Str cross-section area
+  AStr = AStr, #m2 Str cross-section area
+  nd = dia,  #m Nominal diameter
   ρcDry = 7.8e3, #kg/m3 Dry Density of steel   
+  dragProp = Drag.DragProperties(
+    Drag.Custom(), dia, AStr,
+    Cd_n = 0.051503226936425275, Cd_t = 0.0 ),
 
   # Fairlead position
   xz_fl = (60, 20),
@@ -39,7 +45,7 @@ params = gnlPara2D.Test_params(
   order = 1,  
 
   # bedSpring setup
-  bedObj = bedSpring.Bed( dia, A_str ),
+  bedObj = BedSpring.Bed( dia, AStr ),
 
   outFreeSurface = false,
 
@@ -49,12 +55,6 @@ params = gnlPara2D.Test_params(
   simΔt = 1/ffm_f/100.0,
   outΔt = 1/ffm_f/4.0,
   maxIter = 300,
-
-  # Drag coeff
-  C_dn = 0.01, # Normal drag coeff
-  d_dn = sqrt(4*dia/pi), #m Normal drag projection diameter
-  C_dt = 0.0, # Tangent drag coff
-  d_dt = sqrt(4*dia/pi), #m Tangent drag projection diameter
   
   # Time signal ramp up (t0 t1)
   startRamp = (0.0, 2/ffm_f),

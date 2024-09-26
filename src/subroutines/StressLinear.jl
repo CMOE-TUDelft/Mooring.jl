@@ -1,8 +1,10 @@
-module stressLinear
+module StressLinear
 
 using Revise
 using Gridap
 using Parameters
+
+using Mooring.Drag
 
 
 
@@ -12,33 +14,39 @@ Custom Structs
 
 """
 # ---------------------Start---------------------
-struct Seg
+@with_kw struct Segment
   
 	ρcDry::Real	
 	E::Real
 	L::Real
-	A::Real
+	A::Real	
+  nd::Real
 
 	ρcSub::Real
-	μm::Real
+	μm::Real   
+  
+  dragProp::Drag.DragProperties #Default Drag.NoDrag
+
+end
 
 
-  function Seg( ρcDry, E, L, A, ρcSub )
+function Segment( ρcDry, E, L, A, nd, ρcSub;
+  dragProp = Drag.DragProperties(Drag.NoDrag()) )
 
-    μm = 0.5*E
-    
-    new(ρcDry, E, L, A, ρcSub, μm)
-  end
+  μm = 0.5*E    
+  
+  Segment(ρcDry, E, L, A, nd, ρcSub, μm, dragProp)
+end
 
 
-	function Seg( params )
+function Segment( params )
 
-		@unpack E, ρcDry, L, A_str, ρw = params
-		ρcSub = ρcDry - ρw
-    μm = 0.5*E
-    
-    new(ρcDry, E, L, A_str, ρcSub, μm)
-  end
+  @unpack E, ρcDry, L, AStr, ρw, nd, dragProp = params
+
+  ρcSub = ρcDry - ρw        
+
+  Segment(ρcDry, E, L, AStr, nd, ρcSub;
+    dragProp = dragProp )
 end
 # ----------------------End----------------------
 

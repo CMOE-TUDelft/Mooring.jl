@@ -13,8 +13,10 @@ Warmup and Test params
   # Material properties
   E = 64.2986e9 #N
   L = 75 #m
-  A_str = π*0.048*0.048/4 #m2 Str cross-section area
+  AStr = π*0.048*0.048/4 #m2 Str cross-section area
+  nd = 0.048  #m Nominal diameter
   ρcDry = 7.8e3 #kg/m3 Density of steel    
+  dragProp = Drag.DragProperties(Drag.NoDrag()) 
 
   xz_fl = (60, 20)
 
@@ -23,7 +25,7 @@ Warmup and Test params
   order = 1  
 
   # bedSpring setup
-  bedObj = bedSpring.Bed( 0.048, π*0.048*0.048/4 )
+  bedObj = BedSpring.Bed( 0.048, π*0.048*0.048/4 )
   
   outFreeSurface = false
 
@@ -33,16 +35,6 @@ Warmup and Test params
   simΔt = 0.02
   outΔt = 0.2
   maxIter = 200
-
-  # Drag coeff
-  C_dn = 2.6 # Normal drag coeff
-  d_dn = 0.048 #m Normal drag projection diameter
-  C_dt = 1.4 # Tangent drag coff
-  d_dt = 0.048/pi #m Tangent drag projection diameter
-
-  # Added mass coeff
-  C_an = 1.0 # Normal added-mass coeff
-  C_at = 0.5 # Tangent added-mass coff
 
   # Time signal ramp up (t0 t1)
   startRamp = (0.0, 15)
