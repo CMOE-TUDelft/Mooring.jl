@@ -137,7 +137,7 @@ end
 
 # Self Drag + Current, No Wave
 function drag_ΓX(t, dragProp, inputRamp, 
-  UCur, QTr, T1s, T1m, ∇u, v)
+  UCur, waveVel, QTr, T1s, T1m, ∇u, v)
 
   local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm, tRamp
 
@@ -151,7 +151,7 @@ function drag_ΓX(t, dragProp, inputRamp,
 
   sΛ = (t1m2.^0.5) / T1m
   
-  vr = UCur*tRamp - v
+  vr = UCur*tRamp + waveVel*tRamp - v
   vt = (vr ⋅ t1s) * t1s / t1m2
   vtm = (vt ⋅ vt).^0.5
   vn = vr - vt

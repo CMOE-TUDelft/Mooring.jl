@@ -321,6 +321,12 @@ function main(params)
   UCur_cs = create_cellState( 
     CellField( r -> getCurrentField(r, Xh, curObj), Ω), 
     loc )  
+
+  getWaveVel_cf(t, sp, x) = 
+    CellField( r -> getWaveVelField(r, t, sp, x), Ω )  
+  
+  waveVel_cs = 
+    create_cellState( getWaveVel_cf(t0, sp, Xh), loc)  
   # ----------------------End----------------------
 
 
@@ -380,9 +386,9 @@ function main(params)
       (bedSpring_fnc∘(Xh_cs, csTup1..., u, ∇(u), ∂t(u))) )*JJ_cs )dΩ +    
     # ∫( ( -ψu ⋅ (drag_ΓX∘(csTup1..., ∇(u), ∂t(u))) )*JJ_cs )dΩ 
     ∫( ( -ψu ⋅ (
-      ((UCur, Qtr, T1s, T1m, ∇u, v) -> 
-        Drag.drag_ΓX(t, cnstTup1..., UCur, Qtr, T1s, T1m, ∇u, v)
-      )∘(UCur_cs, csTup1...,∇(u), ∂t(u))
+      ((UCur, waveVel, Qtr, T1s, T1m, ∇u, v) -> 
+        Drag.drag_ΓX(t, cnstTup1..., UCur, waveVel, Qtr, T1s, T1m, ∇u, v)
+      )∘(UCur_cs, waveVel_cs, csTup1...,∇(u), ∂t(u))
     ) )*JJ_cs )dΩ 
     # ∫( (  )*JJ_cs )dΩ        
 
@@ -522,7 +528,10 @@ function main(params)
   execTime[3] = time()   
   tick()
   cnt=0
-  
+
+  # Update waveVel(tn) before solving t(n+1)
+  update_state!( (a,b) -> (true, b), waveVel_cs, 
+    getWaveVel_cf(t0, sp, xNew) ) 
   
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
@@ -616,9 +625,9 @@ function main(params)
     execTime[3] = time()  
     tick()
 
-    # # Update waveVel(tn) before solving t(n+1)
-    # update_state!( (a,b) -> (true, b), waveVel_cs, 
-    #   getWaveVel_cf(t, xNew) ) 
+    # Update waveVel(tn) before solving t(n+1)
+    update_state!( (a,b) -> (true, b), waveVel_cs, 
+      getWaveVel_cf(t, sp, xNew) ) 
     
     next = iterate(solnht, iState)
   end  
