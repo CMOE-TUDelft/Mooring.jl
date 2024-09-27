@@ -5,6 +5,7 @@ using Parameters
 using WaveSpec
 using .Constants
 using .Currents
+using .WaveTimeSeries
 using Mooring.BedSpring
 using Mooring.Drag
 
@@ -57,7 +58,12 @@ params = gnlPara2D.Test_params(
   maxIter = 300,
   
   # Time signal ramp up (t0 t1)
-  startRamp = (0.0, 2/ffm_f),
+  inputRamp = TimeRampType(0.0, 2/ffm_f),
+
+  # Current
+  curObj = CurrentStat(23, 
+    [-23.0, -22.0, -15.0, 0.0], 
+    [0.0, 0.2, 0.3, 0.3]),
 
   # Forced fairlead motion
   ffm_η = ffm_η, #m

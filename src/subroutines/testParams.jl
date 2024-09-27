@@ -37,7 +37,7 @@ Warmup and Test params
   maxIter = 200
 
   # Time signal ramp up (t0 t1)
-  startRamp = (0.0, 15)
+  inputRamp = TimeRampType(0.0, 15)
 
   # Wave spectrum
   h0 = 23 #m
@@ -48,7 +48,7 @@ Warmup and Test params
   ωc = -1
 
   # Current
-  strCur = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
+  curObj = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
 
   # Forced fairlead motion
   ffm_η = 0.1 #m
