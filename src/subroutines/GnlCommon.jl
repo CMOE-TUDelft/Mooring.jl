@@ -26,7 +26,7 @@ using Plots
 
 
 export printTerAndFile, showTerAndFile
-export getInputSpec, getCurrentField, getWaveVelField
+export getInputSpec, getCurrentField, getWaveVel
 export setInitXZ, getParabola
 export assemble_cache
 
@@ -182,11 +182,20 @@ function getCurrentField(r, Xh, curObj)
 end
 
 
-function getWaveVelField(r, t, sp, xh)
+# function getWaveVelField(r, t, sp, xh)
 
-  x_qp = xh(r)  
+#   x_qp = xh(r)  
+#   w_u, w_w = waveAiry1D_vel(sp, t, 
+#     x_qp[1], x_qp[2]-sp.h0 )
+
+#   return VectorValue(w_u, w_w)
+# end
+
+
+function getWaveVel(t, sp, x)
+    
   w_u, w_w = waveAiry1D_vel(sp, t, 
-    x_qp[1], x_qp[2]-sp.h0 )
+    x[1], x[2]-sp.h0 )
 
   return VectorValue(w_u, w_w)
 end

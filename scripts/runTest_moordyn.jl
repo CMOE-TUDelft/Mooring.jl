@@ -60,10 +60,13 @@ params = gnlPara2D.Test_params(
   # Time signal ramp up (t0 t1)
   inputRamp = TimeRampType(0.0, 2/ffm_f),
 
+  Hs = 0.0,
+
   # Current
   curObj = CurrentStat(23, 
     [-23.0, -22.0, -15.0, 0.0], 
-    [0.0, 0.2, 0.3, 0.3]),
+    # [0.0, 0.2, 0.3, 0.3]),
+    [0.0, 0.0, 0.0, 0.0]),
 
   # Forced fairlead motion
   ffm_η = ffm_η, #m
@@ -71,5 +74,10 @@ params = gnlPara2D.Test_params(
   ϵ0 = ϵ0
 )
 gnlPara2D.main(params)
+
+# # Production run
+# params = gnlPara2D.Test_params(params, 
+#   simT = 20/ffm_f)
+# gnlPara2D.main(params)
 
 

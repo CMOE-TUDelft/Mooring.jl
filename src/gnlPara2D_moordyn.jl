@@ -322,8 +322,10 @@ function main(params)
     CellField( r -> getCurrentField(r, Xh, curObj), Ω), 
     loc )  
 
+  # getWaveVel_cf(t, sp, x) = 
+  #   CellField( r -> getWaveVelField(r, t, sp, x), Ω )  
   getWaveVel_cf(t, sp, x) = 
-    CellField( r -> getWaveVelField(r, t, sp, x), Ω )  
+    CellField( r -> getWaveVel(t, sp, x(r)), Ω )  
   
   waveVel_cs = 
     create_cellState( getWaveVel_cf(t0, sp, Xh), loc)  
@@ -351,6 +353,10 @@ function main(params)
 
   drag_ΓX(Qtr, T1s, T1m, ∇u, v) = 
     Drag.drag_ΓX(seg.dragProp, Qtr, T1s, T1m, ∇u, v)
+
+  drag_ΓX(t, dragProp, inputRamp) = (UCur, waveVel, Qtr, T1s, T1m, ∇u, v) ->
+    Drag.drag_ΓX(t, dragProp, inputRamp, 
+      UCur, waveVel, Qtr, T1s, T1m, ∇u, v)
   # ----------------------End----------------------
 
 
@@ -363,7 +369,11 @@ function main(params)
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ + 
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
-      (bedSpring_fnc∘(Xh_cs, csTup1...,u, ∇(u), 0.0*u)) )*JJ_cs )dΩ 
+      (bedSpring_fnc∘(Xh_cs, csTup1...,u, ∇(u), 0.0*u)) )*JJ_cs )dΩ +
+    ∫( ( 
+      -ψu ⋅ ( drag_ΓX(0.0, cnstTup1...)
+        ∘(UCur_cs, waveVel_cs, csTup1...,∇(u), 0.0*u) ) 
+    )*JJ_cs )dΩ 
 
 
   op_S = FEOperator(res0, US, Ψu)
@@ -378,18 +388,22 @@ function main(params)
   massD1(t, ∂ₜₜu, ψu) =  
     ∫( ( (ψu ⋅ ∂ₜₜu) * seg.ρcDry )*JJ_cs )dΩ
   # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
-  
+
   resD1(t, u, ψu) =      
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
       (bedSpring_fnc∘(Xh_cs, csTup1..., u, ∇(u), ∂t(u))) )*JJ_cs )dΩ +    
     # ∫( ( -ψu ⋅ (drag_ΓX∘(csTup1..., ∇(u), ∂t(u))) )*JJ_cs )dΩ 
-    ∫( ( -ψu ⋅ (
-      ((UCur, waveVel, Qtr, T1s, T1m, ∇u, v) -> 
-        Drag.drag_ΓX(t, cnstTup1..., UCur, waveVel, Qtr, T1s, T1m, ∇u, v)
-      )∘(UCur_cs, waveVel_cs, csTup1...,∇(u), ∂t(u))
-    ) )*JJ_cs )dΩ 
+    # ∫( ( -ψu ⋅ (
+    #   ((UCur, waveVel, Qtr, T1s, T1m, ∇u, v) -> 
+    #     Drag.drag_ΓX(t, cnstTup1..., UCur, waveVel, Qtr, T1s, T1m, ∇u, v)
+    #   )∘(UCur_cs, waveVel_cs, csTup1...,∇(u), ∂t(u))
+    # ) )*JJ_cs )dΩ 
+    ∫( ( 
+      -ψu ⋅ ( drag_ΓX(t, cnstTup1...)
+        ∘(UCur_cs, waveVel_cs, csTup1...,∇(u), ∂t(u)) ) 
+    )*JJ_cs )dΩ 
     # ∫( (  )*JJ_cs )dΩ        
 
     
@@ -530,8 +544,10 @@ function main(params)
   cnt=0
 
   # Update waveVel(tn) before solving t(n+1)
+  # update_state!( (a,b) -> (true, b), waveVel_cs, 
+  #   getWaveVel_cf(t0, sp, xNew) ) 
   update_state!( (a,b) -> (true, b), waveVel_cs, 
-    getWaveVel_cf(t0, sp, xNew) ) 
+    ((x) -> getWaveVel(t0, sp, x))∘(xNew) ) 
   
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
@@ -625,9 +641,8 @@ function main(params)
     execTime[3] = time()  
     tick()
 
-    # Update waveVel(tn) before solving t(n+1)
     update_state!( (a,b) -> (true, b), waveVel_cs, 
-      getWaveVel_cf(t, sp, xNew) ) 
+      ((x) -> getWaveVel(t, sp, x))∘(xNew) ) 
     
     next = iterate(solnht, iState)
   end  
