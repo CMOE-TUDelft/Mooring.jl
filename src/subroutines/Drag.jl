@@ -4,6 +4,7 @@ using Revise
 using Parameters
 using Gridap
 using WaveSpec.Constants
+using WaveSpec.WaveTimeSeries
 
 ρWater = 1025 #Kg/m3
 
@@ -110,7 +111,8 @@ Functions
 
 """
 # ---------------------Start---------------------
-function drag_ΓX(dragProp, QTr, T1s, T1m, ∇u, v) #No wave and current
+# Self Drag, No Wave, No Current
+function drag_ΓX(dragProp, QTr, T1s, T1m, ∇u, v) 
 
   local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm
 
@@ -125,6 +127,34 @@ function drag_ΓX(dragProp, QTr, T1s, T1m, ∇u, v) #No wave and current
   vt = -(v ⋅ t1s) * t1s / t1m2
   vtm = (vt ⋅ vt).^0.5
   vn = -v - vt
+  vnm = (vn ⋅ vn).^0.5    
+
+  return (dragProp.Cfd_n * vn * vnm + 
+    dragProp.Cfd_t * vt * vtm) * sΛ 
+
+end    
+
+
+# Self Drag + Current, No Wave
+function drag_ΓX(t, dragProp, inputRamp, 
+  UCur, waveVel, QTr, T1s, T1m, ∇u, v)
+
+  local FΓ, t1s, t1m2, vn, vnm, sΛ, vt, vtm, tRamp
+
+  tRamp = timeRamp(t, inputRamp)
+
+  FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+
+  t1s = FΓ ⋅ T1s
+  t1m2 = t1s ⋅ t1s    
+  #t1 = t1s / ((t1s ⋅ t1s).^0.5)
+
+  sΛ = (t1m2.^0.5) / T1m
+  
+  vr = UCur*tRamp + waveVel*tRamp - v
+  vt = (vr ⋅ t1s) * t1s / t1m2
+  vtm = (vt ⋅ vt).^0.5
+  vn = vr - vt
   vnm = (vn ⋅ vn).^0.5    
 
   return (dragProp.Cfd_n * vn * vnm + 

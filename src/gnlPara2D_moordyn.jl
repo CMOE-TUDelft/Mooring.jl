@@ -74,20 +74,20 @@ function main(params)
   printTer()
 
   # Time Parameters
-  @unpack t0, simT, simΔt, outΔt, maxIter, startRamp = params
+  @unpack t0, simT, simΔt, outΔt, maxIter, inputRamp = params
   @unpack outFreeSurface = params
   outMod = floor(Int64,outΔt/simΔt);
   
   printTer("[VAL] (t0, simT) = ",(t0, simT))
-  printTer("[VAL] (simΔt, outΔt) = ",(simΔt, outΔt))
-  printTer("[VAL] StartRamp = ",startRamp)
+  printTer("[VAL] (simΔt, outΔt) = ",(simΔt, outΔt))  
   printTer("[VAL] outMod = ", outMod)
+  printTer("[SHOW] inputRamp "); showTer(inputRamp)
   printTer()
 
 
-  ## Wave input
+  ## Wave and Current input
   # ---------------------Start---------------------  
-  @unpack h0 = params
+  @unpack h0, curObj = params
 
   sp = getInputSpec(params)
   #η, ϕ, u, w = waveAiry1D(sp, t, 0.1, -0.1)
@@ -98,6 +98,8 @@ function main(params)
   printTer("[VAL] nw = ", sp.nω)
   printTer("[VAL] wc = ", sp.ω[end])
   printTer()
+
+  printTer("[SHOW] curObj"); showTer(curObj)  
   # ----------------------End----------------------  
 
 
@@ -215,7 +217,7 @@ function main(params)
     # ffm_η = 1.5 #m2
     # ffm_ω = 1 #rad/s
 
-    tRamp = timeRamp(t, startRamp[1], startRamp[2])    
+    tRamp = timeRamp(t, inputRamp)    
 
     return VectorValue( 
       tRamp*ffm_η*sin(ffm_ω*t),
@@ -314,14 +316,26 @@ function main(params)
   T1s_cs = create_cellState(T1s, loc)
   T1m_cs = create_cellState(T1m, loc)
   T1_cs = create_cellState(T1, loc)
-  # ----------------------End----------------------
 
+  ## Current Field
+  UCur_cs = create_cellState( 
+    CellField( r -> getCurrentField(r, Xh, curObj), Ω), 
+    loc )  
+
+  # getWaveVel_cf(t, sp, x) = 
+  #   CellField( r -> getWaveVelField(r, t, sp, x), Ω )  
+  getWaveVel_cf(t, sp, x) = 
+    CellField( r -> getWaveVel(t, sp, x(r)), Ω )  
+  
+  waveVel_cs = 
+    create_cellState( getWaveVel_cf(t0, sp, Xh), loc)  
+  # ----------------------End----------------------
 
 
   ## Tuples for cellstates
   csTup1 = (QTrans_cs, T1s_cs, T1m_cs)
-
-
+  cnstTup1 = (seg.dragProp, inputRamp)
+  
 
   ## Parsing functions
   # ---------------------Start---------------------
@@ -339,6 +353,10 @@ function main(params)
 
   drag_ΓX(Qtr, T1s, T1m, ∇u, v) = 
     Drag.drag_ΓX(seg.dragProp, Qtr, T1s, T1m, ∇u, v)
+
+  drag_ΓX(t, dragProp, inputRamp) = (UCur, waveVel, Qtr, T1s, T1m, ∇u, v) ->
+    Drag.drag_ΓX(t, dragProp, inputRamp, 
+      UCur, waveVel, Qtr, T1s, T1m, ∇u, v)
   # ----------------------End----------------------
 
 
@@ -351,7 +369,11 @@ function main(params)
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ + 
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
-      (bedSpring_fnc∘(Xh_cs, csTup1...,u, ∇(u), 0.0*u)) )*JJ_cs )dΩ 
+      (bedSpring_fnc∘(Xh_cs, csTup1...,u, ∇(u), 0.0*u)) )*JJ_cs )dΩ +
+    ∫( ( 
+      -ψu ⋅ ( drag_ΓX(0.0, cnstTup1...)
+        ∘(UCur_cs, waveVel_cs, csTup1...,∇(u), 0.0*u) ) 
+    )*JJ_cs )dΩ 
 
 
   op_S = FEOperator(res0, US, Ψu)
@@ -366,13 +388,22 @@ function main(params)
   massD1(t, ∂ₜₜu, ψu) =  
     ∫( ( (ψu ⋅ ∂ₜₜu) * seg.ρcDry )*JJ_cs )dΩ
   # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
-  
+
   resD1(t, u, ψu) =      
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
       (bedSpring_fnc∘(Xh_cs, csTup1..., u, ∇(u), ∂t(u))) )*JJ_cs )dΩ +    
-    ∫( ( -ψu ⋅ (drag_ΓX∘(csTup1..., ∇(u), ∂t(u))) )*JJ_cs )dΩ 
+    # ∫( ( -ψu ⋅ (drag_ΓX∘(csTup1..., ∇(u), ∂t(u))) )*JJ_cs )dΩ 
+    # ∫( ( -ψu ⋅ (
+    #   ((UCur, waveVel, Qtr, T1s, T1m, ∇u, v) -> 
+    #     Drag.drag_ΓX(t, cnstTup1..., UCur, waveVel, Qtr, T1s, T1m, ∇u, v)
+    #   )∘(UCur_cs, waveVel_cs, csTup1...,∇(u), ∂t(u))
+    # ) )*JJ_cs )dΩ 
+    ∫( ( 
+      -ψu ⋅ ( drag_ΓX(t, cnstTup1...)
+        ∘(UCur_cs, waveVel_cs, csTup1...,∇(u), ∂t(u)) ) 
+    )*JJ_cs )dΩ 
     # ∫( (  )*JJ_cs )dΩ        
 
     
@@ -511,7 +542,12 @@ function main(params)
   execTime[3] = time()   
   tick()
   cnt=0
-  
+
+  # Update waveVel(tn) before solving t(n+1)
+  # update_state!( (a,b) -> (true, b), waveVel_cs, 
+  #   getWaveVel_cf(t0, sp, xNew) ) 
+  update_state!( (a,b) -> (true, b), waveVel_cs, 
+    ((x) -> getWaveVel(t0, sp, x))∘(xNew) ) 
   
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
@@ -605,17 +641,16 @@ function main(params)
     execTime[3] = time()  
     tick()
 
-    # # Update waveVel(tn) before solving t(n+1)
-    # update_state!( (a,b) -> (true, b), waveVel_cs, 
-    #   getWaveVel_cf(t, xNew) ) 
+    update_state!( (a,b) -> (true, b), waveVel_cs, 
+      ((x) -> getWaveVel(t, sp, x))∘(xNew) ) 
     
     next = iterate(solnht, iState)
   end  
   execTime[2] = time()  
   tock()
-  @printf(outFile0, 
+  printTer(@sprintf( 
     "\n[TIM] Total Time: \t %5i \t %.3f \n", 
-    round(simT/simΔt), execTime[2]-execTime[1])
+    round(simT/simΔt), execTime[2]-execTime[1]) )
 
   vtk_save(pvd)
   if(outFreeSurface)
@@ -635,7 +670,7 @@ function main(params)
 
 
   function setGridlines(plt)
-    vline!(plt, [startRamp[2]/fT], linewidth = 3, lc = "red", label=nothing)
+    vline!(plt, [inputRamp.t1/fT], linewidth = 3, lc = "red", label=nothing)
     plot!(plt, grid=:true, gridcolor=:black, 
       gridalpha=0.5, gridlinestyle=:dot,
       gridlinewidth = 1)    

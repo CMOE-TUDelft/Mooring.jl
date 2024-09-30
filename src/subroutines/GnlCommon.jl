@@ -26,8 +26,9 @@ using Plots
 
 
 export printTerAndFile, showTerAndFile
-export getInputSpec, setInitXZ
-export getParabola, assemble_cache
+export getInputSpec, getCurrentField, getWaveVel
+export setInitXZ, getParabola
+export assemble_cache
 
 
 
@@ -65,26 +66,6 @@ function showTerAndFile(var::Any, outFile::IOStream)
   @show var
   show(outFile, var)
   println(outFile)
-end
-
-
-function getInputSpec(params)
-
-  @unpack Hs, Tp, h0, nω, seed, ωc = params
-
-  if(ωc < 0)
-    ω, S, A = jonswap(Hs, Tp,
-      plotflag=false, nω = nω)
-  else
-    ω, S, A = jonswap(Hs, Tp,
-      plotflag=false, nω = nω, ωc = ωc)
-  end
-
-  k = dispersionRelAng.(h0, ω; msg=false)
-  α = randomPhase(ω, seed = seed)
-
-  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
-  return sp
 end
 
 
@@ -158,6 +139,65 @@ function assemble_cache(xNew, save_f_cache2)
 
   return cache2
 
+end
+# ----------------------End----------------------
+
+
+
+"""
+Wave and Current functions
+=============
+
+"""
+# ---------------------Start---------------------
+function getInputSpec(params)
+
+  @unpack Hs, Tp, h0, nω, seed, ωc = params
+
+  if(ωc < 0)
+    ω, S, A = jonswap(Hs, Tp,
+      plotflag=false, nω = nω)
+  else
+    ω, S, A = jonswap(Hs, Tp,
+      plotflag=false, nω = nω, ωc = ωc)
+  end
+
+  k = dispersionRelAng.(h0, ω; msg=false)
+  α = randomPhase(ω, seed = seed)
+
+  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
+  return sp
+end
+
+
+function getCurrentField(r, Xh, curObj)
+  
+  X_qp = Xh(r)
+  pz = X_qp ⋅ VectorValue(0.0,1.0) - curObj.h0
+  pz = min(pz, 0.0)
+  pz = max(pz, -curObj.h0)
+
+  return VectorValue( curObj.itp( pz ), 0.0 )   
+
+end
+
+
+# function getWaveVelField(r, t, sp, xh)
+
+#   x_qp = xh(r)  
+#   w_u, w_w = waveAiry1D_vel(sp, t, 
+#     x_qp[1], x_qp[2]-sp.h0 )
+
+#   return VectorValue(w_u, w_w)
+# end
+
+
+function getWaveVel(t, sp, x)
+    
+  w_u, w_w = waveAiry1D_vel(sp, t, 
+    x[1], x[2]-sp.h0 )
+
+  return VectorValue(w_u, w_w)
 end
 # ----------------------End----------------------
 
