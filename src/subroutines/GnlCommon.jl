@@ -184,14 +184,11 @@ end
 
 function getWaveVelField(r, t, sp, xh)
 
-  # return VectorValue(0.0, 0.0)
-
   x_qp = xh(r)  
   w_u, w_w = waveAiry1D_vel(sp, t, 
     x_qp[1], x_qp[2]-sp.h0 )
 
   return VectorValue(w_u, w_w)
-  # return VectorValue(0.0, 0.0)
 end
 # ----------------------End----------------------
 
