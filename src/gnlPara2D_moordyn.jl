@@ -143,18 +143,22 @@ function main(params)
   # ---------------------Start---------------------
   model_fs = CartesianDiscreteModel((0, 1.2*seg.L), (nx))
   Ω_fs = Interior(model_fs)
-
-  Ψu_fs = FESpace(Ω_fs, 
-    ReferenceFE(lagrangian, Float64, 1), 
-    conformity=:H1)  
   
   X_fs(r) = r[1]
   
   function getEta_fs(t,x)    
     lx = x ⋅ VectorValue(1.0)
-    return waveAiry1D_eta(sp, t, lx, 0.0)         
+    return waveAiry1D_eta(sp, t, lx, 0.0)
   end
   getEta_fs(t) = x -> getEta_fs(t,x)
+
+  function getvtk_fs(t)
+    tprt = @sprintf("%d",floor(Int64,t*1e6))
+    createvtk(Ω_fs,    
+      pltName*"fs/fs_tSol_$tprt"*".vtu",
+      cellfields=["X"=>X_fs, "h0" => sp.h0,
+        "eta"=> getEta_fs(t)])
+  end
   # ----------------------End----------------------  
 
 
@@ -504,27 +508,27 @@ function main(params)
   end
 
 
+  function getvtk(t, X, xNew, uh)
+    tprt = @sprintf("%d",floor(Int64,t*1e6))
+    
+    createvtk(Ω,
+      pltName*"tSol_$tprt"*".vtu",
+      cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
+        "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
+        "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
+        "gradU"=>∇(uh)])
+  end
+
+
   ## Save initial solution
   # ---------------------Start---------------------  
   uh = U0    
   @printf("Time : %10.3f s \t Counter : %5i \n", t0, 0)          
-  tprt = @sprintf("%d",floor(Int64,t0*1000))                        
 
   xNew = X + uh
 
-  pvd[t0] = createvtk(Ω,    
-    pltName*"tSol_$tprt"*".vtu",
-    cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-      "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
-      "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
-      "gradU"=>∇(uh)])      
-
-  if(outFreeSurface)
-    pvd_fs[t0] =createvtk(Ω_fs,    
-      pltName*"fs/fs_tSol_$tprt"*".vtu",
-      cellfields=["X"=>X_fs, "eta"=> getEta_fs(t0)])
-  end
-  
+  pvd[t0] = getvtk(t0, X, xNew, uh)   
+  if(outFreeSurface) pvd_fs[t0] = getvtk_fs(t0) end
   # ----------------------End----------------------
 
 
@@ -563,7 +567,6 @@ function main(params)
     @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
     @printf("Conv : %10s \t Iter    : %5i \n",
       iNLCache.result.x_converged, iNLCache.result.iterations)
-    tprt = @sprintf("%d",floor(Int64,t*1000000))
 
     # Interpolation: easiest method
     # xNew = X + uh
@@ -611,22 +614,9 @@ function main(params)
 
           
     if(cnt%outMod == 0)               
-
       println("Paraview output")        
-
-      pvd[t] = createvtk(Ω,    
-        pltName*"tSol_$tprt"*".vtu",
-        cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-          "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
-          "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
-          "gradU"=>∇(uh)])
-
-      if(outFreeSurface)
-        pvd_fs[t] =createvtk(Ω_fs,    
-          pltName*"fs/fs_tSol_$tprt"*".vtu",
-          cellfields=["X"=>X_fs, "eta"=> getEta_fs(t)])
-      end
-    
+      pvd[t] = getvtk(t, X, xNew, uh)
+      if(outFreeSurface) pvd_fs[t] = getvtk_fs(t) end         
     end
 
 
@@ -653,9 +643,7 @@ function main(params)
     round(simT/simΔt), execTime[2]-execTime[1]) )
 
   vtk_save(pvd)
-  if(outFreeSurface)
-    vtk_save(pvd_fs)
-  end
+  if(outFreeSurface) vtk_save(pvd_fs) end
 
   close(outFile0)
   close(outFile1)
