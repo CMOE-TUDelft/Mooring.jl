@@ -8,6 +8,7 @@ using .Currents
 using .WaveTimeSeries
 using Mooring.BedSpring
 using Mooring.Drag
+using Mooring.FairLeadMotion
 
 include(srcdir("gnlPara2D_moordyn.jl"))
 
@@ -58,7 +59,7 @@ params = gnlPara2D.Test_params(
   maxIter = 300,
   
   # Time signal ramp up (t0 t1)
-  inputRamp = TimeRampType(0.0, 2/ffm_f),
+  inputRamp = TimeRampType(0.0, 2/ffm_f),  
 
   Hs = 0.0,
 
@@ -67,6 +68,9 @@ params = gnlPara2D.Test_params(
     [-23.0, -22.0, -15.0, 0.0], 
     # [0.0, 0.2, 0.3, 0.3]),
     [0.0, 0.0, 0.0, 0.0]),
+
+  
+  FLMotion = FairLeadMotion.Regular(),
 
   # Forced fairlead motion
   ffm_η = ffm_η, #m

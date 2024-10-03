@@ -50,6 +50,8 @@ Warmup and Test params
   # Current
   curObj = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
 
+  FLMotion::FairLeadMotion.MotionType = FairLeadMotion.Regular()
+
   # Forced fairlead motion
   ffm_η = 0.1 #m
   ffm_ω = 0.5 #Hz

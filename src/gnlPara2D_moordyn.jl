@@ -30,6 +30,9 @@ using Mooring.BedSpring
 using Mooring.Drag
 using Mooring.GnlCommon
 using Mooring.StressLinear
+using Mooring.FairLeadMotion
+
+
 
 include(srcdir("subroutines","testParams.jl"))
 
@@ -176,7 +179,7 @@ function main(params)
   ## Reference config parabola
   # ---------------------Start---------------------        
   X, printMsg = getParabola(xz_fl[1],xz_fl[2], seg.L)  
-  printTer(printMsg)
+  printTer(printMsg); printTer()
 
   writevtk(Ω, pltName*"referenceDomain",
     cellfields=["X"=>X])
@@ -203,32 +206,56 @@ function main(params)
   # ----------------------End----------------------
 
 
-  ## Define Trial Fnc Dynamic
-  # ---------------------Start---------------------  
-  # Dirichlet BC
-  gAnch(x, t::Real) = VectorValue(0.0, 0.0)
-  gAnch(t::Real) = x -> gAnch(x, t)
-
+  ## Define FairLead Motion
+  # ---------------------Start---------------------
+  @unpack FLMotion = params
   Xh_fl = X(Point(seg.L))
   printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]))
   printTer("[VAL] Xh_fl = ", (Xh_fl[1], Xh_fl[2]-h0))
-  printTer()  
-  
-  @unpack ffm_η, ffm_ω = params
-  printTer("[VAL] ffm_η ", ffm_η)
-  printTer("[VAL] ffm_ω ", ffm_ω)
-  function getFairLeadEnd(x,t)    
-    # ffm_η = 1.5 #m2
-    # ffm_ω = 1 #rad/s
 
+  # FairLead motion with wave particle  
+  itp_flη, itp_flpx, itp_flpz = FairLeadMotion.posItp( sp, inputRamp,
+    t0:simΔt/2.0:(1.2*simT) , 
+    Xh_fl[1], Xh_fl[2]-h0 )
+
+  function getFairLeadEnd(x, t , ::FairLeadMotion.WithWave)    
+    # tRamp already done in createInterpObj
+    px = itp_flpx(t)
+    pz = itp_flpz(t)
+    return VectorValue(px, pz)
+  end
+  
+  if FLMotion isa FairLeadMotion.WithWave
+    printTer("[MSG] FairLead moves with wave particle ")  
+  end
+
+  # Fairlead motion with prescribed excitation
+  @unpack ffm_η, ffm_ω = params
+  if FLMotion isa FairLeadMotion.Regular
+    printTer("[MSG] FairLead moves sinusodally ")
+    printTer("[VAL] ffm_η ", ffm_η)
+    printTer("[VAL] ffm_ω ", ffm_ω)    
+  end
+
+  function getFairLeadEnd(x, t, ::FairLeadMotion.Regular)    
     tRamp = timeRamp(t, inputRamp)    
 
     return VectorValue( 
       tRamp*ffm_η*sin(ffm_ω*t),
       ϵ0*seg.L )
-  end    
+  end   
+
+  printTer()
+  # ----------------------End----------------------
+
+
+  ## Define Trial Fnc Dynamic
+  # ---------------------Start---------------------  
+  # Dirichlet BC
+  gAnch(x, t::Real) = VectorValue(0.0, 0.0)
+  gAnch(t::Real) = x -> gAnch(x, t)  
   
-  gFairLead(x, t::Real) = getFairLeadEnd(x,t)    
+  gFairLead(x, t::Real) = getFairLeadEnd(x, t, FLMotion)    
   gFairLead(t::Real) = x -> gFairLead(x, t)
 
   U = TransientTrialFESpace(Ψu, [gAnch, gFairLead])
