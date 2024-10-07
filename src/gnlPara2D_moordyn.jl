@@ -196,16 +196,6 @@ function main(params)
   # ----------------------End----------------------
 
 
-  ## Define Trial Fnc Static
-  # ---------------------Start---------------------
-  # Dirichlet BC
-  gAnch_S(x) = VectorValue(0.0, 0.0)  
-  gFairLead_S(x) = VectorValue(0.0, ϵ0*seg.L)  
-
-  US = TrialFESpace(Ψu, [gAnch_S, gFairLead_S])
-  # ----------------------End----------------------
-
-
   ## Define FairLead Motion
   # ---------------------Start---------------------
   @unpack FLMotion = params
@@ -246,6 +236,16 @@ function main(params)
   end   
 
   printTer()
+  # ----------------------End----------------------
+
+
+  ## Define Trial Fnc Static
+  # ---------------------Start---------------------
+  # Dirichlet BC
+  gAnch_S(x) = VectorValue(0.0, 0.0)  
+  gFairLead_S(x) = getFairLeadEnd(x, t0, FLMotion) 
+
+  US = TrialFESpace(Ψu, [gAnch_S, gFairLead_S])
   # ----------------------End----------------------
 
 
