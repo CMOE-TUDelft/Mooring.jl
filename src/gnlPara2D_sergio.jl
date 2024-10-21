@@ -44,13 +44,6 @@ Warmup and Test params
   A_str = 2*(π*0.048*0.048/4) #m2 Str cross-section area
   ρcDry = 7.8e3 #kg/m3 Density of steel  
 
-  # Bed parameter
-  bed_tanhRamp = 1e3
-  bed_springK = 50 #30kN/m4
-  # Based on Marco's suggestion of 30kN/m2/m in the OrcaFlex manual
-  # Following certain tests from Rieke database,
-  # I choose to keep this value as bed_springK = 50 
-  # => actual spring constant of 3.32 MN/m3/m
 
   # Parameter Domain
   nx = 100
@@ -71,9 +64,6 @@ Warmup and Test params
   C_dt = 1.4 # Tangent drag coff
   d_dt = 0.048/pi #m Tangent drag projection diameter
 
-  # Added mass coeff
-  C_an = 1.0 # Normal added-mass coeff
-  C_at = 0.5 # Tangent added-mass coff
 
   # Time signal ramp up (t0 t1)
   startRamp = (0.0, 15)
@@ -158,7 +148,7 @@ function main(params)
 
   ## Mesh setup: Regular
   # ---------------------Start---------------------  
-  @unpack nx = params
+  @unpack nx, order = params
   domain = (0, L)
   partition = (nx)      
   model = CartesianDiscreteModel(domain, partition)
@@ -170,6 +160,7 @@ function main(params)
   writevtk(model, pltName*"model")
 
   printTer("[VAL] nx = ", nx)
+  printTer("[VAL] order = ", order)
   printTer()
   # ----------------------End----------------------  
 
@@ -222,9 +213,7 @@ function main(params)
 
 
   ## Define Test Fnc
-  # ---------------------Start---------------------
-  @unpack order = params
-
+  # ---------------------Start---------------------  
   reffe = ReferenceFE(lagrangian, 
     VectorValue{2,Float64}, order)
   Ψu = TestFESpace(Ω, reffe, 
@@ -491,17 +480,6 @@ function main(params)
   ## Weak form: Dynamic
   # ---------------------Start---------------------
   
-  # Form 0: Simplest
-  massD0(t, ∂ₜₜu, ψu) =  
-    ∫( ( (ψu ⋅ ∂ₜₜu) * ρcDry )*JJ_cs )dΩ
-  # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
-  
-  resD0(t, u, ψu) =      
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ #+
-    # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
-    # ∫( (  )*JJ_cs )dΩ        
-
-
   # Form 1: Self drag only
   massD1(t, ∂ₜₜu, ψu) =  
     ∫( ( (ψu ⋅ ∂ₜₜu) * ρcDry )*JJ_cs )dΩ
@@ -596,6 +574,10 @@ function main(params)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
+
+  rPrbConv = [0:L/320:L;]
+  rPrbConv = Point.(rPrbConv)
+  nPrbConv = length(rPrbConv)
   
   # ----------------------End----------------------
 
@@ -678,8 +660,8 @@ function main(params)
     # Interpolation: open return_cache(), re-use sub_cache
     xNew = X + uh           
     cache2 = assemble_cache(xNew, save_f_cache2)
-    xNewPrb = evaluate!((save_cache1, cache2), xNew, rPrb)
-    
+    xNewPrb = evaluate!((save_cache1, cache2), xNew, rPrb)    
+
 
     sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
     cache2 = assemble_cache(sT_uh, save_f_cache2)
@@ -752,6 +734,16 @@ function main(params)
     "\n[TIM] Total Time: \t %5i \t %.3f \n", 
     round(simT/simΔt), execTime[2]-execTime[1])
 
+  
+  # Saving convergence solution
+  xNewPrbConv = xNew.(rPrbConv)
+  data = Dict(
+    "nx" => nx,
+    "order" => order,
+    "xNew" => xNewPrbConv)
+  wsave( pltName*"dataConv.jld2", data )
+  
+  
   vtk_save(pvd)
   if(outFreeSurface)
     vtk_save(pvd_fs)

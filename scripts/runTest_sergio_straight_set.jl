@@ -12,9 +12,9 @@ include(srcdir("gnlPara2D_sergio.jl"))
 
 
 allparams = Dict(
-  "epsilon0" => 0.04,
-  "ffm_amp" => [0.2],
-  "ffm_f" => [0.1:0.05:3.0;], #Hz  
+  "epsilon0" => 0.01,
+  "ffm_amp" => [0.4],
+  "ffm_f" => [0.2], #Hz  
 )
 
 dicts = dict_list(allparams)
@@ -39,10 +39,13 @@ function makesim(d::Dict)
   println(caseName)
   
   resDir = datadir(
-    "sims_sergio_202406",
+    "sims_202410",
     folderName,
     caseName)
   mkdir(resDir)  
+
+  A_str = 0.01
+  nd = sqrt(4*A_str/π)
 
   # Warmup run
   params = gnlPara2D.Test_params( 
@@ -52,19 +55,19 @@ function makesim(d::Dict)
     # Material properties
     E = 1e9, #N
     L = 100, #m
-    A_str = 0.01, #m2 Str cross-section area
+    A_str = A_str, #m2 Str cross-section area
     ρcDry = 1414.5, #kg/m3 Density of steel  
     
     # Parameter Domain
-    nx = 200,
-    order = 1,
+    nx = 100,
+    order = 2,
 
     outFreeSurface = false,
 
     # Time Parameters
     t0 = 0.0,
     simT = 200/ffm_f,
-    simΔt = 1/ffm_f/20.0,
+    simΔt = 1/ffm_f/100.0,
     outΔt = 10/ffm_f,
     maxIter = 300,
 
@@ -76,7 +79,17 @@ function makesim(d::Dict)
     # Forced fairlead motion
     ffm_η = ffm_η, #m
     ffm_ω = 2*pi*ffm_f, #rad/s
-    ϵ0 = ϵ0
+    ϵ0 = ϵ0,
+
+    # Drag coeff
+    C_dn = 0.01, # Normal drag coeff
+    d_dn = nd, #m Normal drag projection diameter
+    C_dt = 0.0, # Tangent drag coff
+    d_dt = nd/pi #m Tangent drag projection diameter
+
+    #no Bed 
+    #no wave
+    #yes Self Drag
   )
   gnlPara2D.main(params)
 end
