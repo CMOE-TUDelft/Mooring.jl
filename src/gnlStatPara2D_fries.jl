@@ -19,7 +19,7 @@ using CSV
 
 
 # File properties
-filename = datadir("sims","mem")
+filename = datadir("sims_202410","resStat_Fries2020","gnl")
 
 
 # Material properties
@@ -34,7 +34,7 @@ A = 0.01
 
 
 # Parameter Domain
-nx = 1000
+nx = 500
 domain = (0, L)
 partition = (nx)
 model = CartesianDiscreteModel(domain, partition)
@@ -81,7 +81,7 @@ X(r) = VectorValue(fx_X(r), fy_X(r))
 
 ## Define Test Fnc
 # ---------------------Start---------------------
-order = 1
+order = 2
 
 reffe = ReferenceFE(lagrangian, 
   VectorValue{2,Float64}, order)
@@ -196,9 +196,18 @@ nls = NLSolver(show_trace=true,
 
 xNew = Xh + uh
 
+
+function getPrincipalStress2(lT)
+    
+  return (lT[1] + lT[4])/2 + sqrt( ((lT[1] - lT[4])/2)^2 + lT[2]^2 )
+
+end
+
+
 writevtk(Ω, filename*"_referenceDomain",
   cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
-    "ETang"=>ETang(uh), "sigma"=>stressσ(uh) ])
+    "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
+    "sigmaPr" => getPrincipalStress2∘(stressσ(uh)) ])
 
 
 LNew = sum(∫( sqrt∘(JNew(uh) ⊙ JNew(uh)) )dΩ)
