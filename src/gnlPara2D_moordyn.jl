@@ -90,11 +90,12 @@ function main(params)
 
   ## Wave and Current input
   # ---------------------Start---------------------  
-  @unpack h0, curObj = params
+  @unpack h0, curObj, enableWaveSpec = params
 
   sp = getInputSpec(params)
   #η, ϕ, u, w = waveAiry1D(sp, t, 0.1, -0.1)
 
+  printTer("[VAL] enableWaveSpec = ", enableWaveSpec)
   printTer("[VAL] h0 = ", h0)
   printTer("[VAL] Hs = ", sp.Hs)
   printTer("[VAL] Tp = ", sp.Tp)
@@ -658,8 +659,10 @@ function main(params)
     execTime[3] = time()  
     tick()
 
-    update_state!( (a,b) -> (true, b), waveVel_cs, 
-      ((x) -> getWaveVel(t, sp, x))∘(xNew) ) 
+    if(enableWaveSpec)
+      update_state!( (a,b) -> (true, b), waveVel_cs, 
+        ((x) -> getWaveVel(t, sp, x))∘(xNew) ) 
+    end
     
     next = iterate(solnht, iState)
   end  

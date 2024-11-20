@@ -40,6 +40,7 @@ Warmup and Test params
   inputRamp = TimeRampType(0.0, 15)
 
   # Wave spectrum
+  enableWaveSpec = true
   h0 = 23 #m
   Hs = 3 #m
   Tp = 12 #s

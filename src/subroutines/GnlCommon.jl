@@ -152,14 +152,20 @@ Wave and Current functions
 # ---------------------Start---------------------
 function getInputSpec(params)
 
-  @unpack Hs, Tp, h0, nω, seed, ωc = params
+  @unpack Hs, Tp, h0, nω, seed, ωc, enableWaveSpec = params
 
-  if(ωc < 0)
-    ω, S, A = jonswap(Hs, Tp,
-      plotflag=false, nω = nω)
+  if(enableWaveSpec)
+    if(ωc < 0)
+      ω, S, A = jonswap(Hs, Tp,
+        plotflag=false, nω = nω)
+    else
+      ω, S, A = jonswap(Hs, Tp,
+        plotflag=false, nω = nω, ωc = ωc)
+    end
+  
   else
-    ω, S, A = jonswap(Hs, Tp,
-      plotflag=false, nω = nω, ωc = ωc)
+    ω, S, A = jonswap(0.0, 10.0,
+        plotflag=false, nω = 64)
   end
 
   k = dispersionRelAng.(h0, ω; msg=false)

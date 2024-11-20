@@ -61,7 +61,7 @@ params = gnlPara2D.Test_params(
   # Time signal ramp up (t0 t1)
   inputRamp = TimeRampType(0.0, 2/ffm_f),  
 
-  Hs = 0.0,
+  enableWaveSpec = false,
 
   # Current
   curObj = CurrentStat(23, 

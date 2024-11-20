@@ -75,6 +75,7 @@ params = gnlPara2D.Test_params(
   C_at = 0.5, # Tangent added-mass coff
 
   # Wave spectrum
+  enableWaveSpec = true,
   h0 = h0,
   Hs = Hs,
   Tp = Tp,
