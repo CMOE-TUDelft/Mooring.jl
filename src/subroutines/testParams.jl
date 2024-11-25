@@ -16,6 +16,7 @@ Warmup and Test params
   AStr = π*0.048*0.048/4 #m2 Str cross-section area
   nd = 0.048  #m Nominal diameter
   ρcDry = 7.8e3 #kg/m3 Density of steel    
+  materialDampCoeff = 0.0 # Material damping coeff (sec)
   dragProp = Drag.DragProperties(Drag.NoDrag()) 
 
   xz_fl = (60, 20)

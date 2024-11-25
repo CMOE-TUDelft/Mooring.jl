@@ -377,6 +377,22 @@ function main(params)
   stressK_fnc(QTr, P, ∇u) = 
     StressLinear.stressK_fnc(seg, QTr, P, ∇u)
   
+  if(abs(seg.c) < 1e-10)
+    printTer("[MSG] In-line damping Off")
+    printTer("[VAL] seg.c = ",seg.c)
+    
+    stressK_fnc(QTr, P, ∇u, ∇v) = stressK_fnc(QTr, P, ∇u)
+  
+  else
+    printTer("[MSG] In-line damping On")
+    printTer("[VAL] seg.c = ",seg.c)
+    
+    stressK_fnc(QTr, P, ∇u, ∇v) = 
+      StressLinear.stressK_fnc(seg, QTr, P, ∇u) + 
+      StressLinear.stressK_damp_fnc(seg, QTr, P, ∇u, ∇v)
+  end
+
+  
   stressσ_fnc(QTr, P, J, ∇u ) = 
     StressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
   
@@ -398,7 +414,8 @@ function main(params)
 
   # Form 0: Simplest
   res0(u, ψu) =          
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u) )) )*JJ_cs )dΩ +
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ 
+      (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ + 
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
       (bedSpring_fnc∘(Xh_cs, csTup1...,u, ∇(u), 0.0*u)) )*JJ_cs )dΩ +
@@ -422,10 +439,11 @@ function main(params)
   # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
 
   resD1(t, u, ψu) =      
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ +
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ 
+      (stressK_fnc∘(QTrans_cs, P_cs, ∇(u), ∇(∂t(u)) )) )*JJ_cs )dΩ +    
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
-      (bedSpring_fnc∘(Xh_cs, csTup1..., u, ∇(u), ∂t(u))) )*JJ_cs )dΩ +    
+      ( bedSpring_fnc∘( Xh_cs, csTup1..., u, ∇(u), ∂t(u) ) ) )*JJ_cs )dΩ +    
     # ∫( ( -ψu ⋅ (drag_ΓX∘(csTup1..., ∇(u), ∂t(u))) )*JJ_cs )dΩ 
     # ∫( ( -ψu ⋅ (
     #   ((UCur, waveVel, Qtr, T1s, T1m, ∇u, v) -> 
@@ -436,7 +454,7 @@ function main(params)
       -ψu ⋅ ( drag_ΓX(t, cnstTup1...)
         ∘(UCur_cs, waveVel_cs, csTup1...,∇(u), ∂t(u)) ) 
     )*JJ_cs )dΩ 
-    # ∫( (  )*JJ_cs )dΩ        
+    # ∫( (  )*JJ_cs )dΩ
 
     
   # Define operator
