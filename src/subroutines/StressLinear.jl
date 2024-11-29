@@ -21,8 +21,9 @@ Custom Structs
 	L::Real
 	A::Real	  
   nd::Real # Nominal diameter  
-  c::Real # Damping coeff
+  c::Real # Damping coeff  
 
+  cOnFlag::Bool # Damping on or off ?
 	ρcSub::Real
 	μm::Real     
   
@@ -35,8 +36,13 @@ function Segment( ρcDry, E, L, A, nd, c, ρcSub;
   dragProp = Drag.DragProperties(Drag.NoDrag()) )
 
   μm = 0.5*E    
+  cOnFlag = false
+  if(abs(c) > 1e-10)
+    cOnFlag = true
+  end
   
-  Segment(ρcDry, E, L, A, nd, c, ρcSub, μm, dragProp)
+  Segment(ρcDry, E, L, A, nd, c, 
+    cOnFlag, ρcSub, μm, dragProp)
 end
 
 

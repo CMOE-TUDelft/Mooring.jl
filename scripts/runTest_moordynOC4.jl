@@ -14,20 +14,23 @@ include(srcdir("gnlPara2D_moordyn.jl"))
 
 
 resDir = datadir("sims_202411",
-  # "res_T20.0_cDamp1e-2" )
-  "runDamp")
+  # "run")
+  # "res_T12.1")
+  "res_T07.5")
+  # "res_T20.0")
+  # "res_T00.2")
 
-ffm_η = 3.0 #m
-ffm_f = 1/12.1 #Hz
-ϵ0 = 0.0
-materialDampCoeff = 0.01
-tStepsPerT = 100
-
-# ffm_η = 0.5 #m
-# ffm_f = 1/7.5 #Hz
+# ffm_η = 3.0 #m
+# ffm_f = 1/12.1 #Hz
 # ϵ0 = 0.0
 # materialDampCoeff = 0.0
 # tStepsPerT = 100
+
+ffm_η = 0.5 #m
+ffm_f = 1/7.5 #Hz
+ϵ0 = 0.0
+materialDampCoeff = 0.0
+tStepsPerT = 100
 
 # ffm_η = 10 #m
 # ffm_f = 1/20 #Hz
@@ -38,7 +41,7 @@ tStepsPerT = 100
 # ffm_η = 0.5 #m
 # ffm_f = 5 #Hz 1/0.2 sec
 # ϵ0 = 0.0
-# materialDampCoeff = 1e-3
+# materialDampCoeff = 2e-3
 # tStepsPerT = 100
 
 dia = 0.0766
@@ -73,7 +76,10 @@ params = gnlPara2D.Test_params(
   # bedSpring setup
   bedObj = BedSpring.Bed( 
     dia, AStr, 
-    kn = 3.0e6, dampRatio = 0.10 ),
+    kn = 3.0e6, 
+    linDampRatio = 0.10,
+    quadDampRatio = 0.10,
+    tanh_ramp = 1e2),
 
   outFreeSurface = false,
 
@@ -85,7 +91,7 @@ params = gnlPara2D.Test_params(
   maxIter = 100,
   
   # Time signal ramp up (t0 t1)
-  inputRamp = TimeRampType(0.0, 10/ffm_f),  
+  inputRamp = TimeRampType(0.0, 5/ffm_f),  
   
   h0 = depth,
   enableWaveSpec = false,

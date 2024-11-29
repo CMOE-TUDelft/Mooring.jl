@@ -68,12 +68,13 @@ function main(params)
   seg = StressLinear.Segment( params )
   printTer("[SHOW] seg"); showTer(seg)  
   printTer("[SHOW] seg.dragProp"); showTer(seg.dragProp)  
+  printTer("[MSG] In-Line Damping "*(seg.cOnFlag ? "ON" : "OFF"))
   printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()  
 
   @unpack bedObj = params  
-  bedObj = BedSpring.setStillWei!(bedObj, seg.ρcSub*g)    
-  printTer("[VAL] Bed StillWei = ", bedObj.stillWei)
+  bedObj = BedSpring.setStillWei!(bedObj, seg.ρcSub*g)      
+  printTer("[SHOW] bedObj"); showTer(bedObj)  
   printTer()
 
   # Time Parameters
@@ -377,22 +378,15 @@ function main(params)
   stressK_fnc(QTr, P, ∇u) = 
     StressLinear.stressK_fnc(seg, QTr, P, ∇u)
   
-  if(abs(seg.c) < 1e-10)
-    printTer("[MSG] In-line damping Off")
-    printTer("[VAL] seg.c = ",seg.c)
-    
-    stressK_fnc(QTr, P, ∇u, ∇v) = stressK_fnc(QTr, P, ∇u)
-  
-  else
-    printTer("[MSG] In-line damping On")
-    printTer("[VAL] seg.c = ",seg.c)
-    
-    stressK_fnc(QTr, P, ∇u, ∇v) = 
-      StressLinear.stressK_fnc(seg, QTr, P, ∇u) + 
-      StressLinear.stressK_damp_fnc(seg, QTr, P, ∇u, ∇v)
+  function stressK_fnc(QTr, P, ∇u, ∇v) 
+    if(seg.cOnFlag)
+      return StressLinear.stressK_fnc(seg, QTr, P, ∇u) + 
+        StressLinear.stressK_damp_fnc(seg, QTr, P, ∇u, ∇v)    
+    else
+      return StressLinear.stressK_fnc(seg, QTr, P, ∇u) 
+    end    
   end
 
-  
   stressσ_fnc(QTr, P, J, ∇u ) = 
     StressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
   
@@ -453,7 +447,7 @@ function main(params)
     ∫( ( 
       -ψu ⋅ ( drag_ΓX(t, cnstTup1...)
         ∘(UCur_cs, waveVel_cs, csTup1...,∇(u), ∂t(u)) ) 
-    )*JJ_cs )dΩ 
+    )*JJ_cs )dΩ
     # ∫( (  )*JJ_cs )dΩ
 
     
@@ -555,14 +549,25 @@ function main(params)
 
 
   function getvtk(t, X, xNew, uh)
+
+    local tprt, excField
+
     tprt = @sprintf("%d",floor(Int64,t*1e6))
     
+    excField = xNew⋅VectorValue(0.0,-1)
+
     createvtk(Ω,
       pltName*"tSol_$tprt"*".vtu",
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
         "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
         "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
-        "gradU"=>∇(uh)])
+        "gradU"=>∇(uh),
+        "bedLin"=>
+          ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
+        "bedTanh"=>
+          ((exc) -> BedSpring.rampTanh(bedObj, exc))∘(excField)
+      ]
+    )
   end
 
 
