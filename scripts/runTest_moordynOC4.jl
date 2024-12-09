@@ -69,9 +69,11 @@ params = gnlPara2D.Test_params(
   # Fairlead position
   xz_fl = (796.732, depth),
   
-  # Parameter Domain
-  nx = 200,
-  order = 1,  
+  # # Parameter Domain
+  nx = 100,
+  order = 2,
+  # nx = 24,
+  # order = 10,  
 
   # bedSpring setup
   bedObj = BedSpring.Bed( 

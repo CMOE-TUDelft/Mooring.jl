@@ -44,6 +44,7 @@ Warmup and Test params
   A_str = 2*(π*0.048*0.048/4) #m2 Str cross-section area
   ρcDry = 7.8e3 #kg/m3 Density of steel  
 
+  xz_fl = (60, 20)
 
   # Parameter Domain
   nx = 100
@@ -79,6 +80,9 @@ Warmup and Test params
   # Current
   strCur = CurrentStat(23, [-23.0, -11.0, 0.0], [0.0, 0.0, 0.0])
 
+  uhAna_amp = 0.1
+  uhAna_ampForCmp = 0.1 
+
   # Forced fairlead motion
   ffm_η = 0.1 #m
   ffm_ω = 0.5 #Hz
@@ -112,11 +116,12 @@ function main(params)
 
 
   # Material properties
-  @unpack E, ρcDry, L, A_str, ϵ0 = params
+  @unpack E, ρcDry, L, A_str, ϵ0, xz_fl = params
   ρw = 1025 #Kg/m3 density of water
   μₘ = 0.5*E
   ρcSub = ρcDry - ρw
   printTer("[VAL] Length = ", L)
+  printTer("[VAL] Given FL xz = ", xz_fl)
   printTer()
   
   # Time Parameters
@@ -210,6 +215,16 @@ function main(params)
   writevtk(Ω, pltName*"referenceDomain",
     cellfields=["X"=>X])
   # ----------------------End----------------------  
+
+
+  # ## Reference config parabola
+  # # ---------------------Start---------------------        
+  # X, printMsg = getParabola(xz_fl[1],xz_fl[2], L)  
+  # printTer(printMsg); printTer()
+
+  # writevtk(Ω, pltName*"referenceDomain",
+  #   cellfields=["X"=>X])
+  # # ----------------------End----------------------  
 
 
   ## Define Test Fnc
@@ -486,10 +501,10 @@ function main(params)
   # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
   
   resD1(t, u, ψu) =      
-    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ +
+    ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ (stressK_fnc∘(QTrans_cs, P_cs, ∇(u))) )*JJ_cs )dΩ #+
     # ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ 
     # ∫( ( -ψu ⋅ drag_ΓX(QTrans_cs, ∂t(u), ∇(u)) )*JJ_cs )dΩ 
-    ∫( ( -ψu ⋅ (drag_ΓX∘(QTrans_cs, T1s_cs, T1m_cs, ∂t(u), ∇(u))) )*JJ_cs )dΩ 
+    # ∫( ( -ψu ⋅ (drag_ΓX∘(QTrans_cs, T1s_cs, T1m_cs, ∂t(u), ∇(u))) )*JJ_cs )dΩ 
     # ∫( (  )*JJ_cs )dΩ        
 
     
@@ -531,8 +546,13 @@ function main(params)
 
 
   ## Initial solution
-  # ---------------------Start---------------------  
-  U0 = interpolate_everywhere(uh_S, U(t0))
+  # ---------------------Start---------------------  4
+  @unpack uhAna_amp, uhAna_ampForCmp = params
+  uh_init(x) = uh_S(x) + 
+    VectorValue( uhAna_amp*sin(π/L*x[1]), 0.0) 
+  uh_cmp(x) = uh_S(x) + 
+    VectorValue( uhAna_ampForCmp*sin(π/L*x[1]), 0.0) 
+  U0 = interpolate_everywhere(uh_init, U(t0))
 
   U0t = interpolate_everywhere(VectorValue(0.0, 0.0), U(t0))
   U0tt = interpolate_everywhere(VectorValue(0.0, 0.0), U(t0))
@@ -575,9 +595,6 @@ function main(params)
 
   daFile1 = open( pltName*"data1.dat", "w" )
 
-  rPrbConv = [0:L/320:L;]
-  rPrbConv = Point.(rPrbConv)
-  nPrbConv = length(rPrbConv)
   
   # ----------------------End----------------------
 
@@ -618,6 +635,8 @@ function main(params)
   ## Execute
   # ---------------------Start---------------------
 
+  diff(uh) = uh - uh_cmp
+
   # Interpolation: save cache
   xNew = X + uh
   save_cache1, save_cache2 = Gridap.Arrays.return_cache(xNew, rPrb)
@@ -634,11 +653,11 @@ function main(params)
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
   while next !== nothing
-
+    
     (iSol, iState) = next
     (t, uh) = iSol      
     iNLCache = iState[2][5][1][4]
-    # @show propertynames(iNLCache.result)
+    # @show propertynames(iNLCache.result)    
 
     cnt = cnt+1          
     @printf("Progress : %10.3f %% \n", t/simT*100)          
@@ -679,6 +698,12 @@ function main(params)
     # cache2 = assemble_cache(gradU, save_f_cache2)
     # gradUPrb = evaluate!((save_cache1, cache2), gradU, rPrb)
     # @show gradUPrb[1]
+
+    errA = sum(∫( diff(uh) ⋅ diff(uh) )dΩ )
+    errA = sqrt(errA)
+    diff2 = diff(uh)⋅VectorValue(1.0,0.0)
+    errB = sum(∫( diff2 * diff2 )dΩ )
+    errB = sqrt(errB)
     
 
     @printf(daFile1, "%15.6f",t)
@@ -700,7 +725,7 @@ function main(params)
         pltName*"tSol_$tprt"*".vtu",
         cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
           "ETang"=>ETang(uh), "sigma"=>stressσ(uh),
-          "gradU"=>∇(uh)])
+          "gradU"=>∇(uh), "diff"=>diff(uh)])
 
       if(outFreeSurface)
         pvd_fs[t] =createvtk(Ω_fs,    
@@ -714,9 +739,10 @@ function main(params)
     execTime[4] = time()  
     tock()
     @printf(outFile1, 
-      "%5i, %10.3f, %10.3f, %5i, %2i \n", 
+      "%5i, %10.3f, %10.3f, %5i, %2i, %20.15e, %20.15e \n", 
       cnt, t, execTime[4]-execTime[3], 
-      iNLCache.result.iterations, iNLCache.result.x_converged)
+      iNLCache.result.iterations, iNLCache.result.x_converged,
+      errA, errB)
     println("-x-x-x-")
     println()
     execTime[3] = time()  
@@ -738,15 +764,24 @@ function main(params)
 
   pot = sum(∫( ETang(uh) ⊙ stressS(uh) * ((J ⊙ J).^0.5) )dΩ)
   printTer("Stored potential energy = ", pot)
+
+    
+  errA = sum(∫( diff(uh) ⋅ diff(uh) )dΩ )
+  errA = sqrt(errA)
+  diff2 = diff(uh)⋅VectorValue(1.0,0.0)
+  errB = sum(∫( diff2 * diff2 )dΩ )
+  errB = sqrt(errB)
+  printTer("Error w.r.t analytical soln = ", errA)
+  printTer("Error2 w.r.t analytical soln = ", errB)
   
   # Saving convergence solution
-  xNewPrbConv = xNew.(rPrbConv)
   data = Dict(
     "nx" => nx,
     "order" => order,
-    "xNew" => xNewPrbConv,
     "pot" => pot,
-    "fdofvals" => get_free_dof_values(uh)
+    "fdofvals" => get_free_dof_values(uh),
+    "errA" => errA,
+    "errB" => errB,
     )
   wsave( pltName*"dataConv.jld2", data )
   
@@ -907,6 +942,34 @@ function setInitXZ(initCSV)
 
   return interpX, interpZ
 
+end
+
+
+function getParabola(xend,zend,L)
+
+  dx = xend /100
+  x = 0:dx:xend
+
+  b(a) = zend/xend - a*xend  
+  yy(a) = 2*a.*x .+ b(a)
+  y(a) = sqrt.(1.0 .+ yy(a).*yy(a))
+
+  lineLen(a) = gaussQuad1D(y(a), dx)
+  errLen(a) = lineLen(a) - L
+  
+  a = find_zero(errLen, 0.1)  
+
+  pA = a
+  pB = b(a)  
+
+  X(r) = VectorValue( 
+    r[1]/L*xend, 
+    pA * (r[1]/L*xend)^2 + pB*(r[1]/L*xend) )
+
+  
+  printMsg = @sprintf("[VAL] (pA, pB) = %15.6e, %15.6e", pA, pB)
+  
+  return X, printMsg
 end
 
 

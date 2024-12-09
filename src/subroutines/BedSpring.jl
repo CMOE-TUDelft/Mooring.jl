@@ -19,6 +19,8 @@ Custom Structs
   quadDampRatio::Real  #sec2/m 
   # qudratic law impact damping
   # https://doi.org/10.1080/0020739X.2021.1954253
+  # Critical damping of Moordyn
+  # https://moordyn.readthedocs.io/en/latest/troubleshooting.html#model-stability-and-segment-damping
 
   od::Real
   A::Real      
