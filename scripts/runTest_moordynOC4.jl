@@ -13,35 +13,40 @@ using Mooring.FairLeadMotion
 include(srcdir("gnlPara2D_moordyn.jl"))
 
 
-resDir = datadir("sims_202411",
+resDir = datadir("sims_202412",
   # "run")
-  # "res_T12.1")
-  "res_T07.5")
+  "res_T12.1")
+  # "res_T07.5")
   # "res_T20.0")
   # "res_T00.2")
 
-# ffm_η = 3.0 #m
-# ffm_f = 1/12.1 #Hz
-# ϵ0 = 0.0
-# materialDampCoeff = 0.0
-# tStepsPerT = 100
-
-ffm_η = 0.5 #m
-ffm_f = 1/7.5 #Hz
+ffm_η = 3.0 #m
+ffm_f = 1/12.1 #Hz
 ϵ0 = 0.0
+# materialDampCoeff = 0.07
 materialDampCoeff = 0.0
 tStepsPerT = 100
+
+# ffm_η = 0.5 #m
+# ffm_f = 1/7.5 #Hz
+# ϵ0 = 0.0
+# # materialDampCoeff = 0.07
+# materialDampCoeff = 0.0
+# tStepsPerT = 100
 
 # ffm_η = 10 #m
 # ffm_f = 1/20 #Hz
 # ϵ0 = 0.0
-# materialDampCoeff = 1e-1
+# # materialDampCoeff = 1e-1
+# materialDampCoeff = 0.07
 # tStepsPerT = 200
 
 # ffm_η = 0.5 #m
 # ffm_f = 5 #Hz 1/0.2 sec
 # ϵ0 = 0.0
-# materialDampCoeff = 2e-3
+# # materialDampCoeff = 2e-3
+# # materialDampCoeff = 0.07
+# materialDampCoeff = 0.0007
 # tStepsPerT = 100
 
 dia = 0.0766
