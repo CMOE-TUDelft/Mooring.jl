@@ -14,8 +14,8 @@ include(srcdir("gnlPara2D_moordyn.jl"))
 
 
 resDir = datadir("sims_202412",
-  # "run")
-  "res_T12.1")
+  "run")
+  # "res_T12.1")
   # "res_T07.5")
   # "res_T20.0")
   # "res_T00.2")
@@ -92,7 +92,7 @@ params = gnlPara2D.Test_params(
 
   # Time Parameters
   t0 = 0.0,
-  simT = 20/ffm_f,
+  simT = 5/ffm_f/tStepsPerT,
   simΔt = 1/ffm_f/tStepsPerT,
   outΔt = 1/ffm_f/4.0,
   maxIter = 100,

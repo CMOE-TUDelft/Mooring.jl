@@ -320,6 +320,18 @@ function main(params)
     return (lT[1] + lT[4])/2 + sqrt( ((lT[1] - lT[4])/2)^2 + lT[2]^2 )
   
   end
+
+
+  function getPrincipalStress3(lT)
+
+    @show θp = atan( 2*lT[2]/(lT[1]-lT[4]) ) / 2
+
+    @show rotQ = TensorValue(cos(θp), -sin(θp), sin(θp), cos(θp))
+    @show rotQ ⋅ transpose(rotQ)
+    
+    return rotQ ⋅ (lT ⋅ transpose(rotQ))
+  
+  end
   # ----------------------End----------------------
 
 
@@ -640,6 +652,10 @@ function main(params)
     sTPrb = evaluate!((save_cache1, cache2), sT_uh, rPrb)
     sTPrb_princ = getPrincipalStress2.(sTPrb)
 
+    ll = Point(0.8*seg.L)
+    @show stTemp = sT_uh(ll) 
+    @show getPrincipalStress2(stTemp)
+    @show getPrincipalStress3(stTemp)    
 
     ETang_uh = ETang_fnc∘(QTrans, P, J, ∇(uh) )
     cache2 = assemble_cache(ETang_uh, save_f_cache2)

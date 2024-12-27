@@ -2,7 +2,10 @@ module StressLinear
 
 using Revise
 using Gridap
+using ForwardDiff
 using Parameters
+using LinearAlgebra
+using Roots: find_zero
 
 using Mooring.Drag
 
@@ -14,7 +17,7 @@ Custom Structs
 
 """
 # ---------------------Start---------------------
-@with_kw struct Segment
+@with_kw struct Segment{T} where T
   
 	ρcDry::Real	
 	E::Real
@@ -25,7 +28,9 @@ Custom Structs
 
   cOnFlag::Bool # Damping on or off ?
 	ρcSub::Real
-	μm::Real     
+	μm::Real
+       
+  material_model::T
   
   dragProp::Drag.DragProperties #Default Drag.NoDrag
 
@@ -41,7 +46,7 @@ function Segment( ρcDry, E, L, A, nd, c, ρcSub;
     cOnFlag = true
   end
   
-  Segment(ρcDry, E, L, A, nd, c, 
+  Segment{tyopeof}(ρcDry, E, L, A, nd, c, 
     cOnFlag, ρcSub, μm, dragProp)
 end
 
@@ -82,13 +87,32 @@ Functions
 function stressK_fnc(seg, QTr, P, ∇u)
     
 	local FΓ, EDir, ETang
+  local rotM, pETang, pETangMax, pStr, S
 	
 	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
 	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
 	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
 	ETang = P ⋅ EDir ⋅ P
 
-	return 2*seg.μm * (FΓ ⋅ ETang)
+	# return 2*seg.μm * (FΓ ⋅ ETang)
+
+  rotM = getStrRotMatrix( ETang )
+
+  pETang = rotM ⋅ (ETang ⋅ transpose(rotM))
+
+  # diag_pETang = diag(pETang)  
+  # pETangMax = max( diag_pETang[1], diag_pETang[2] )
+  # pStr = 2*seg.μm * pETangMax
+
+  pStr = TensorValue( 
+    linStressStrain(seg, pETang[1]),
+    0.0, 0.0, 
+    linStressStrain(seg, pETang[4]) )
+
+  S = ( transpose(rotM) ⋅ pStr ) ⋅ rotM
+
+  return FΓ ⋅ S
+
 end
 
 
@@ -155,6 +179,45 @@ function ETang_fnc(QTr, P, J, ∇u)
 
 	return P ⋅ EDir ⋅ P
 end
+
+
+
+function getStrRotMatrix(σ)
+  # Ref
+  # https://www.continuummechanics.org/principalstress.html
+  
+  θp = atan( 2*σ[2]/(σ[1]-σ[4]) ) / 2
+  return TensorValue(cos(θp), -sin(θp), sin(θp), cos(θp))
+end
+
+
+
+function linStressStrain(seg, strain::Float64)
+  
+  # println(typeof(strain))
+  # return 2*seg.μm * strain
+
+  # ϵErr(σ) = strain - update_step(seg.μm, σ)
+  # @show strain, 2*seg.μm* strain
+  ϵErr(σ) = (2*seg.μm*strain - σ)
+  σi = find_zero(ϵErr, 2*seg.μm*strain-1e-10)
+  
+  return σi
+end
+
+function linStressStrain(seg::Segment{T}, strain::ForwardDiff.Dual)
+  
+  # println(typeof(strain))
+  return 2*seg.μm * strain
+
+  # ϵErr(σ) = strain - update_step(seg.μm, σ)
+  # σi = find_zero(ϵErr, 100)
+  # return σi
+end
+
+update_step(μm, σ) = σ / 2*μm
+
+
 # ----------------------End----------------------
     
 end
