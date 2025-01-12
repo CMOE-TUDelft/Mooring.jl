@@ -30,6 +30,7 @@ using Mooring.BedSpring
 using Mooring.Drag
 using Mooring.GnlCommon
 using Mooring.StressLinear
+using Mooring.StressNLVE
 using Mooring.FairLeadMotion
 
 
@@ -87,6 +88,26 @@ function main(params)
   printTer("[VAL] outMod = ", outMod)
   printTer("[SHOW] inputRamp "); showTer(inputRamp)
   printTer()
+
+
+  ## StressNLVE
+  # ---------------------Start---------------------  
+  S = StressNLVE.Schapery(true,
+    D0 = 270e-12,
+    Dn = [23e-12, 5e-12, 14e-12, 18e-12],
+    λn = [1.0, 10^(-1), 10^(-2), 10^(-3)],
+    g0 = [1.055, -0.0007e-6, -0.0001e-12],
+    g1 = [4.8, -0.45e-6, 0.017e-12, -0.0002e-18],
+    g2 = [0.0, -0.0179e-6, 0.008e-12, -0.0003e-18, 3.82e-30]
+  )
+  
+  printTer("[SHOW] Schapery S"); showTer(S)  
+
+  @show StressNLVE.DBar(S, simΔt, 1e6)
+  @show StressNLVE.DBar(S, simΔt, 10e6)
+  @show StressNLVE.DBar(S, simΔt, 20e6)
+  @show StressNLVE.DBar(S, simΔt, 50e6)
+  # ----------------------End----------------------  
 
 
   ## Wave and Current input

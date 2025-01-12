@@ -16,16 +16,16 @@ Custom Structs
 # ---------------------Start---------------------
 @with_kw struct Segment
   
-	ρcDry::Real	
-	E::Real
-	L::Real
-	A::Real	  
+  ρcDry::Real	
+  E::Real
+  L::Real
+  A::Real	  
   nd::Real # Nominal diameter  
   c::Real # Damping coeff  
 
   cOnFlag::Bool # Damping on or off ?
-	ρcSub::Real
-	μm::Real     
+  ρcSub::Real
+  μm::Real     
   
   dragProp::Drag.DragProperties #Default Drag.NoDrag
 

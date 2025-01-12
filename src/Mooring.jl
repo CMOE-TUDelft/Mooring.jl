@@ -15,6 +15,7 @@ include( srcdir("subroutines","BedSpring.jl") )
 include( srcdir("subroutines","Drag.jl") )
 include( srcdir("subroutines","FairLeadMotion.jl") )
 include( srcdir("subroutines","StressLinear.jl") )
+include( srcdir("subroutines","StressNLVE.jl") )
 
 export GnlCommon
 export BedSpring

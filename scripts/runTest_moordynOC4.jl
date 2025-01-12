@@ -13,7 +13,7 @@ using Mooring.FairLeadMotion
 include(srcdir("gnlPara2D_moordyn.jl"))
 
 
-resDir = datadir("sims_202412",
+resDir = datadir("sims_202501",
   # "run")
   "res_T12.1")
   # "res_T07.5")
