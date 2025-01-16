@@ -4,6 +4,7 @@ using Revise
 using Gridap
 using Parameters
 
+using Mooring.StressLinear: Segment
 
 
 """
@@ -73,6 +74,73 @@ end
 ## General polynomial evaluator
 function poly_eval(σ, coeffs::Vector{Float64})
   return sum( c * σ^(i-1) for (i, c) in enumerate(coeffs) )
+end
+# ----------------------End----------------------
+
+
+
+"""
+Stress-strain functions
+=============
+
+"""
+# ---------------------Start---------------------
+function stressK_fnc(seg::Segment, QTr, P, ∇u)
+    
+	local FΓ, EDir, ETang
+	
+	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+	ETang = P ⋅ EDir ⋅ P
+
+	return 2*seg.μm * (FΓ ⋅ ETang)  
+end
+
+
+function stressK_damp_fnc(seg::Segment, QTr, P, ∇u, ∇v)
+    
+	local FΓ, EDirdot, ETangdot, FΓdot
+	
+	FΓdot = ∇v' ⋅ QTr
+	
+	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+	EDirdot = 0.5 * ( FΓdot' ⋅ FΓ + FΓ' ⋅ FΓdot )
+	ETangdot = P ⋅ EDirdot ⋅ P
+
+	return 2*seg.μm * seg.c * (FΓ ⋅ ETangdot)
+end
+
+
+function stressσ_fnc(seg::Segment, QTr, P, J, ∇u)      
+    
+	local FΓ, EDir, ETang, stressS, JNew, sΛ
+	
+	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+	ETang = P ⋅ EDir ⋅ P
+
+	stressS = 2*seg.μm * ETang
+
+	JNew = J  + ∇u'
+	sΛ = ((JNew ⊙ JNew) ./ (J ⊙ J)).^0.5
+
+	return ( FΓ ⋅ stressS ⋅ FΓ' ) / sΛ
+
+end
+
+
+function ETang_fnc(QTr, P, J, ∇u)      
+    
+	local FΓ, EDir
+	
+	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+
+	return P ⋅ EDir ⋅ P
 end
 # ----------------------End----------------------
 

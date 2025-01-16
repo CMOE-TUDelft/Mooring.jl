@@ -91,14 +91,14 @@ function main(params)
 
 
   ## StressNLVE
-  # ---------------------Start---------------------  
+  # ---------------------Start---------------------   
   S = StressNLVE.Schapery(true,
-    D0 = 270e-12,
-    Dn = [23e-12, 5e-12, 14e-12, 18e-12],
+    D0 = 1/seg.E,
+    Dn = [0.1/seg.E, 0.1/seg.E, 0.1/seg.E, 0.1/seg.E],
     λn = [1.0, 10^(-1), 10^(-2), 10^(-3)],
-    g0 = [1.055, -0.0007e-6, -0.0001e-12],
-    g1 = [4.8, -0.45e-6, 0.017e-12, -0.0002e-18],
-    g2 = [0.0, -0.0179e-6, 0.008e-12, -0.0003e-18, 3.82e-30]
+    g0 = [1, 0.0],
+    g1 = [0.0, 0.0],
+    g2 = [0.0, 0.0]
   )
   
   printTer("[SHOW] Schapery S"); showTer(S)  
@@ -107,6 +107,7 @@ function main(params)
   @show StressNLVE.DBar(S, simΔt, 10e6)
   @show StressNLVE.DBar(S, simΔt, 20e6)
   @show StressNLVE.DBar(S, simΔt, 50e6)
+  @show StressNLVE.DBar(S, simΔt, 400e6)
   # ----------------------End----------------------  
 
 
@@ -383,6 +384,12 @@ function main(params)
   
   waveVel_cs = 
     create_cellState( getWaveVel_cf(t0, sp, Xh), loc)  
+
+
+  tmpQ(x) = VectorValue(zeros(S.N))
+  qt0 = 
+    create_cellState( CellField(tmpQ, Ω), loc)    
+  @show qt0
   # ----------------------End----------------------
 
 
@@ -397,7 +404,7 @@ function main(params)
     BedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
 
   stressK_fnc(QTr, P, ∇u) = 
-    StressLinear.stressK_fnc(seg, QTr, P, ∇u)
+    StressNLVE.stressK_fnc(seg, QTr, P, ∇u)
   
   function stressK_fnc(QTr, P, ∇u, ∇v) 
     if(seg.cOnFlag)
@@ -409,10 +416,10 @@ function main(params)
   end
 
   stressσ_fnc(QTr, P, J, ∇u ) = 
-    StressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
+    StressNLVE.stressσ_fnc(seg, QTr, P, J, ∇u )
   
   ETang_fnc(QTr, P, J, ∇u ) = 
-    StressLinear.ETang_fnc( QTr, P, J, ∇u )
+    StressNLVE.ETang_fnc( QTr, P, J, ∇u )
 
   drag_ΓX(Qtr, T1s, T1m, ∇u, v) = 
     Drag.drag_ΓX(seg.dragProp, Qtr, T1s, T1m, ∇u, v)

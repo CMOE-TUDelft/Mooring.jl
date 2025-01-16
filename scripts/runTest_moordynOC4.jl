@@ -92,7 +92,7 @@ params = gnlPara2D.Test_params(
 
   # Time Parameters
   t0 = 0.0,
-  simT = 20/ffm_f,
+  simT = 2/ffm_f,
   simΔt = 1/ffm_f/tStepsPerT,
   outΔt = 1/ffm_f/4.0,
   maxIter = 100,
