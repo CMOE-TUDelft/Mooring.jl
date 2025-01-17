@@ -401,13 +401,13 @@ function main(params)
         CellField( VectorValue(zeros(sch.N)), Ω ), 
         loc)    
 
-    schDa.σt0 = 
+    schDa.pS_t0 = 
       create_cellState( CellField( 0.0, Ω ), loc)    
-    schDa.σt1 = 
+    schDa.pS_t1 = 
       create_cellState( CellField( 0.0, Ω ), loc)      
-    schDa.ϵt0 = 
+    schDa.pETang_t0 = 
       create_cellState( CellField( 0.0, Ω ), loc)      
-    schDa.ϵt1 = 
+    schDa.pETang_t1 = 
       create_cellState( CellField( 0.0, Ω ), loc)      
 
     return schDa
@@ -431,11 +431,11 @@ function main(params)
     StressLinear.stressK_fnc(seg, QTr, P, ∇u)
 
   stressK_fnc(QTr, P, ∇u, 
-    schDa1_ϵt0, schDa1_qt0, schDa1_σt0) = 
+    ϵt0, qt0, σt0) = 
     StressNLVE.stressK_NLVE(
       seg, sch, simΔt, 
       QTr, P, ∇u, 
-      schDa1_ϵt0, schDa1_qt0, schDa1_σt0)
+      ϵt0, qt0, σt0)
   
   function stressK_fnc(QTr, P, ∇u, ∇v)     
     if(seg.cOnFlag)
@@ -497,7 +497,7 @@ function main(params)
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ 
       (stressK_fnc∘(
         QTrans_cs, P_cs, ∇(u),
-        schDa1.ϵt0, schDa1.qt0, schDa1.σt0
+        schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0
       )) )*JJ_cs )dΩ +    
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 

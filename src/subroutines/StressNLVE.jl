@@ -58,10 +58,10 @@ end
 mutable struct SchaperyData
   qt0
   qt1
-  ϵt0
-  ϵt1
-  σt0
-  σt1
+  pETang_t0
+  pETang_t1
+  pS_t0
+  pS_t1
 
   function SchaperyData()
     new()
@@ -104,10 +104,10 @@ Stress-strain functions
 # ---------------------Start---------------------
 function stressK_NLVE(seg::Segment, sch::Schapery, Δt,
   QTr, P, ∇u, 
-  schDa1_ϵt0, schDa1_qt0, schDa1_σt0)
+  schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0)
     
 	local FΓ, EDir, ETang
-  local σtk1, err1
+  local pS_tk1, err1
 	
 	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
 	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
@@ -119,14 +119,14 @@ function stressK_NLVE(seg::Segment, sch::Schapery, Δt,
   rotM = getStrRotMatrix( ETang )
   pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
 
-  σtk1 = schDa1_σt0
-  σtk1, err1 = StressNLVE.σPredicted( 
+  pS_tk1 = schDa1_pS_t0
+  pS_tk1, err1 = StressNLVE.σPredicted( 
     sch, 
-    schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_σt0,
-    pETang[1], Δt, σtk1 )
+    schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
+    pETang[1], Δt, pS_tk1 )
 
   pStr = TensorValue( 
-    σtk1,
+    pS_tk1,
     0.0, 0.0, 
     0.0 )
 
