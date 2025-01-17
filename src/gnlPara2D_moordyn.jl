@@ -694,8 +694,11 @@ function main(params)
   update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
     linStr(schDa1.pETang_t1) ) 
   
-  schDa1.pETang_t0 = schDa1.pETang_t1
-  schDa1.pS_t0 = schDa1.pS_t1
+  update_state!( (a,b) -> (true, b), schDa1.pETang_t0, 
+    schDa1.pETang_t1) 
+
+  update_state!( (a,b) -> (true, b), schDa1.pS_t0, 
+    schDa1.pS_t1) 
   # ----------------------End----------------------  
   
   # for (t, uh) in solnht                       
@@ -786,10 +789,6 @@ function main(params)
     update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
       StressNLVE.update_pETang∘(QTrans, P, J, ∇(uh)) )     
 
-    # update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
-    #   update_pS∘( QTrans, P, ∇(uh), 
-    #     schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0 ) )     
-
     update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
       update_pS∘( schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
         schDa1.pETang_t1 ) )     
@@ -800,9 +799,12 @@ function main(params)
     # update_state!( (a,b) -> (true, b), schDa1.qt1, 
     #   update_qn∘(schDa1.qt0, schDa1.pS_t0, schDa1.pS_t1) )     
 
-    schDa1.pETang_t0 = schDa1.pETang_t1
-    schDa1.pS_t0 = schDa1.pS_t1
     # schDa1.qt0 = schDa1.qt1
+    update_state!( (a,b) -> (true, b), schDa1.pETang_t0, 
+      schDa1.pETang_t1) 
+
+    update_state!( (a,b) -> (true, b), schDa1.pS_t0, 
+      schDa1.pS_t1) 
     # ----------------------End----------------------  
     
     next = iterate(solnht, iState)

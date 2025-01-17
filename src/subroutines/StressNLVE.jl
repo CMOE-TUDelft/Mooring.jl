@@ -107,7 +107,8 @@ function stressK_NLVE(sch::Schapery, Δt,
   schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0)
     
 	local FΓ, EDir, ETang
-  local pS_tk1, err1
+  local pS_tk1, err1, pS_tguess
+  
 	
 	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
 	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
@@ -119,13 +120,11 @@ function stressK_NLVE(sch::Schapery, Δt,
   rotM = getStrRotMatrix( ETang )
   pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
 
-  pS_tk1 = schDa1_pS_t0
-  for i = 1:1
-    pS_tk1, err1 = StressNLVE.σPredicted( 
-      sch, 
-      schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
-      pETang[1], Δt, pS_tk1 )
-  end
+  pS_tguess = schDa1_pS_t0
+  pS_tk1, err1 = get_stressNLVE(
+    sch, Δt,
+    schDa1_ϵt0, schDa1_qt0.data, schDa1_pS_t0,
+    pETang[1], pS_tguess )
 
   pStr = TensorValue( 
     pS_tk1,
@@ -142,6 +141,42 @@ function stressK_NLVE(sch::Schapery, Δt,
 
   return FΓ ⋅ S
 end
+
+function get_stressNLVE(
+  sch, Δt,
+  ϵt0, qt0, pS_t0,
+  ϵt1, pS_guess )
+
+  local pS_tk1, err1
+  
+  pS_tk1 = pS_guess
+  for i = 1:1
+    pS_tk1, err1 = StressNLVE.σPredicted( 
+      sch, 
+      ϵt0, Δt, qt0, pS_t0,
+      ϵt1, Δt, pS_tk1 )
+  end
+
+  return pS_tk1, err1
+end
+
+
+# function get_stressNLVE(
+#   sch, Δt,
+#   ϵt0, qt0, pS_t0,
+#   ϵt1::Float64, pS_guess )
+
+#   local pS_tk1, err1
+
+#   err(σi) = StressNLVE.Residual_σPredicted( 
+#     sch, 
+#     ϵt0, Δt, qt0, pS_t0,
+#     ϵt1, Δt, σi )
+  
+#   pS_tk1 = find_zero(err, pS_guess)    
+
+#   return pS_tk1, 0.0
+# end
 
 
 function update_pETang(QTr, P, J, ∇u)
