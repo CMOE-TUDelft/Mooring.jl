@@ -102,7 +102,7 @@ Stress-strain functions
 
 """
 # ---------------------Start---------------------
-function stressK_NLVE(seg::Segment, sch::Schapery, Δt,
+function stressK_NLVE(sch::Schapery, Δt,
   QTr, P, ∇u, 
   schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0)
     
@@ -120,10 +120,12 @@ function stressK_NLVE(seg::Segment, sch::Schapery, Δt,
   pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
 
   pS_tk1 = schDa1_pS_t0
-  pS_tk1, err1 = StressNLVE.σPredicted( 
-    sch, 
-    schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
-    pETang[1], Δt, pS_tk1 )
+  for i = 1:1
+    pS_tk1, err1 = StressNLVE.σPredicted( 
+      sch, 
+      schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
+      pETang[1], Δt, pS_tk1 )
+  end
 
   pStr = TensorValue( 
     pS_tk1,
@@ -142,18 +144,77 @@ function stressK_NLVE(seg::Segment, sch::Schapery, Δt,
 end
 
 
-function stressK_damp_fnc(seg::Segment, QTr, P, ∇u, ∇v)
+function update_pETang(QTr, P, J, ∇u)
     
-	local FΓ, EDirdot, ETangdot, FΓdot
-	
-	FΓdot = ∇v' ⋅ QTr
+	local FΓ, EDir, ETang
 	
 	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
 	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-	EDirdot = 0.5 * ( FΓdot' ⋅ FΓ + FΓ' ⋅ FΓdot )
-	ETangdot = P ⋅ EDirdot ⋅ P
+	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
 
-	return 2*seg.μm * seg.c * (FΓ ⋅ ETangdot)
+	ETang = P ⋅ EDir ⋅ P
+
+  rotM = getStrRotMatrix( ETang )
+  pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
+
+  return pETang[1]
+end
+
+
+function update_pS(sch::Schapery, Δt,
+  QTr, P, ∇u, 
+  schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0)
+    
+	local FΓ, EDir, ETang
+  local pS_tk1, err1
+	
+	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+	ETang = P ⋅ EDir ⋅ P
+
+	# return 2*seg.μm * (FΓ ⋅ ETang)  
+
+  rotM = getStrRotMatrix( ETang )
+  pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
+
+  pS_tk1 = schDa1_pS_t0
+  for i = 1:1
+    pS_tk1, err1 = StressNLVE.σPredicted( 
+      sch, 
+      schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
+      pETang[1], Δt, pS_tk1 )
+  end
+
+  return pS_tk1    
+end
+
+
+function update_pS(sch::Schapery, Δt,
+  schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0,
+  schDa1_ϵt1)
+    
+  local pS_tk1, err1
+
+  pS_tk1 = schDa1_pS_t0
+  for i = 1:1
+    pS_tk1, err1 = StressNLVE.σPredicted( 
+      sch, 
+      schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
+      schDa1_ϵt1, Δt, pS_tk1 )
+  end
+
+  return pS_tk1    
+end
+
+
+function update_qn(sch::Schapery, Δt, qnt0, σt0, σt1)
+  
+  return VectorValue( retqnt1.(
+    Ref(sch), sch.λn, 
+    Ref(Δt), qnt0.data, 
+    Ref(σt0), Ref(σt1)) )
+  
 end
 
 

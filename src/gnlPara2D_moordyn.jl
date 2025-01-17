@@ -430,10 +430,9 @@ function main(params)
   stressK_fnc(QTr, P, ∇u) = 
     StressLinear.stressK_fnc(seg, QTr, P, ∇u)
 
-  stressK_fnc(QTr, P, ∇u, 
-    ϵt0, qt0, σt0) = 
+  stressK_fnc(QTr, P, ∇u, ϵt0, qt0, σt0) = 
     StressNLVE.stressK_NLVE(
-      seg, sch, simΔt, 
+      sch, simΔt, 
       QTr, P, ∇u, 
       ϵt0, qt0, σt0)
   
@@ -458,6 +457,23 @@ function main(params)
   drag_ΓX(t, dragProp, inputRamp) = (UCur, waveVel, Qtr, T1s, T1m, ∇u, v) ->
     Drag.drag_ΓX(t, dragProp, inputRamp, 
       UCur, waveVel, Qtr, T1s, T1m, ∇u, v)
+
+  update_pS(QTr, P, ∇u, ϵt0, qt0, σt0) = 
+    StressNLVE.update_pS(
+      sch, simΔt, 
+      QTr, P, ∇u, 
+      ϵt0, qt0, σt0)
+
+  update_pS(ϵt0, qt0, σt0, ϵt1) = 
+    StressNLVE.update_pS(
+      sch, simΔt, 
+      ϵt0, qt0, σt0,
+      ϵt1)
+
+  update_qn(qt0, σt0, σt1) = 
+    StressNLVE.update_qn(
+      sch, simΔt, 
+      qt0, σt0, σt1)
   # ----------------------End----------------------
 
 
@@ -668,6 +684,20 @@ function main(params)
   update_state!( (a,b) -> (true, b), waveVel_cs, 
     ((x) -> getWaveVel(t0, sp, x))∘(xNew) ) 
   
+  
+  ## Updating Schapery variables
+  # ---------------------Start---------------------  
+  update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
+    StressNLVE.update_pETang∘(QTrans, P, J, ∇(uh)) )     
+
+  linStr(ϵ) = ϵ/sch.D0
+  update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+    linStr(schDa1.pETang_t1) ) 
+  
+  schDa1.pETang_t0 = schDa1.pETang_t1
+  schDa1.pS_t0 = schDa1.pS_t1
+  # ----------------------End----------------------  
+  
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
   while next !== nothing
@@ -750,6 +780,30 @@ function main(params)
       update_state!( (a,b) -> (true, b), waveVel_cs, 
         ((x) -> getWaveVel(t, sp, x))∘(xNew) ) 
     end
+
+    ## Updating Schapery variables
+    # ---------------------Start---------------------  
+    update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
+      StressNLVE.update_pETang∘(QTrans, P, J, ∇(uh)) )     
+
+    # update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+    #   update_pS∘( QTrans, P, ∇(uh), 
+    #     schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0 ) )     
+
+    update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+      update_pS∘( schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
+        schDa1.pETang_t1 ) )     
+
+    # update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+    #   linStr(schDa1.pETang_t1) ) 
+
+    # update_state!( (a,b) -> (true, b), schDa1.qt1, 
+    #   update_qn∘(schDa1.qt0, schDa1.pS_t0, schDa1.pS_t1) )     
+
+    schDa1.pETang_t0 = schDa1.pETang_t1
+    schDa1.pS_t0 = schDa1.pS_t1
+    # schDa1.qt0 = schDa1.qt1
+    # ----------------------End----------------------  
     
     next = iterate(solnht, iState)
   end  
