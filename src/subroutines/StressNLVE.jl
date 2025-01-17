@@ -2,7 +2,9 @@ module StressNLVE
 
 using Revise
 using Gridap
+using ForwardDiff
 using Parameters
+using Roots: find_zero
 
 using Mooring.StressLinear: Segment
 
@@ -94,7 +96,19 @@ function stressK_fnc(seg::Segment, QTr, P, ∇u)
 	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
 	ETang = P ⋅ EDir ⋅ P
 
-	return 2*seg.μm * (FΓ ⋅ ETang)  
+	# return 2*seg.μm * (FΓ ⋅ ETang)  
+
+  rotM = getStrRotMatrix( ETang )
+  pETang = rotM ⋅ (ETang ⋅ transpose(rotM))
+
+  pStr = TensorValue( 
+    linStressStrain(seg, pETang[1]),
+    0.0, 0.0, 
+    linStressStrain(seg, pETang[4]) )
+
+  S = ( transpose(rotM) ⋅ pStr ) ⋅ rotM
+
+  return FΓ ⋅ S
 end
 
 
@@ -143,6 +157,30 @@ function ETang_fnc(QTr, P, J, ∇u)
 	return P ⋅ EDir ⋅ P
 end
 # ----------------------End----------------------
+
+
+
+"""
+Linear Hooke's Law material
+=============
+
+"""
+# ---------------------Start---------------------
+function linStressStrain(seg, strain::Float64)
+  
+  ϵErr(σ) = (2*seg.μm*strain - σ)
+  σi = find_zero(ϵErr, 2*seg.μm*strain-1e-10)
+  
+  return σi
+end
+
+function linStressStrain(seg::Segment, strain::ForwardDiff.Dual)
+  
+  # println(typeof(strain))
+  return 2*seg.μm * strain
+end
+# ----------------------End----------------------
+
 
 
 
