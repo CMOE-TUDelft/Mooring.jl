@@ -92,22 +92,22 @@ function main(params)
 
   ## StressNLVE
   # ---------------------Start---------------------   
-  S = StressNLVE.Schapery(true,
+  sch = StressNLVE.Schapery(true,
     D0 = 1/seg.E,
-    Dn = [0.1/seg.E, 0.1/seg.E, 0.1/seg.E, 0.1/seg.E],
+    Dn = [0.0/seg.E, 0.0/seg.E, 0.0/seg.E, 0.0/seg.E],
     λn = [1.0, 10^(-1), 10^(-2), 10^(-3)],
     g0 = [1, 0.0],
     g1 = [0.0, 0.0],
     g2 = [0.0, 0.0]
   )
   
-  printTer("[SHOW] Schapery S"); showTer(S)  
+  printTer("[SHOW] Schapery sch"); showTer(sch)  
 
-  @show StressNLVE.DBar(S, simΔt, 1e6)
-  @show StressNLVE.DBar(S, simΔt, 10e6)
-  @show StressNLVE.DBar(S, simΔt, 20e6)
-  @show StressNLVE.DBar(S, simΔt, 50e6)
-  @show StressNLVE.DBar(S, simΔt, 400e6)
+  @show StressNLVE.DBar(sch, simΔt, 1e6)
+  @show StressNLVE.DBar(sch, simΔt, 10e6)
+  @show StressNLVE.DBar(sch, simΔt, 20e6)
+  @show StressNLVE.DBar(sch, simΔt, 50e6)
+  @show StressNLVE.DBar(sch, simΔt, 400e6)
   # ----------------------End----------------------  
 
 
@@ -390,33 +390,30 @@ function main(params)
   ## Cell state Schapery
   # ---------------------Start---------------------  
   function getSchaperyData()
-    SDa = StressNLVE.SchaperyData()
-    SDa.qt0 = 
+    schDa = StressNLVE.SchaperyData()
+    schDa.qt0 = 
       create_cellState( 
-        CellField( VectorValue(zeros(S.N)), Ω ), 
+        CellField( VectorValue(zeros(sch.N)), Ω ), 
         loc)    
 
-    SDa.qt1 = 
+    schDa.qt1 = 
       create_cellState( 
-        CellField( VectorValue(zeros(S.N)), Ω ), 
+        CellField( VectorValue(zeros(sch.N)), Ω ), 
         loc)    
 
-    SDa.σt0 = 
+    schDa.σt0 = 
       create_cellState( CellField( 0.0, Ω ), loc)    
-    SDa.σt1 = 
+    schDa.σt1 = 
       create_cellState( CellField( 0.0, Ω ), loc)      
-    SDa.ϵt0 = 
+    schDa.ϵt0 = 
       create_cellState( CellField( 0.0, Ω ), loc)      
-    SDa.ϵt1 = 
+    schDa.ϵt1 = 
       create_cellState( CellField( 0.0, Ω ), loc)      
 
-    return SDa
+    return schDa
   end
 
-  SDa1 = getSchaperyData()
-  SDa2 = getSchaperyData()
-
-  @show SDa1 == SDa2  
+  schDa1 = getSchaperyData()  
   # ----------------------End----------------------
 
 
@@ -431,16 +428,22 @@ function main(params)
     BedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
 
   stressK_fnc(QTr, P, ∇u) = 
-    StressNLVE.stressK_NLVE(seg, S, QTr, P, ∇u)
+    StressLinear.stressK_fnc(seg, QTr, P, ∇u)
+
+  stressK_fnc(QTr, P, ∇u, 
+    schDa1_ϵt0, schDa1_qt0, schDa1_σt0) = 
+    StressNLVE.stressK_NLVE(
+      seg, sch, simΔt, 
+      QTr, P, ∇u, 
+      schDa1_ϵt0, schDa1_qt0, schDa1_σt0)
   
-  function stressK_fnc(QTr, P, ∇u, ∇v) 
-    return StressNLVE.stressK_NLVE(seg, S, QTr, P, ∇u)
-    # if(seg.cOnFlag)
-    #   return StressLinear.stressK_fnc(seg, QTr, P, ∇u) + 
-    #     StressLinear.stressK_damp_fnc(seg, QTr, P, ∇u, ∇v)    
-    # else
-    #   return StressLinear.stressK_fnc(seg, QTr, P, ∇u) 
-    # end    
+  function stressK_fnc(QTr, P, ∇u, ∇v)     
+    if(seg.cOnFlag)
+      return StressLinear.stressK_fnc(seg, QTr, P, ∇u) + 
+        StressLinear.stressK_damp_fnc(seg, QTr, P, ∇u, ∇v)    
+    else
+      return StressLinear.stressK_fnc(seg, QTr, P, ∇u) 
+    end    
   end
 
   stressσ_fnc(QTr, P, J, ∇u ) = 
@@ -489,8 +492,13 @@ function main(params)
   # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
 
   resD1(t, u, ψu) =      
+    # ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ 
+    #   (stressK_fnc∘(QTrans_cs, P_cs, ∇(u), ∇(∂t(u)) )) )*JJ_cs )dΩ +    
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ 
-      (stressK_fnc∘(QTrans_cs, P_cs, ∇(u), ∇(∂t(u)) )) )*JJ_cs )dΩ +    
+      (stressK_fnc∘(
+        QTrans_cs, P_cs, ∇(u),
+        schDa1.ϵt0, schDa1.qt0, schDa1.σt0
+      )) )*JJ_cs )dΩ +    
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
       ( bedSpring_fnc∘( Xh_cs, csTup1..., u, ∇(u), ∂t(u) ) ) )*JJ_cs )dΩ +    

@@ -102,10 +102,12 @@ Stress-strain functions
 
 """
 # ---------------------Start---------------------
-function stressK_NLVE(seg::Segment, S::Schapery, 
-  QTr, P, ∇u)
+function stressK_NLVE(seg::Segment, sch::Schapery, Δt,
+  QTr, P, ∇u, 
+  schDa1_ϵt0, schDa1_qt0, schDa1_σt0)
     
 	local FΓ, EDir, ETang
+  local σtk1, err1
 	
 	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
 	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
@@ -117,11 +119,22 @@ function stressK_NLVE(seg::Segment, S::Schapery,
   rotM = getStrRotMatrix( ETang )
   pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
 
+  σtk1 = schDa1_σt0
+  σtk1, err1 = StressNLVE.σPredicted( 
+    sch, 
+    schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_σt0,
+    pETang[1], Δt, σtk1 )
+
   pStr = TensorValue( 
-    linStressStrain(seg, pETang[1]),
+    σtk1,
     0.0, 0.0, 
     0.0 )
-    # linStressStrain(seg, pETang[4]) )
+
+  # pStr = TensorValue( 
+  #     linStressStrain(seg, pETang[1]),
+  #     0.0, 0.0, 
+  #     0.0 )
+  #     # linStressStrain(seg, pETang[4]) )
 
   S = ( transpose(rotM) ⋅ pStr ) ⋅ rotM
 
