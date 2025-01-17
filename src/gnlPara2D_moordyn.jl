@@ -383,13 +383,40 @@ function main(params)
     CellField( r -> getWaveVel(t, sp, x(r)), Ω )  
   
   waveVel_cs = 
-    create_cellState( getWaveVel_cf(t0, sp, Xh), loc)  
+    create_cellState( getWaveVel_cf(t0, sp, Xh), loc)    
+  # ----------------------End----------------------
 
 
-  tmpQ(x) = VectorValue(zeros(S.N))
-  qt0 = 
-    create_cellState( CellField(tmpQ, Ω), loc)    
-  @show qt0
+  ## Cell state Schapery
+  # ---------------------Start---------------------  
+  function getSchaperyData()
+    SDa = StressNLVE.SchaperyData()
+    SDa.qt0 = 
+      create_cellState( 
+        CellField( VectorValue(zeros(S.N)), Ω ), 
+        loc)    
+
+    SDa.qt1 = 
+      create_cellState( 
+        CellField( VectorValue(zeros(S.N)), Ω ), 
+        loc)    
+
+    SDa.σt0 = 
+      create_cellState( CellField( 0.0, Ω ), loc)    
+    SDa.σt1 = 
+      create_cellState( CellField( 0.0, Ω ), loc)      
+    SDa.ϵt0 = 
+      create_cellState( CellField( 0.0, Ω ), loc)      
+    SDa.ϵt1 = 
+      create_cellState( CellField( 0.0, Ω ), loc)      
+
+    return SDa
+  end
+
+  SDa1 = getSchaperyData()
+  SDa2 = getSchaperyData()
+
+  @show SDa1 == SDa2  
   # ----------------------End----------------------
 
 
@@ -404,15 +431,16 @@ function main(params)
     BedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
 
   stressK_fnc(QTr, P, ∇u) = 
-    StressNLVE.stressK_fnc(seg, QTr, P, ∇u)
+    StressNLVE.stressK_NLVE(seg, S, QTr, P, ∇u)
   
   function stressK_fnc(QTr, P, ∇u, ∇v) 
-    if(seg.cOnFlag)
-      return StressLinear.stressK_fnc(seg, QTr, P, ∇u) + 
-        StressLinear.stressK_damp_fnc(seg, QTr, P, ∇u, ∇v)    
-    else
-      return StressLinear.stressK_fnc(seg, QTr, P, ∇u) 
-    end    
+    return StressNLVE.stressK_NLVE(seg, S, QTr, P, ∇u)
+    # if(seg.cOnFlag)
+    #   return StressLinear.stressK_fnc(seg, QTr, P, ∇u) + 
+    #     StressLinear.stressK_damp_fnc(seg, QTr, P, ∇u, ∇v)    
+    # else
+    #   return StressLinear.stressK_fnc(seg, QTr, P, ∇u) 
+    # end    
   end
 
   stressσ_fnc(QTr, P, J, ∇u ) = 

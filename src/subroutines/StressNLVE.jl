@@ -52,6 +52,21 @@ function Schapery(
     g0, g1, g2, 
     ΣDn)
 end
+
+
+
+mutable struct SchaperyData
+  qt0
+  qt1
+  ϵt0
+  ϵt1
+  σt0
+  σt1
+
+  function SchaperyData()
+    new()
+  end
+end
 # ----------------------End----------------------
 
 
@@ -87,7 +102,8 @@ Stress-strain functions
 
 """
 # ---------------------Start---------------------
-function stressK_fnc(seg::Segment, QTr, P, ∇u)
+function stressK_NLVE(seg::Segment, S::Schapery, 
+  QTr, P, ∇u)
     
 	local FΓ, EDir, ETang
 	
@@ -99,12 +115,13 @@ function stressK_fnc(seg::Segment, QTr, P, ∇u)
 	# return 2*seg.μm * (FΓ ⋅ ETang)  
 
   rotM = getStrRotMatrix( ETang )
-  pETang = rotM ⋅ (ETang ⋅ transpose(rotM))
+  pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
 
   pStr = TensorValue( 
     linStressStrain(seg, pETang[1]),
     0.0, 0.0, 
-    linStressStrain(seg, pETang[4]) )
+    0.0 )
+    # linStressStrain(seg, pETang[4]) )
 
   S = ( transpose(rotM) ⋅ pStr ) ⋅ rotM
 
