@@ -92,14 +92,7 @@ function main(params)
 
   ## StressNLVE
   # ---------------------Start---------------------   
-  sch = StressNLVE.Schapery(true,
-    D0 = 1/seg.E,
-    Dn = [0.0/seg.E, 0.0/seg.E, 0.0/seg.E, 0.0/seg.E],
-    λn = [1.0, 10^(-1), 10^(-2), 10^(-3)],
-    g0 = [1, 0.0],
-    g1 = [0.0, 0.0],
-    g2 = [0.0, 0.0]
-  )
+  @unpack sch = params
   
   printTer("[SHOW] Schapery sch"); showTer(sch)  
 
@@ -793,18 +786,20 @@ function main(params)
       update_pS∘( schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
         schDa1.pETang_t1 ) )     
 
+    update_state!( (a,b) -> (true, b), schDa1.qt1, 
+      update_qn∘(schDa1.qt0, schDa1.pS_t0, schDa1.pS_t1) )     
+
     # update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
     #   linStr(schDa1.pETang_t1) ) 
 
-    # update_state!( (a,b) -> (true, b), schDa1.qt1, 
-    #   update_qn∘(schDa1.qt0, schDa1.pS_t0, schDa1.pS_t1) )     
-
-    # schDa1.qt0 = schDa1.qt1
     update_state!( (a,b) -> (true, b), schDa1.pETang_t0, 
       schDa1.pETang_t1) 
 
     update_state!( (a,b) -> (true, b), schDa1.pS_t0, 
       schDa1.pS_t1) 
+
+    update_state!( (a,b) -> (true, b), schDa1.qt0, 
+      schDa1.qt1) 
     # ----------------------End----------------------  
     
     next = iterate(solnht, iState)
