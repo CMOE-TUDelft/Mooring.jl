@@ -9,6 +9,7 @@ using .WaveTimeSeries
 using Mooring.BedSpring
 using Mooring.Drag
 using Mooring.FairLeadMotion
+using Mooring.StressNLVE
 
 include(srcdir("gnlPara2D_moordyn.jl"))
 
@@ -49,6 +50,19 @@ tStepsPerT = 100
 # materialDampCoeff = 0.0007
 # tStepsPerT = 100
 
+
+## StressNLVE
+# ---------------------Start---------------------   
+sch = StressNLVE.Schapery(true,
+  D0 = 1/1.63529e11,
+  Dn = [0.0, 0.0, 0.0, 0.0],
+  λn = [1e-1, 1e-2, 1e-3, 1e-4],
+  g0 = [1, 0],
+  g1 = [0, 0],
+  g2 = [0, 0]
+)
+# ----------------------End----------------------  
+
 dia = 0.0766
 AStr = π*dia*dia/4
 
@@ -71,6 +85,10 @@ params = gnlPara2D.Test_params(
     Drag.Custom(), dia, AStr,
     Cd_n = 2.0, Cd_t = 0.8 ),
 
+  
+  # Schapery characteristics
+  sch = sch,
+  
   # Fairlead position
   xz_fl = (796.732, depth),
   

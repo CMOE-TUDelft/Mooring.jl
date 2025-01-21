@@ -194,8 +194,12 @@ function main(params)
 
 
   ## Reference config parabola
-  # ---------------------Start---------------------        
-  X, printMsg = getParabola(xz_fl[1],xz_fl[2], seg.L)  
+  # ---------------------Start---------------------    
+  if((xz_fl[1]==0) && ((xz_fl[2] - seg.L) < 1e-8))
+    X, printMsg = getLine(xz_fl[1],xz_fl[2], seg.L)  
+  else
+    X, printMsg = getParabola(xz_fl[1],xz_fl[2], seg.L)  
+  end
   printTer(printMsg); printTer()
 
   writevtk(Ω, pltName*"referenceDomain",
