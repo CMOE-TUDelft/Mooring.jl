@@ -411,6 +411,7 @@ function main(params)
   end
 
   schDa1 = getSchaperyData()  
+  schDa2 = getSchaperyData()  
   # ----------------------End----------------------
 
 
@@ -427,11 +428,13 @@ function main(params)
   stressK_fnc(QTr, P, ∇u) = 
     StressLinear.stressK_fnc(seg, QTr, P, ∇u)
 
-  stressK_fnc(QTr, P, ∇u, ϵt0, qt0, σt0) = 
+  stressK_fnc(QTr, P, ∇u, 
+    p1ϵt0, p1qt0, p1σt0, p2ϵt0, p2qt0, p2σt0) = 
     StressNLVE.stressK_NLVE(
       sch, simΔt, 
       QTr, P, ∇u, 
-      ϵt0, qt0, σt0)
+      p1ϵt0, p1qt0, p1σt0,
+      p2ϵt0, p2qt0, p2σt0)
   
   function stressK_fnc(QTr, P, ∇u, ∇v)     
     if(seg.cOnFlag)
@@ -510,7 +513,8 @@ function main(params)
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ 
       (stressK_fnc∘(
         QTrans_cs, P_cs, ∇(u),
-        schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0
+        schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
+        schDa2.pETang_t0, schDa2.qt0, schDa2.pS_t0
       )) )*JJ_cs )dΩ +    
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
@@ -684,10 +688,14 @@ function main(params)
   
   ## Updating Schapery variables
   # ---------------------Start---------------------  
-  update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
-    StressNLVE.update_pETang∘(QTrans, P, J, ∇(uh)) )     
-
   linStr(ϵ) = ϵ/sch.D0
+  
+  update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
+    ( (QTrans, P, J, ∇uh) -> 
+      StressNLVE.update_pETang(QTrans, P, J, ∇uh, 1) 
+    )∘(QTrans, P, J, ∇(uh)) 
+  )
+  
   update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
     linStr(schDa1.pETang_t1) ) 
   
@@ -695,7 +703,23 @@ function main(params)
     schDa1.pETang_t1) 
 
   update_state!( (a,b) -> (true, b), schDa1.pS_t0, 
-    schDa1.pS_t1) 
+    schDa1.pS_t1)
+    
+  
+  update_state!( (a,b) -> (true, b), schDa2.pETang_t1, 
+    ( (QTrans, P, J, ∇uh) -> 
+      StressNLVE.update_pETang(QTrans, P, J, ∇uh, 4) 
+    )∘(QTrans, P, J, ∇(uh)) 
+  )
+
+  update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
+    linStr(schDa2.pETang_t1) ) 
+  
+  update_state!( (a,b) -> (true, b), schDa2.pETang_t0, 
+    schDa2.pETang_t1) 
+
+  update_state!( (a,b) -> (true, b), schDa2.pS_t0, 
+    schDa2.pS_t1)
   # ----------------------End----------------------  
   
   # for (t, uh) in solnht                       
@@ -784,7 +808,10 @@ function main(params)
     ## Updating Schapery variables
     # ---------------------Start---------------------  
     update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
-      StressNLVE.update_pETang∘(QTrans, P, J, ∇(uh)) )     
+      ( (QTrans, P, J, ∇uh) -> 
+        StressNLVE.update_pETang(QTrans, P, J, ∇uh, 1) 
+      )∘(QTrans, P, J, ∇(uh)) 
+    )    
 
     update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
       update_pS∘( schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
@@ -803,7 +830,33 @@ function main(params)
       schDa1.pS_t1) 
 
     update_state!( (a,b) -> (true, b), schDa1.qt0, 
-      schDa1.qt1) 
+      schDa1.qt1)
+      
+      
+    update_state!( (a,b) -> (true, b), schDa2.pETang_t1, 
+      ( (QTrans, P, J, ∇uh) -> 
+        StressNLVE.update_pETang(QTrans, P, J, ∇uh, 4) 
+      )∘(QTrans, P, J, ∇(uh)) 
+    )    
+
+    update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
+      update_pS∘( schDa2.pETang_t0, schDa2.qt0, schDa2.pS_t0,
+        schDa2.pETang_t1 ) )     
+
+    update_state!( (a,b) -> (true, b), schDa2.qt1, 
+      update_qn∘(schDa2.qt0, schDa2.pS_t0, schDa2.pS_t1) )     
+
+    # update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
+    #   linStr(schDa2.pETang_t1) ) 
+
+    update_state!( (a,b) -> (true, b), schDa2.pETang_t0, 
+      schDa2.pETang_t1) 
+
+    update_state!( (a,b) -> (true, b), schDa2.pS_t0, 
+      schDa2.pS_t1) 
+
+    update_state!( (a,b) -> (true, b), schDa2.qt0, 
+      schDa2.qt1)
     # ----------------------End----------------------  
     
     next = iterate(solnht, iState)

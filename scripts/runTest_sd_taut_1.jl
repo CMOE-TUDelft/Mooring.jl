@@ -15,7 +15,8 @@ include(srcdir("gnlPara2D_moordyn.jl"))
 
 
 resDir = datadir("sims_202501",
-  "run_f3p05")
+  "run")
+  # "run_sch_veStiff_f3p05")
 
 ffm_η = 1.0 #m
 ffm_f = 3.05 #Hz
@@ -29,8 +30,10 @@ tStepsPerT = 100
 # ---------------------Start---------------------   
 # sch = StressNLVE.Schapery(true,
 #   D0 = 1.97e-10,
-#   Dn = [1e-10, 1.5e-10, 1e-10, 1.5e-10],
-#   λn = [1e-1, 1e-2, 1e-3, 1e-4],
+#   Dn = [  1e-10,  1.5e-10,  1e-10,  1.5e-10, 
+#           20e-10, 1e-10,    1e-10,  100e-10],
+#   λn = [  1e-1,   1e-2,     1e-3,   1e-4,
+#           1e-5,   1e-6,     1e-7,   1e-8],
 #   g0 = [0.55, -1e-10, -3e-18, 1e-26],
 #   g1 = [0.10, 6.6e-11, 4.2e-19, -2.7e-27],
 #   g2 = [1.7, -8.8e-9, 4.4e-17, 5.0e-28]
@@ -93,7 +96,7 @@ params = gnlPara2D.Test_params(
 
   # Time Parameters
   t0 = 0.0,
-  simT = 6/ffm_f,
+  simT = 20/ffm_f,
   simΔt = 1/ffm_f/tStepsPerT,
   outΔt = 1/ffm_f/4.0,
   maxIter = 100,

@@ -104,10 +104,11 @@ Stress-strain functions
 # ---------------------Start---------------------
 function stressK_NLVE(sch::Schapery, Δt,
   QTr, P, ∇u, 
-  schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0)
+  schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0,
+  schDa2_ϵt0, schDa2_qt0, schDa2_pS_t0)
     
 	local FΓ, EDir, ETang
-  local pS_tk1, err1, pS_tguess
+  local pS_tk1, pS_tk2, err1, err2, pS_tguess
   
 	
 	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
@@ -126,10 +127,16 @@ function stressK_NLVE(sch::Schapery, Δt,
     schDa1_ϵt0, schDa1_qt0.data, schDa1_pS_t0,
     pETang[1], pS_tguess )
 
+  pS_tguess = schDa2_pS_t0
+  pS_tk2, err2 = get_stressNLVE(
+    sch, Δt,
+    schDa2_ϵt0, schDa2_qt0.data, schDa2_pS_t0,
+    pETang[4], pS_tguess )
+
   pStr = TensorValue( 
     pS_tk1,
     0.0, 0.0, 
-    0.0 )
+    pS_tk2 )
 
   # pStr = TensorValue( 
   #     linStressStrain(seg, pETang[1]),
@@ -179,7 +186,7 @@ end
 # end
 
 
-function update_pETang(QTr, P, J, ∇u)
+function update_pETang(QTr, P, J, ∇u, index)
     
 	local FΓ, EDir, ETang
 	
@@ -192,7 +199,7 @@ function update_pETang(QTr, P, J, ∇u)
   rotM = getStrRotMatrix( ETang )
   pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
 
-  return pETang[1]
+  return pETang[index]
 end
 
 
