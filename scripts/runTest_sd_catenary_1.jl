@@ -14,9 +14,9 @@ using Mooring.StressNLVE
 include(srcdir("gnlPara2D_moordyn.jl"))
 
 
-ffm_η = 1.0 #m
-ffm_f = 3.05#0.90 #Hz
-ϵ0 = 0.01
+ffm_η = 3.0 #m
+ffm_f = 1/12.1 #Hz
+ϵ0 = 0.0
 # materialDampCoeff = 0.07
 materialDampCoeff = 0.0
 tStepsPerT = 100
@@ -66,15 +66,14 @@ typeName = "NLVE"
 # ----------------------End----------------------  
 
 
-resDir = datadir("sims_202501",
+resDir = datadir("sims_202501","catenary",
   # "run")  
   caseName, typeName)
 
 dia = 0.052
 AStr = π*dia*dia/4
 
-depth = 110
-L0 = 100
+depth = 186
 
 
 # Warmup run
@@ -84,7 +83,7 @@ params = gnlPara2D.Test_params(
   
   # Material properties
   E = 5.076e9, #N
-  L = L0, #m
+  L = 835.35, #m
   AStr = AStr, #m2 Str cross-section area
   nd = dia,  #m Nominal diameter
   ρcDry = 1380, #kg/m3 Dry Density of steel   
@@ -97,9 +96,9 @@ params = gnlPara2D.Test_params(
   sch = sch,
 
   # Fairlead position
-  xz_fl = (0.0, L0),
+  xz_fl = (796.732, depth),
   
-  # # Parameter Domain
+  # Parameter Domain
   nx = 100,
   order = 2,
   # nx = 24,
@@ -143,9 +142,4 @@ params = gnlPara2D.Test_params(
   ϵ0 = ϵ0
 )
 gnlPara2D.main(params)
-
-# # Production run
-# params = gnlPara2D.Test_params(params, 
-#   simT = 20/ffm_f)
-# gnlPara2D.main(params)
 

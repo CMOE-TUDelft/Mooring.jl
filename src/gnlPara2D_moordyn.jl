@@ -8,6 +8,7 @@ using Revise
 using Gridap
 using Gridap.Algebra
 using Gridap.ODEs
+using Gridap.ReferenceFEs
 using Gridap.Arrays: testitem, return_cache
 using DataFrames:DataFrame
 using DataFrames:Matrix
@@ -214,7 +215,7 @@ function main(params)
   Ψu = TestFESpace(Ω, reffe, 
     conformity=:H1, 
     dirichlet_tags=["anchor", "fairLead"])
-  # ----------------------End----------------------
+  # ----------------------End----------------------  
 
 
   ## Define FairLead Motion
@@ -368,6 +369,7 @@ function main(params)
   T1s_cs = create_cellState(T1s, loc)
   T1m_cs = create_cellState(T1m, loc)
   T1_cs = create_cellState(T1, loc)
+  
   rotM_cs = create_cellState( 
     CellField( TensorValue(0.0,0.0,0.0,0.0), Ω ), 
     loc )
@@ -549,6 +551,27 @@ function main(params)
   # ----------------------End----------------------
 
 
+  ## Define Test Fnc for projecting CellState to CellField
+  # ---------------------Start---------------------
+  reffe_ve = ReferenceFE(lagrangian, 
+    TensorValue{2, 2, Float64, 4}, order-1)  
+  Ψσ_ve = TestFESpace(Ω, reffe_ve, 
+    conformity=:L2)
+  Σ_ve = TrialFESpace(Ψσ_ve)
+
+  a_ve(σ_ve, ψσ_ve) = 
+    ∫( σ_ve ⊙ ψσ_ve )dΩ
+
+  l_ve( ψσ_ve) = 
+    ∫( schDa_σve ⊙ ψσ_ve )dΩ  
+
+  assemA = assemble_matrix(a_ve, Σ_ve, Ψσ_ve)
+  assemb = assemble_vector(l_ve, Ψσ_ve)
+
+  # AffineFEOperator(trial,test,A,b)
+  # ----------------------End----------------------
+
+
   ## Static Solution
   # ---------------------Start---------------------
   tick()
@@ -661,7 +684,7 @@ function main(params)
   end
 
 
-  function getvtk(t, X, xNew, uh, rotM_cs, schDa1, schDa2 )
+  function getvtk(t, X, xNew, uh, σve_cf )
 
     local tprt, excField
 
@@ -676,9 +699,8 @@ function main(params)
       pltName*"tSol_$tprt"*".vtu",
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
         "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
-        "sigma"=>stressσ_fnc∘( QTrans, P, J, ∇(uh) ),        
-        # "sigma"=>stressσ_fnc( 
-        #   QTrans, P, J, ∇(uh), rotM_cs, schDa1.pS_t1, schDa2.pS_t1 ),
+        # "sigma"=>stressσ_fnc∘( QTrans, P, J, ∇(uh) ),        
+        "sigma"=>σve_cf,
         "gradU"=>∇(uh),
         "bedLin"=>
           ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
@@ -785,40 +807,6 @@ function main(params)
     @printf("Conv : %10s \t Iter    : %5i \n",
       iNLCache.result.x_converged, iNLCache.result.iterations)
 
-    # Interpolation: easiest method
-    # xNew = X + uh
-    # σT = getPrincipalStress(uh, rPrb)      
-    # xNewPrb = xNew.(rPrb)
-    
-    # Interpolation: using return_cache()
-    # xNew = X + uh
-    # cache_xNew = Gridap.Arrays.return_cache(xNew, rPrb)
-    # xNewPrb = evaluate!(cache_xNew, xNew, rPrb)
-
-    # Interpolation: open return_cache(), re-use sub_cache
-    xNew = X + uh           
-    cache2 = assemble_cache(xNew, save_f_cache2)
-    xNewPrb = evaluate!((save_cache1, cache2), xNew, rPrb)
-    
-
-    sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
-    cache2 = assemble_cache(sT_uh, save_f_cache2)
-    sTPrb = evaluate!((save_cache1, cache2), sT_uh, rPrb)
-    sTPrb_princ = getPrincipalStress2.(sTPrb)
-
-
-    ETang_uh = ETang_fnc∘(QTrans, P, J, ∇(uh) )
-    cache2 = assemble_cache(ETang_uh, save_f_cache2)
-    ETangPrb = evaluate!((save_cache1, cache2), ETang_uh, rPrb)
-    ETangPrb_princ = getPrincipalStress2.(ETangPrb)
-
-
-    # gradU = ∇(uh)
-    # cache2 = assemble_cache(gradU, save_f_cache2)
-    # gradUPrb = evaluate!((save_cache1, cache2), gradU, rPrb)
-    # @show gradUPrb[1]
-    
-
     ## Marching Schapery variables
     # ---------------------Start---------------------  
 
@@ -860,8 +848,49 @@ function main(params)
     #   linStr(schDa2.pETang_t1) ) 
 
     update_state!( (a,b) -> (true, b), schDa_σve, 
-      stressσ_fnc∘(QTrans, P, J, ∇(uh), rotM_cs, schDa1.pS_t1, schDa2.pS_t1) )    
+      stressσ_fnc∘(QTrans, P, J, ∇(uh), rotM_cs, schDa1.pS_t1, schDa2.pS_t1) )        
+
+    
+    assemb = assemble_vector(l_ve, Ψσ_ve)
+    op_ve = AffineFEOperator(Σ_ve, Ψσ_ve, assemA,assemb)
+    # op_ve = AffineFEOperator( a_ve, l_ve, Σ_ve, Ψσ_ve )        
+
+    σve_cf = solve(op_ve)        
     # ----------------------End----------------------  
+
+    # Interpolation: easiest method
+    # xNew = X + uh
+    # σT = getPrincipalStress(uh, rPrb)      
+    # xNewPrb = xNew.(rPrb)
+    
+    # Interpolation: using return_cache()
+    # xNew = X + uh
+    # cache_xNew = Gridap.Arrays.return_cache(xNew, rPrb)
+    # xNewPrb = evaluate!(cache_xNew, xNew, rPrb)
+
+    # Interpolation: open return_cache(), re-use sub_cache
+    xNew = X + uh           
+    cache2 = assemble_cache(xNew, save_f_cache2)
+    xNewPrb = evaluate!((save_cache1, cache2), xNew, rPrb)
+    
+
+    # sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
+    sT_uh = σve_cf
+    cache2 = assemble_cache(sT_uh, save_f_cache2)
+    sTPrb = evaluate!((save_cache1, cache2), sT_uh, rPrb)
+    sTPrb_princ = getPrincipalStress2.(sTPrb)
+
+
+    ETang_uh = ETang_fnc∘(QTrans, P, J, ∇(uh) )
+    cache2 = assemble_cache(ETang_uh, save_f_cache2)
+    ETangPrb = evaluate!((save_cache1, cache2), ETang_uh, rPrb)
+    ETangPrb_princ = getPrincipalStress2.(ETangPrb)
+
+
+    # gradU = ∇(uh)
+    # cache2 = assemble_cache(gradU, save_f_cache2)
+    # gradUPrb = evaluate!((save_cache1, cache2), gradU, rPrb)
+    # @show gradUPrb[1]        
     
 
     @printf(daFile1, "%15.6f",t)
@@ -878,7 +907,7 @@ function main(params)
     if(cnt%outMod == 0)               
       println("Paraview output")        
       # pvd[t] = getvtk(t, X, xNew, uh)
-      pvd[t] = getvtk(t, X, xNew, uh, rotM_cs, schDa1, schDa2 )
+      pvd[t] = getvtk(t, X, xNew, uh, σve_cf )
       if(outFreeSurface) pvd_fs[t] = getvtk_fs(t) end         
     end
 
