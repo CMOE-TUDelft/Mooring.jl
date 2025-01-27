@@ -368,6 +368,12 @@ function main(params)
   T1s_cs = create_cellState(T1s, loc)
   T1m_cs = create_cellState(T1m, loc)
   T1_cs = create_cellState(T1, loc)
+  rotM_cs = create_cellState( 
+    CellField( TensorValue(0.0,0.0,0.0,0.0), Ω ), 
+    loc )
+  schDa_σve = create_cellState( 
+    CellField( TensorValue(0.0,0.0,0.0,0.0), Ω ), 
+    loc )
 
   ## Current Field
   UCur_cs = create_cellState( 
@@ -447,6 +453,9 @@ function main(params)
 
   stressσ_fnc(QTr, P, J, ∇u ) = 
     StressNLVE.stressσ_fnc(seg, QTr, P, J, ∇u )
+
+  stressσ_fnc(QTr, P, J, ∇u, rotM, p1σt1, p2σt1) = 
+    StressNLVE.stressσ_fnc( QTr, P, J, ∇u, rotM, p1σt1, p2σt1 )
   
   ETang_fnc(QTr, P, J, ∇u ) = 
     StressNLVE.ETang_fnc( QTr, P, J, ∇u )
@@ -641,13 +650,41 @@ function main(params)
       pltName*"tSol_$tprt"*".vtu",
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
         "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
-        "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
+        "sigma"=>stressσ_fnc∘( QTrans, P, J, ∇(uh) ),
         "gradU"=>∇(uh),
         "bedLin"=>
           ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
         "bedTanh"=>
           ((exc) -> BedSpring.rampTanh(bedObj, exc))∘(excField)
       ]
+    )
+  end
+
+
+  function getvtk(t, X, xNew, uh, rotM_cs, schDa1, schDa2 )
+
+    local tprt, excField
+
+    tprt = @sprintf("%d",floor(Int64,t*1e6))
+    
+    excField = xNew⋅VectorValue(0.0,-1)
+
+    # propertynames(rotM_cs)
+    # (:points, :values, :⁺, :plus, :⁻, :minus)
+
+    createvtk(Ω,
+      pltName*"tSol_$tprt"*".vtu",
+      cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
+        "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
+        "sigma"=>stressσ_fnc∘( QTrans, P, J, ∇(uh) ),        
+        # "sigma"=>stressσ_fnc( 
+        #   QTrans, P, J, ∇(uh), rotM_cs, schDa1.pS_t1, schDa2.pS_t1 ),
+        "gradU"=>∇(uh),
+        "bedLin"=>
+          ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
+        "bedTanh"=>
+          ((exc) -> BedSpring.rampTanh(bedObj, exc))∘(excField)
+      ]      
     )
   end
 
@@ -686,9 +723,13 @@ function main(params)
     ((x) -> getWaveVel(t0, sp, x))∘(xNew) ) 
   
   
-  ## Updating Schapery variables
+  ## Marching Schapery variables
   # ---------------------Start---------------------  
   linStr(ϵ) = ϵ/sch.D0
+
+  update_state!( (a,b) -> (true, b), rotM_cs, 
+    StressNLVE.get_rotM∘(QTrans, P, J, ∇(uh)) )
+
   
   update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
     ( (QTrans, P, J, ∇uh) -> 
@@ -697,13 +738,7 @@ function main(params)
   )
   
   update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
-    linStr(schDa1.pETang_t1) ) 
-  
-  update_state!( (a,b) -> (true, b), schDa1.pETang_t0, 
-    schDa1.pETang_t1) 
-
-  update_state!( (a,b) -> (true, b), schDa1.pS_t0, 
-    schDa1.pS_t1)
+    linStr(schDa1.pETang_t1) )     
     
   
   update_state!( (a,b) -> (true, b), schDa2.pETang_t1, 
@@ -714,13 +749,26 @@ function main(params)
 
   update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
     linStr(schDa2.pETang_t1) ) 
+
+  # ----------------------End----------------------  
+
+
+  ## Updating Schapery variables
+  # ---------------------Start---------------------  
+
+  update_state!( (a,b) -> (true, b), schDa1.pETang_t0, 
+    schDa1.pETang_t1) 
+
+  update_state!( (a,b) -> (true, b), schDa1.pS_t0, 
+    schDa1.pS_t1)
   
   update_state!( (a,b) -> (true, b), schDa2.pETang_t0, 
     schDa2.pETang_t1) 
 
   update_state!( (a,b) -> (true, b), schDa2.pS_t0, 
-    schDa2.pS_t1)
+    schDa2.pS_t1)  
   # ----------------------End----------------------  
+
   
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
@@ -771,6 +819,51 @@ function main(params)
     # @show gradUPrb[1]
     
 
+    ## Marching Schapery variables
+    # ---------------------Start---------------------  
+
+    update_state!( (a,b) -> (true, b), rotM_cs, 
+      StressNLVE.get_rotM∘(QTrans, P, J, ∇(uh)) )
+
+
+    update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
+      ( (QTrans, P, J, ∇uh) -> 
+        StressNLVE.update_pETang(QTrans, P, J, ∇uh, 1) 
+      )∘(QTrans, P, J, ∇(uh)) 
+    )    
+
+    update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+      update_pS∘( schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
+        schDa1.pETang_t1 ) )     
+
+    update_state!( (a,b) -> (true, b), schDa1.qt1, 
+      update_qn∘(schDa1.qt0, schDa1.pS_t0, schDa1.pS_t1) )     
+
+    # update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+    #   linStr(schDa1.pETang_t1) )     
+
+      
+    update_state!( (a,b) -> (true, b), schDa2.pETang_t1, 
+      ( (QTrans, P, J, ∇uh) -> 
+        StressNLVE.update_pETang(QTrans, P, J, ∇uh, 4) 
+      )∘(QTrans, P, J, ∇(uh)) 
+    )    
+
+    update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
+      update_pS∘( schDa2.pETang_t0, schDa2.qt0, schDa2.pS_t0,
+        schDa2.pETang_t1 ) )     
+
+    update_state!( (a,b) -> (true, b), schDa2.qt1, 
+      update_qn∘(schDa2.qt0, schDa2.pS_t0, schDa2.pS_t1) )     
+
+    # update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
+    #   linStr(schDa2.pETang_t1) ) 
+
+    update_state!( (a,b) -> (true, b), schDa_σve, 
+      stressσ_fnc∘(QTrans, P, J, ∇(uh), rotM_cs, schDa1.pS_t1, schDa2.pS_t1) )    
+    # ----------------------End----------------------  
+    
+
     @printf(daFile1, "%15.6f",t)
     @printf(daFile1, ", %2i, %5i", 
       iNLCache.result.x_converged, iNLCache.result.iterations)
@@ -784,7 +877,8 @@ function main(params)
           
     if(cnt%outMod == 0)               
       println("Paraview output")        
-      pvd[t] = getvtk(t, X, xNew, uh)
+      # pvd[t] = getvtk(t, X, xNew, uh)
+      pvd[t] = getvtk(t, X, xNew, uh, rotM_cs, schDa1, schDa2 )
       if(outFreeSurface) pvd_fs[t] = getvtk_fs(t) end         
     end
 
@@ -803,26 +897,11 @@ function main(params)
     if(enableWaveSpec)
       update_state!( (a,b) -> (true, b), waveVel_cs, 
         ((x) -> getWaveVel(t, sp, x))∘(xNew) ) 
-    end
+    end    
+
 
     ## Updating Schapery variables
     # ---------------------Start---------------------  
-    update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
-      ( (QTrans, P, J, ∇uh) -> 
-        StressNLVE.update_pETang(QTrans, P, J, ∇uh, 1) 
-      )∘(QTrans, P, J, ∇(uh)) 
-    )    
-
-    update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
-      update_pS∘( schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
-        schDa1.pETang_t1 ) )     
-
-    update_state!( (a,b) -> (true, b), schDa1.qt1, 
-      update_qn∘(schDa1.qt0, schDa1.pS_t0, schDa1.pS_t1) )     
-
-    # update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
-    #   linStr(schDa1.pETang_t1) ) 
-
     update_state!( (a,b) -> (true, b), schDa1.pETang_t0, 
       schDa1.pETang_t1) 
 
@@ -831,23 +910,6 @@ function main(params)
 
     update_state!( (a,b) -> (true, b), schDa1.qt0, 
       schDa1.qt1)
-      
-      
-    update_state!( (a,b) -> (true, b), schDa2.pETang_t1, 
-      ( (QTrans, P, J, ∇uh) -> 
-        StressNLVE.update_pETang(QTrans, P, J, ∇uh, 4) 
-      )∘(QTrans, P, J, ∇(uh)) 
-    )    
-
-    update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
-      update_pS∘( schDa2.pETang_t0, schDa2.qt0, schDa2.pS_t0,
-        schDa2.pETang_t1 ) )     
-
-    update_state!( (a,b) -> (true, b), schDa2.qt1, 
-      update_qn∘(schDa2.qt0, schDa2.pS_t0, schDa2.pS_t1) )     
-
-    # update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
-    #   linStr(schDa2.pETang_t1) ) 
 
     update_state!( (a,b) -> (true, b), schDa2.pETang_t0, 
       schDa2.pETang_t1) 

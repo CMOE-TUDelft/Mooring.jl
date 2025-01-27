@@ -186,6 +186,22 @@ end
 # end
 
 
+
+function get_rotM(QTr, P, J, ∇u)
+    
+	local FΓ, EDir, ETang
+	
+	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+
+	ETang = P ⋅ EDir ⋅ P
+
+  rotM = getStrRotMatrix( ETang )
+  
+  return rotM
+end
+
+
 function update_pETang(QTr, P, J, ∇u, index)
     
 	local FΓ, EDir, ETang
@@ -275,6 +291,53 @@ function stressσ_fnc(seg::Segment, QTr, P, J, ∇u)
 	sΛ = ((JNew ⊙ JNew) ./ (J ⊙ J)).^0.5
 
 	return ( FΓ ⋅ stressS ⋅ FΓ' ) / sΛ
+
+end
+
+
+function stressσ_fnc(
+  # sch::Schapery, Δt,
+  QTr, P, J, ∇u, rotM,
+  # schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0, 
+  schDa1_pS_t1,
+  # schDa2_ϵt0, schDa2_qt0, schDa2_pS_t0, 
+  schDa2_pS_t1)
+    
+	local FΓ, EDir, ETang
+  # local pS_tk1, pS_tk2, err1, err2, pS_tguess
+  
+	
+	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+	# EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+	# ETang = P ⋅ EDir ⋅ P
+
+  # rotM = getStrRotMatrix( ETang )
+  # pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
+
+  # pS_tguess = schDa1_pS_t0
+  # pS_tk1, err1 = get_stressNLVE(
+  #   sch, Δt,
+  #   schDa1_ϵt0, schDa1_qt0.data, schDa1_pS_t0,
+  #   pETang[1], pS_tguess )
+
+  # pS_tguess = schDa2_pS_t0
+  # pS_tk2, err2 = get_stressNLVE(
+  #   sch, Δt,
+  #   schDa2_ϵt0, schDa2_qt0.data, schDa2_pS_t0,
+  #   pETang[4], pS_tguess )
+
+  pStr = TensorValue( 
+    schDa1_pS_t1,
+    0.0, 0.0, 
+    schDa2_pS_t1 )
+
+  S = ( transpose(rotM) ⋅ pStr ) ⋅ rotM
+
+	JNew = J  + ∇u'
+	sΛ = ((JNew ⊙ JNew) ./ (J ⊙ J)).^0.5
+
+	return ( FΓ ⋅ S ⋅ FΓ' ) / sΛ
 
 end
 
