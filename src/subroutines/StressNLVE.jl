@@ -8,6 +8,8 @@ using Roots: find_zero
 
 using Mooring.StressLinear: Segment
 
+ITER_SOLVE = 1
+ITER_DIFF = 1
 
 """
 Custom Structs
@@ -32,7 +34,7 @@ end
 
 
 function Schapery(
-  placeholder; #Ask Oriol
+  placeholder; #Ask Oriol # TODO
   D0::Real,
   Dn::Vector{<:Real} = [0.0], 
   λn::Vector{<:Real} = [1.0],
@@ -149,15 +151,20 @@ function stressK_NLVE(sch::Schapery, Δt,
   return FΓ ⋅ S
 end
 
+
 function get_stressNLVE(
   sch, Δt,
   ϵt0, qt0, pS_t0,
-  ϵt1, pS_guess )
+  # ϵt1, 
+  ϵt1::ForwardDiff.Dual, 
+  pS_guess )
 
   local pS_tk1, err1
   
+  # Solving by fixed point iteration
+  # TODO: number of iterations 
   pS_tk1 = pS_guess
-  for i = 1:1
+  for i = 1:ITER_DIFF
     pS_tk1, err1 = StressNLVE.σPredicted( 
       sch, 
       ϵt0, Δt, qt0, pS_t0,
@@ -166,6 +173,29 @@ function get_stressNLVE(
 
   return pS_tk1, err1
 end
+
+
+function get_stressNLVE(
+  sch, Δt,
+  ϵt0, qt0, pS_t0,
+  ϵt1::Float64, 
+  pS_guess )
+
+  local pS_tk1, err1
+  
+  # Solving by fixed point iteration
+  # TODO: number of iterations 
+  pS_tk1 = pS_guess
+  for i = 1:ITER_SOLVE
+    pS_tk1, err1 = StressNLVE.σPredicted( 
+      sch, 
+      ϵt0, Δt, qt0, pS_t0,
+      ϵt1, Δt, pS_tk1 )
+  end
+
+  return pS_tk1, err1
+end
+
 
 
 # function get_stressNLVE(
@@ -184,7 +214,6 @@ end
 
 #   return pS_tk1, 0.0
 # end
-
 
 
 function get_rotM(QTr, P, J, ∇u)
@@ -219,33 +248,33 @@ function update_pETang(QTr, P, J, ∇u, index)
 end
 
 
-function update_pS(sch::Schapery, Δt,
-  QTr, P, ∇u, 
-  schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0)
+# function update_pS(sch::Schapery, Δt,
+#   QTr, P, ∇u, 
+#   schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0)
     
-	local FΓ, EDir, ETang
-  local pS_tk1, err1
+# 	local FΓ, EDir, ETang
+#   local pS_tk1, err1
 	
-	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
-	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
-	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
-	ETang = P ⋅ EDir ⋅ P
+# 	FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+# 	# FΓ = ∇(u)' ⋅ QTrans_cs + TensorValue(1.0,0.0,0.0,1.0)
+# 	EDir = 0.5 * ( FΓ' ⋅ FΓ - TensorValue(1.0,0.0,0.0,1.0) )
+# 	ETang = P ⋅ EDir ⋅ P
 
-	# return 2*seg.μm * (FΓ ⋅ ETang)  
+# 	# return 2*seg.μm * (FΓ ⋅ ETang)  
 
-  rotM = getStrRotMatrix( ETang )
-  pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
+#   rotM = getStrRotMatrix( ETang )
+#   pETang = rotM ⋅ (ETang ⋅ transpose(rotM))  
 
-  pS_tk1 = schDa1_pS_t0
-  for i = 1:1
-    pS_tk1, err1 = StressNLVE.σPredicted( 
-      sch, 
-      schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
-      pETang[1], Δt, pS_tk1 )
-  end
+#   pS_tk1 = schDa1_pS_t0
+#   for i = 1:1
+#     pS_tk1, err1 = StressNLVE.σPredicted( 
+#       sch, 
+#       schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
+#       pETang[1], Δt, pS_tk1 )
+#   end
 
-  return pS_tk1    
-end
+#   return pS_tk1    
+# end
 
 
 function update_pS(sch::Schapery, Δt,
@@ -254,8 +283,10 @@ function update_pS(sch::Schapery, Δt,
     
   local pS_tk1, err1
 
+  # Solving by fixed point iteration
+  # TODO: number of iterations 
   pS_tk1 = schDa1_pS_t0
-  for i = 1:1
+  for i = 1:ITER_SOLVE
     pS_tk1, err1 = StressNLVE.σPredicted( 
       sch, 
       schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
@@ -487,7 +518,7 @@ function σPredicted( S::Schapery,
 
   DBartk = DBar(S, ΔΨtk, σtk1)
 
-  err = ϵt1 - ϵt0 + tmp1 + tmp2 + tmp3 - DBartk*σtk1
+  err = σtk1 - (ϵt1 - ϵt0 + tmp1 + tmp2 + tmp3)/DBartk
   
   return σtk1, err
 end
@@ -527,9 +558,9 @@ function Residual_σPredicted( S::Schapery,
 
   DBartk = DBar(S, ΔΨtk, σtk)
   
-  err = ϵt1 - ϵt0 + tmp1 + tmp2 + tmp3 - DBartk*σtk
+  err = σtk - ( ϵt1 - ϵt0 + tmp1 + tmp2 + tmp3 )/DBartk
 
-  return err
+  return abs(err)
 end
 
 
