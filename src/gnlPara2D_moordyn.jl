@@ -560,13 +560,13 @@ function main(params)
   Σ_ve = TrialFESpace(Ψσ_ve)
 
   a_ve(σ_ve, ψσ_ve) = 
-    ∫( σ_ve ⊙ ψσ_ve )dΩ
+    ∫( (σ_ve ⊙ ψσ_ve)*JJ_cs )dΩ
 
   l_ve( ψσ_ve) = 
-    ∫( schDa_σve ⊙ ψσ_ve )dΩ  
+    ∫( (schDa_σve ⊙ ψσ_ve)*JJ_cs )dΩ  
 
   assemA = assemble_matrix(a_ve, Σ_ve, Ψσ_ve)
-  assemb = assemble_vector(l_ve, Ψσ_ve)
+  assemB = assemble_vector(l_ve, Ψσ_ve)
 
   # AffineFEOperator(trial,test,A,b)
   # ----------------------End----------------------
@@ -851,8 +851,8 @@ function main(params)
       stressσ_fnc∘(QTrans, P, J, ∇(uh), rotM_cs, schDa1.pS_t1, schDa2.pS_t1) )        
 
     
-    assemb = assemble_vector(l_ve, Ψσ_ve)
-    op_ve = AffineFEOperator(Σ_ve, Ψσ_ve, assemA,assemb)
+    assemB = assemble_vector(l_ve, Ψσ_ve)
+    op_ve = AffineFEOperator(Σ_ve, Ψσ_ve, assemA, assemB)
     # op_ve = AffineFEOperator( a_ve, l_ve, Σ_ve, Ψσ_ve )        
 
     σve_cf = solve(op_ve)        
