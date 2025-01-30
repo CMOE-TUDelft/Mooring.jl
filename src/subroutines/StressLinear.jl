@@ -145,6 +145,13 @@ function stressσ_fnc(seg, QTr, P, J, ∇u)
 end
 
 
+function principal_stressσ_fnc(seg, QTr, P, J, ∇u)
+  lT = stressσ_fnc(seg, QTr, P, J, ∇u)
+
+  return (lT[1] + lT[4])/2 + sqrt( ((lT[1] - lT[4])/2)^2 + lT[2]^2 )
+end
+
+
 function ETang_fnc(QTr, P, J, ∇u)      
     
 	local FΓ, EDir
@@ -155,6 +162,15 @@ function ETang_fnc(QTr, P, J, ∇u)
 
 	return P ⋅ EDir ⋅ P
 end
+
+
+function principal_ETang_fnc(QTr, P, J, ∇u)
+  lT = ETang_fnc(QTr, P, J, ∇u)      
+
+  return (lT[1] + lT[4])/2 + sqrt( ((lT[1] - lT[4])/2)^2 + lT[2]^2 )
+end
+
+
 # ----------------------End----------------------
     
 end
