@@ -647,6 +647,7 @@ function main(params)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
+  daFile2 = open( pltName*"data2.dat", "w" )
   
   # ----------------------End----------------------
 
@@ -708,6 +709,31 @@ function main(params)
           ((exc) -> BedSpring.rampTanh(bedObj, exc))∘(excField)
       ]      
     )
+  end
+
+
+  function outData2(t, daF, schDa1, schDa2)
+
+    @printf(daF, "%15.6f",t)
+
+    for i = 1:length(schDa1.pS_t1.values)
+
+      pS1 = schDa1.pS_t1.values[i][2]
+      pS2 = schDa2.pS_t1.values[i][2]
+      pETang1 = schDa1.pETang_t1.values[i][2]
+      pETang2 = schDa2.pETang_t1.values[i][2]
+
+      r = schDa1.pETang_t1.points.cell_phys_point[i][2]
+
+      (ret_pS,ret_pETang) = ifelse(
+        abs(pETang1)> abs(pETang2), 
+        (pS1,pETang1), 
+        (pS2,pETang2) )      
+
+      @printf(daF, ", %15.6f, %20.10e, %20.10e",
+        r[1], ret_pETang, ret_pS)
+    end
+    @printf(daF, "\n")    
   end
 
 
@@ -891,7 +917,8 @@ function main(params)
     # cache2 = assemble_cache(gradU, save_f_cache2)
     # gradUPrb = evaluate!((save_cache1, cache2), gradU, rPrb)
     # @show gradUPrb[1]        
-    
+
+    outData2(t, daFile2, schDa1, schDa2)
 
     @printf(daFile1, "%15.6f",t)
     @printf(daFile1, ", %2i, %5i", 
@@ -964,6 +991,7 @@ function main(params)
   close(outFile0)
   close(outFile1)
   close(daFile1)
+  close(daFile2)
   # ----------------------End----------------------
 
 
