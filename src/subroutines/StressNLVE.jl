@@ -193,6 +193,8 @@ function get_stressNLVE(
       ϵt1, Δt, pS_tk1 )
   end
 
+  # @show "fixed-point iteration"
+
   return pS_tk1, err1
 end
 
@@ -211,6 +213,7 @@ end
 #     ϵt1, Δt, σi )
   
 #   pS_tk1 = find_zero(err, pS_guess)    
+#   # @show "find_zero"
 
 #   return pS_tk1, 0.0
 # end
@@ -281,17 +284,13 @@ function update_pS(sch::Schapery, Δt,
   schDa1_ϵt0, schDa1_qt0, schDa1_pS_t0,
   schDa1_ϵt1)
     
-  local pS_tk1, err1
+  local pS_tk1, pS_tguess, err1
 
-  # Solving by fixed point iteration
-  # TODO: number of iterations 
-  pS_tk1 = schDa1_pS_t0
-  for i = 1:ITER_SOLVE
-    pS_tk1, err1 = StressNLVE.σPredicted( 
-      sch, 
-      schDa1_ϵt0, Δt, schDa1_qt0.data, schDa1_pS_t0,
-      schDa1_ϵt1, Δt, pS_tk1 )
-  end
+  pS_tguess = schDa1_pS_t0
+  pS_tk1, err1 = get_stressNLVE(
+    sch, Δt,
+    schDa1_ϵt0, schDa1_qt0.data, schDa1_pS_t0,
+    schDa1_ϵt1, pS_tguess )
 
   return pS_tk1    
 end
