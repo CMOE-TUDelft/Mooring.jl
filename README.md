@@ -1,30 +1,74 @@
 # Mooring.jl
 
-This code base is using the [Julia Language](https://julialang.org/) and
-[DrWatson](https://juliadynamics.github.io/DrWatson.jl/stable/)
-to make a reproducible scientific project named
-> Mooring.jl
+This repository is built using the [Julia Language](https://julialang.org/) and [DrWatson](https://juliadynamics.github.io/DrWatson.jl/stable/) to facilitate a reproducible scientific project named:
 
-It is authored by Shagun.
+> **Mooring.jl**
 
-To (locally) reproduce this project, do the following:
+Authored by **Shagun**.
 
-0. Download this code base. Notice that raw data are typically not included in the
-   git-history and may need to be downloaded independently.
-1. Open a Julia console and do:
-   ```
-   julia> using Pkg
-   julia> Pkg.add("DrWatson") # install globally, for using `quickactivate`
-   julia> Pkg.activate("path/to/this/project")
-   julia> Pkg.instantiate()
-   ```
+## Getting Started
 
-This will install all necessary packages for you to be able to run the scripts and
-everything should work out of the box, including correctly finding local paths.
+To reproduce this project locally, follow these steps:
 
-You may notice that most scripts start with the commands:
+### 1. Clone the Repository
+First, download the codebase by cloning this repository:
+
+```sh
+git clone https://github.com/yourusername/Mooring.jl.git
+cd Mooring.jl
+```
+
+**Note:** Raw data files are typically **not** included in version control (git). You may need to download them separately.
+
+### 2. Start a Julia Session
+Open a terminal in the project directory and start Julia with:
+
+```sh
+julia --project=.
+```
+
+### 3. Install Dependencies
+Once in Julia, enter package manager mode by pressing `]` and run:
+
+```julia
+(Mooring) pkg> instantiate
+```
+
+This will install all required dependencies, ensuring that everything runs correctly, including proper resolution of local paths.
+
+---
+
+## Updating Specific Dependencies
+If you need to update specific dependencies to newer versions, enter package manager mode (`]`) and run:
+
+```julia
+(Mooring) pkg> add https://github.com/shagunTUD/Gridap.jl#devMoor
+(Mooring) pkg> add https://github.com/shagun751/WaveSpec.jl#main
+```
+
+This will fetch and install the specified versions from their respective repositories.
+
+---
+
+## Running Scripts
+You can execute a script using:
+
+```julia
+julia> include("test/demo_test.jl")
+```
+
+### DrWatson Integration
+Most scripts in this project begin with:
+
 ```julia
 using DrWatson
 @quickactivate "Mooring.jl"
 ```
-which auto-activate the project and enable local path handling from DrWatson.
+
+This automatically activates the project environment and ensures proper handling of local paths.
+
+---
+
+## Additional Notes
+- If you run into issues with missing dependencies, try running `] resolve` in Julia to fix package compatibility.
+- Ensure that your Julia version matches the one specified in `Project.toml` to avoid compatibility issues.
