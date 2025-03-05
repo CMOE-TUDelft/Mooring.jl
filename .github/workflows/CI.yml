@@ -44,8 +44,8 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           files: lcov.info
-  docs:
-    name: Demo Test
+  tests:
+    name: Test Suite
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -54,9 +54,13 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-docdeploy@v1
+      # - uses: julia-actions/julia-buildpkg@v1
+      # - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: |
-          julia --project=. -e 'include("test/demo_test.jl")'
+            julia --project=. -e '
+            using Pkg;
+            Pkg.add(url="https://github.com/shagunTUD/Gridap.jl",rev="devMoor")
+            Pkg.add(url="https://github.com/shagun751/WaveSpec.jl",rev="main");'
+      - uses: julia-actions/julia-runtest@v1
