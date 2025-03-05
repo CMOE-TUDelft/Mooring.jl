@@ -33,6 +33,7 @@ Manifest.toml
 *.csv
 
 # Folders
+data/*
 output/
 sims_*/
 .ipynb_checkpoints
