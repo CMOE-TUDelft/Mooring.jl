@@ -5,7 +5,6 @@ authors = ["Shagun Agarwal <s.agarwal@tudelft.nl>"]
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
@@ -27,6 +26,5 @@ WaveSpec = "908d4cf6-a6c0-449c-92e4-852c8f288332"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
 [compat]
-Documenter = "1.8.1"
 DrWatson = "2.12.0"
 julia = "1.8.2"
