@@ -62,5 +62,7 @@ jobs:
             julia --project=. -e '
             using Pkg;
             Pkg.add(url="https://github.com/shagunTUD/Gridap.jl",rev="devMoor")
-            Pkg.add(url="https://github.com/shagun751/WaveSpec.jl",rev="main");'
+            Pkg.add(url="https://github.com/shagun751/WaveSpec.jl",rev="main");
+            Pkg.instantiate();
+            Pkg.precompile()'
       - uses: julia-actions/julia-runtest@v1
