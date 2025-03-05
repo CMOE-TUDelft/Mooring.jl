@@ -19,6 +19,16 @@ Warmup and Test params
   materialDampCoeff = 0.0 # Material damping coeff (sec)
   dragProp = Drag.DragProperties(Drag.NoDrag()) 
 
+  # Schapery characteristics
+  sch = StressNLVE.Schapery(true,
+    D0 = 1/64.2986e9,
+    Dn = [0.0, 0.0, 0.0, 0.0],
+    λn = [1.0, 1e-1, 1e-2, 1e-3],
+    g0 = [1, 0.0],
+    g1 = [0.0, 0.0],
+    g2 = [0.0, 0.0]
+  )
+
   xz_fl = (60, 20)
 
   # Parameter Domain

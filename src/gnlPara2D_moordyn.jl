@@ -8,6 +8,7 @@ using Revise
 using Gridap
 using Gridap.Algebra
 using Gridap.ODEs
+using Gridap.ReferenceFEs
 using Gridap.Arrays: testitem, return_cache
 using DataFrames:DataFrame
 using DataFrames:Matrix
@@ -91,22 +92,16 @@ function main(params)
 
 
   ## StressNLVE
-  # ---------------------Start---------------------  
-  S = StressNLVE.Schapery(true,
-    D0 = 270e-12,
-    Dn = [23e-12, 5e-12, 14e-12, 18e-12],
-    λn = [1.0, 10^(-1), 10^(-2), 10^(-3)],
-    g0 = [1.055, -0.0007e-6, -0.0001e-12],
-    g1 = [4.8, -0.45e-6, 0.017e-12, -0.0002e-18],
-    g2 = [0.0, -0.0179e-6, 0.008e-12, -0.0003e-18, 3.82e-30]
-  )
+  # ---------------------Start---------------------   
+  @unpack sch = params
   
-  printTer("[SHOW] Schapery S"); showTer(S)  
+  printTer("[SHOW] Schapery sch"); showTer(sch)  
 
-  @show StressNLVE.DBar(S, simΔt, 1e6)
-  @show StressNLVE.DBar(S, simΔt, 10e6)
-  @show StressNLVE.DBar(S, simΔt, 20e6)
-  @show StressNLVE.DBar(S, simΔt, 50e6)
+  @show StressNLVE.DBar(sch, simΔt, 1e6)
+  @show StressNLVE.DBar(sch, simΔt, 10e6)
+  @show StressNLVE.DBar(sch, simΔt, 20e6)
+  @show StressNLVE.DBar(sch, simΔt, 50e6)
+  @show StressNLVE.DBar(sch, simΔt, 400e6)
   # ----------------------End----------------------  
 
 
@@ -200,8 +195,12 @@ function main(params)
 
 
   ## Reference config parabola
-  # ---------------------Start---------------------        
-  X, printMsg = getParabola(xz_fl[1],xz_fl[2], seg.L)  
+  # ---------------------Start---------------------    
+  if((xz_fl[1]==0) && ((xz_fl[2] - seg.L) < 1e-8))
+    X, printMsg = getLine(xz_fl[1],xz_fl[2], seg.L)  
+  else
+    X, printMsg = getParabola(xz_fl[1],xz_fl[2], seg.L)  
+  end
   printTer(printMsg); printTer()
 
   writevtk(Ω, pltName*"referenceDomain",
@@ -216,7 +215,7 @@ function main(params)
   Ψu = TestFESpace(Ω, reffe, 
     conformity=:H1, 
     dirichlet_tags=["anchor", "fairLead"])
-  # ----------------------End----------------------
+  # ----------------------End----------------------  
 
 
   ## Define FairLead Motion
@@ -370,6 +369,13 @@ function main(params)
   T1s_cs = create_cellState(T1s, loc)
   T1m_cs = create_cellState(T1m, loc)
   T1_cs = create_cellState(T1, loc)
+  
+  rotM_cs = create_cellState( 
+    CellField( TensorValue(0.0,0.0,0.0,0.0), Ω ), 
+    loc )
+  schDa_σve = create_cellState( 
+    CellField( TensorValue(0.0,0.0,0.0,0.0), Ω ), 
+    loc )
 
   ## Current Field
   UCur_cs = create_cellState( 
@@ -382,7 +388,38 @@ function main(params)
     CellField( r -> getWaveVel(t, sp, x(r)), Ω )  
   
   waveVel_cs = 
-    create_cellState( getWaveVel_cf(t0, sp, Xh), loc)  
+    create_cellState( getWaveVel_cf(t0, sp, Xh), loc)    
+  # ----------------------End----------------------
+
+
+  ## Cell state Schapery
+  # ---------------------Start---------------------  
+  function getSchaperyData()
+    schDa = StressNLVE.SchaperyData()
+    schDa.qt0 = 
+      create_cellState( 
+        CellField( VectorValue(zeros(sch.N)), Ω ), 
+        loc)    
+
+    schDa.qt1 = 
+      create_cellState( 
+        CellField( VectorValue(zeros(sch.N)), Ω ), 
+        loc)    
+
+    schDa.pS_t0 = 
+      create_cellState( CellField( 0.0, Ω ), loc)    
+    schDa.pS_t1 = 
+      create_cellState( CellField( 0.0, Ω ), loc)      
+    schDa.pETang_t0 = 
+      create_cellState( CellField( 0.0, Ω ), loc)      
+    schDa.pETang_t1 = 
+      create_cellState( CellField( 0.0, Ω ), loc)      
+
+    return schDa
+  end
+
+  schDa1 = getSchaperyData()  
+  schDa2 = getSchaperyData()  
   # ----------------------End----------------------
 
 
@@ -398,8 +435,16 @@ function main(params)
 
   stressK_fnc(QTr, P, ∇u) = 
     StressLinear.stressK_fnc(seg, QTr, P, ∇u)
+
+  stressK_fnc(QTr, P, ∇u, 
+    p1ϵt0, p1qt0, p1σt0, p2ϵt0, p2qt0, p2σt0) = 
+    StressNLVE.stressK_NLVE(
+      sch, simΔt, 
+      QTr, P, ∇u, 
+      p1ϵt0, p1qt0, p1σt0,
+      p2ϵt0, p2qt0, p2σt0)
   
-  function stressK_fnc(QTr, P, ∇u, ∇v) 
+  function stressK_fnc(QTr, P, ∇u, ∇v)     
     if(seg.cOnFlag)
       return StressLinear.stressK_fnc(seg, QTr, P, ∇u) + 
         StressLinear.stressK_damp_fnc(seg, QTr, P, ∇u, ∇v)    
@@ -409,10 +454,13 @@ function main(params)
   end
 
   stressσ_fnc(QTr, P, J, ∇u ) = 
-    StressLinear.stressσ_fnc(seg, QTr, P, J, ∇u )
+    StressNLVE.stressσ_fnc(seg, QTr, P, J, ∇u )
+
+  stressσ_fnc(QTr, P, J, ∇u, rotM, p1σt1, p2σt1) = 
+    StressNLVE.stressσ_fnc( QTr, P, J, ∇u, rotM, p1σt1, p2σt1 )
   
   ETang_fnc(QTr, P, J, ∇u ) = 
-    StressLinear.ETang_fnc( QTr, P, J, ∇u )
+    StressNLVE.ETang_fnc( QTr, P, J, ∇u )
 
   drag_ΓX(Qtr, T1s, T1m, ∇u, v) = 
     Drag.drag_ΓX(seg.dragProp, Qtr, T1s, T1m, ∇u, v)
@@ -420,6 +468,23 @@ function main(params)
   drag_ΓX(t, dragProp, inputRamp) = (UCur, waveVel, Qtr, T1s, T1m, ∇u, v) ->
     Drag.drag_ΓX(t, dragProp, inputRamp, 
       UCur, waveVel, Qtr, T1s, T1m, ∇u, v)
+
+  update_pS(QTr, P, ∇u, ϵt0, qt0, σt0) = 
+    StressNLVE.update_pS(
+      sch, simΔt, 
+      QTr, P, ∇u, 
+      ϵt0, qt0, σt0)
+
+  update_pS(ϵt0, qt0, σt0, ϵt1) = 
+    StressNLVE.update_pS(
+      sch, simΔt, 
+      ϵt0, qt0, σt0,
+      ϵt1)
+
+  update_qn(qt0, σt0, σt1) = 
+    StressNLVE.update_qn(
+      sch, simΔt, 
+      qt0, σt0, σt1)
   # ----------------------End----------------------
 
 
@@ -454,8 +519,14 @@ function main(params)
   # massD(t, u, ∂ₜₜu, v) = massD(t, ∂ₜₜu, v)
 
   resD1(t, u, ψu) =      
+    # ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ 
+    #   (stressK_fnc∘(QTrans_cs, P_cs, ∇(u), ∇(∂t(u)) )) )*JJ_cs )dΩ +    
     ∫( ( (∇(ψu)' ⋅ QTrans_cs) ⊙ 
-      (stressK_fnc∘(QTrans_cs, P_cs, ∇(u), ∇(∂t(u)) )) )*JJ_cs )dΩ +    
+      (stressK_fnc∘(
+        QTrans_cs, P_cs, ∇(u),
+        schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
+        schDa2.pETang_t0, schDa2.qt0, schDa2.pS_t0
+      )) )*JJ_cs )dΩ +    
     ∫( ( -ψu ⋅ FWeih_cs )*JJ_cs )dΩ +
     ∫( ( -ψu ⋅ VectorValue(0.0,1.0) * 
       ( bedSpring_fnc∘( Xh_cs, csTup1..., u, ∇(u), ∂t(u) ) ) )*JJ_cs )dΩ +    
@@ -477,6 +548,27 @@ function main(params)
   #   order=2, constant_mass=true)
   op_D = TransientSemilinearFEOperator(massD1, resD1, U, Ψu; 
     order=2, constant_mass=true)
+  # ----------------------End----------------------
+
+
+  ## Define Test Fnc for projecting CellState to CellField
+  # ---------------------Start---------------------
+  reffe_ve = ReferenceFE(lagrangian, 
+    TensorValue{2, 2, Float64, 4}, order-1)  
+  Ψσ_ve = TestFESpace(Ω, reffe_ve, 
+    conformity=:L2)
+  Σ_ve = TrialFESpace(Ψσ_ve)
+
+  a_ve(σ_ve, ψσ_ve) = 
+    ∫( (σ_ve ⊙ ψσ_ve)*JJ_cs )dΩ
+
+  l_ve( ψσ_ve) = 
+    ∫( (schDa_σve ⊙ ψσ_ve)*JJ_cs )dΩ  
+
+  assemA = assemble_matrix(a_ve, Σ_ve, Ψσ_ve)
+  assemB = assemble_vector(l_ve, Ψσ_ve)
+
+  # AffineFEOperator(trial,test,A,b)
   # ----------------------End----------------------
 
 
@@ -555,6 +647,7 @@ function main(params)
   nPrb = length(rPrb)
 
   daFile1 = open( pltName*"data1.dat", "w" )
+  daFile2 = open( pltName*"data2.dat", "w" )
   
   # ----------------------End----------------------
 
@@ -581,7 +674,7 @@ function main(params)
       pltName*"tSol_$tprt"*".vtu",
       cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
         "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
-        "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
+        "sigma"=>stressσ_fnc∘( QTrans, P, J, ∇(uh) ),
         "gradU"=>∇(uh),
         "bedLin"=>
           ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
@@ -589,6 +682,58 @@ function main(params)
           ((exc) -> BedSpring.rampTanh(bedObj, exc))∘(excField)
       ]
     )
+  end
+
+
+  function getvtk(t, X, xNew, uh, σve_cf )
+
+    local tprt, excField
+
+    tprt = @sprintf("%d",floor(Int64,t*1e6))
+    
+    excField = xNew⋅VectorValue(0.0,-1)
+
+    # propertynames(rotM_cs)
+    # (:points, :values, :⁺, :plus, :⁻, :minus)
+
+    createvtk(Ω,
+      pltName*"tSol_$tprt"*".vtu",
+      cellfields=["XOrig"=>X, "XNew"=>xNew, "uh"=>uh, 
+        "ETang"=>ETang_fnc( QTrans, P, J, ∇(uh) ), 
+        # "sigma"=>stressσ_fnc∘( QTrans, P, J, ∇(uh) ),        
+        "sigma"=>σve_cf,
+        "gradU"=>∇(uh),
+        "bedLin"=>
+          ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
+        "bedTanh"=>
+          ((exc) -> BedSpring.rampTanh(bedObj, exc))∘(excField)
+      ]      
+    )
+  end
+
+
+  function outData2(t, daF, schDa1, schDa2)
+
+    @printf(daF, "%15.6f",t)
+
+    for i = 1:length(schDa1.pS_t1.values)
+
+      pS1 = schDa1.pS_t1.values[i][2]
+      pS2 = schDa2.pS_t1.values[i][2]
+      pETang1 = schDa1.pETang_t1.values[i][2]
+      pETang2 = schDa2.pETang_t1.values[i][2]
+
+      r = schDa1.pETang_t1.points.cell_phys_point[i][2]
+
+      (ret_pS,ret_pETang) = ifelse(
+        abs(pETang1)> abs(pETang2), 
+        (pS1,pETang1), 
+        (pS2,pETang2) )      
+
+      @printf(daF, ", %15.6f, %20.10e, %20.10e",
+        r[1], ret_pETang, ret_pS)
+    end
+    @printf(daF, "\n")    
   end
 
 
@@ -625,6 +770,54 @@ function main(params)
   update_state!( (a,b) -> (true, b), waveVel_cs, 
     ((x) -> getWaveVel(t0, sp, x))∘(xNew) ) 
   
+  
+  ## Marching Schapery variables
+  # ---------------------Start---------------------  
+  linStr(ϵ) = ϵ/sch.D0
+
+  update_state!( (a,b) -> (true, b), rotM_cs, 
+    StressNLVE.get_rotM∘(QTrans, P, J, ∇(uh)) )
+
+  
+  update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
+    ( (QTrans, P, J, ∇uh) -> 
+      StressNLVE.update_pETang(QTrans, P, J, ∇uh, 1) 
+    )∘(QTrans, P, J, ∇(uh)) 
+  )
+  
+  update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+    linStr(schDa1.pETang_t1) )     
+    
+  
+  update_state!( (a,b) -> (true, b), schDa2.pETang_t1, 
+    ( (QTrans, P, J, ∇uh) -> 
+      StressNLVE.update_pETang(QTrans, P, J, ∇uh, 4) 
+    )∘(QTrans, P, J, ∇(uh)) 
+  )
+
+  update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
+    linStr(schDa2.pETang_t1) ) 
+
+  # ----------------------End----------------------  
+
+
+  ## Updating Schapery variables
+  # ---------------------Start---------------------  
+
+  update_state!( (a,b) -> (true, b), schDa1.pETang_t0, 
+    schDa1.pETang_t1) 
+
+  update_state!( (a,b) -> (true, b), schDa1.pS_t0, 
+    schDa1.pS_t1)
+  
+  update_state!( (a,b) -> (true, b), schDa2.pETang_t0, 
+    schDa2.pETang_t1) 
+
+  update_state!( (a,b) -> (true, b), schDa2.pS_t0, 
+    schDa2.pS_t1)  
+  # ----------------------End----------------------  
+
+  
   # for (t, uh) in solnht                       
   next = iterate(solnht)            
   while next !== nothing
@@ -639,6 +832,57 @@ function main(params)
     @printf("Time : %10.3f s \t Counter : %5i \n", t, cnt)          
     @printf("Conv : %10s \t Iter    : %5i \n",
       iNLCache.result.x_converged, iNLCache.result.iterations)
+
+    ## Marching Schapery variables
+    # ---------------------Start---------------------  
+
+    update_state!( (a,b) -> (true, b), rotM_cs, 
+      StressNLVE.get_rotM∘(QTrans, P, J, ∇(uh)) )
+
+
+    update_state!( (a,b) -> (true, b), schDa1.pETang_t1, 
+      ( (QTrans, P, J, ∇uh) -> 
+        StressNLVE.update_pETang(QTrans, P, J, ∇uh, 1) 
+      )∘(QTrans, P, J, ∇(uh)) 
+    )    
+
+    update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+      update_pS∘( schDa1.pETang_t0, schDa1.qt0, schDa1.pS_t0,
+        schDa1.pETang_t1 ) )     
+
+    update_state!( (a,b) -> (true, b), schDa1.qt1, 
+      update_qn∘(schDa1.qt0, schDa1.pS_t0, schDa1.pS_t1) )     
+
+    # update_state!( (a,b) -> (true, b), schDa1.pS_t1, 
+    #   linStr(schDa1.pETang_t1) )     
+
+      
+    update_state!( (a,b) -> (true, b), schDa2.pETang_t1, 
+      ( (QTrans, P, J, ∇uh) -> 
+        StressNLVE.update_pETang(QTrans, P, J, ∇uh, 4) 
+      )∘(QTrans, P, J, ∇(uh)) 
+    )    
+
+    update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
+      update_pS∘( schDa2.pETang_t0, schDa2.qt0, schDa2.pS_t0,
+        schDa2.pETang_t1 ) )     
+
+    update_state!( (a,b) -> (true, b), schDa2.qt1, 
+      update_qn∘(schDa2.qt0, schDa2.pS_t0, schDa2.pS_t1) )     
+
+    # update_state!( (a,b) -> (true, b), schDa2.pS_t1, 
+    #   linStr(schDa2.pETang_t1) ) 
+
+    update_state!( (a,b) -> (true, b), schDa_σve, 
+      stressσ_fnc∘(QTrans, P, J, ∇(uh), rotM_cs, schDa1.pS_t1, schDa2.pS_t1) )        
+
+    
+    assemB = assemble_vector(l_ve, Ψσ_ve)
+    op_ve = AffineFEOperator(Σ_ve, Ψσ_ve, assemA, assemB)
+    # op_ve = AffineFEOperator( a_ve, l_ve, Σ_ve, Ψσ_ve )        
+
+    σve_cf = solve(op_ve)        
+    # ----------------------End----------------------  
 
     # Interpolation: easiest method
     # xNew = X + uh
@@ -656,7 +900,8 @@ function main(params)
     xNewPrb = evaluate!((save_cache1, cache2), xNew, rPrb)
     
 
-    sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
+    # sT_uh = stressσ_fnc∘(QTrans, P, J, ∇(uh) )
+    sT_uh = σve_cf
     cache2 = assemble_cache(sT_uh, save_f_cache2)
     sTPrb = evaluate!((save_cache1, cache2), sT_uh, rPrb)
     sTPrb_princ = getPrincipalStress2.(sTPrb)
@@ -671,8 +916,9 @@ function main(params)
     # gradU = ∇(uh)
     # cache2 = assemble_cache(gradU, save_f_cache2)
     # gradUPrb = evaluate!((save_cache1, cache2), gradU, rPrb)
-    # @show gradUPrb[1]
-    
+    # @show gradUPrb[1]        
+
+    outData2(t, daFile2, schDa1, schDa2)
 
     @printf(daFile1, "%15.6f",t)
     @printf(daFile1, ", %2i, %5i", 
@@ -687,7 +933,8 @@ function main(params)
           
     if(cnt%outMod == 0)               
       println("Paraview output")        
-      pvd[t] = getvtk(t, X, xNew, uh)
+      # pvd[t] = getvtk(t, X, xNew, uh)
+      pvd[t] = getvtk(t, X, xNew, uh, σve_cf )
       if(outFreeSurface) pvd_fs[t] = getvtk_fs(t) end         
     end
 
@@ -706,7 +953,29 @@ function main(params)
     if(enableWaveSpec)
       update_state!( (a,b) -> (true, b), waveVel_cs, 
         ((x) -> getWaveVel(t, sp, x))∘(xNew) ) 
-    end
+    end    
+
+
+    ## Updating Schapery variables
+    # ---------------------Start---------------------  
+    update_state!( (a,b) -> (true, b), schDa1.pETang_t0, 
+      schDa1.pETang_t1) 
+
+    update_state!( (a,b) -> (true, b), schDa1.pS_t0, 
+      schDa1.pS_t1) 
+
+    update_state!( (a,b) -> (true, b), schDa1.qt0, 
+      schDa1.qt1)
+
+    update_state!( (a,b) -> (true, b), schDa2.pETang_t0, 
+      schDa2.pETang_t1) 
+
+    update_state!( (a,b) -> (true, b), schDa2.pS_t0, 
+      schDa2.pS_t1) 
+
+    update_state!( (a,b) -> (true, b), schDa2.qt0, 
+      schDa2.qt1)
+    # ----------------------End----------------------  
     
     next = iterate(solnht, iState)
   end  
@@ -722,6 +991,7 @@ function main(params)
   close(outFile0)
   close(outFile1)
   close(daFile1)
+  close(daFile2)
   # ----------------------End----------------------
 
 

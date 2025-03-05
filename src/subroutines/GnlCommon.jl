@@ -27,7 +27,7 @@ using Plots
 
 export printTerAndFile, showTerAndFile
 export getInputSpec, getCurrentField, getWaveVel
-export setInitXZ, getParabola
+export setInitXZ, getParabola, getLine
 export assemble_cache
 
 
@@ -126,6 +126,18 @@ function getParabola(xend,zend,L)
 
   
   printMsg = @sprintf("[VAL] (pA, pB) = %15.6e, %15.6e", pA, pB)
+  
+  return X, printMsg
+end
+
+function getLine(xend,zend,L)
+
+  X(r) = VectorValue( 
+    r[1]/L*xend, 
+    r[1]/L*zend )
+
+  tmp = sqrt(xend^2 + zend^2)
+  printMsg = @sprintf("[MSG] getLine (LGiven, LActual) = %15.6e, %15.6e", L, tmp)
   
   return X, printMsg
 end
