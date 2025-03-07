@@ -3,6 +3,7 @@ module EnvironmentalConditions
 using Parameters
 using Gridap.TensorValues
 using WaveSpec.Currents
+using WaveSpec.WaveTimeSeries
 
 export WaveParameters
 
@@ -56,13 +57,25 @@ function get_current_field(r::Real, Xh, curObj::CurrentStat)
   
 end
 
-function getWaveVel(t, sp, x)
-    
-    w_u, w_w = waveAiry1D_vel(sp, t, 
-      x[1], x[2]-sp.h0 )
-  
+"""
+get_wave_velocity
+
+This function returns the wave velocity at a given point
+in the space `x`. It uses the Airy wave theory, defined in the [WaveSpec](https://github.com/shagun751/WaveSpec.jl)
+package.
+
+Input:
+- `t::Real`: Time
+- `sp::SpecStruct`: Wave spectrum parameters
+- `x::VectorValue`: Point in the space
+
+Output:
+- `VectorValue`: Wave velocity at the point `x`
+"""
+function get_wave_velocity(t, sp, x)
+    w_u, w_w = waveAiry1D_vel(sp, t, x[1], x[2]-sp.h0 )
     return VectorValue(w_u, w_w)
-  end
+end
 
 
 
