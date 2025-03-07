@@ -82,7 +82,7 @@ end
 
 
 # Bed1
-# function forceFnc(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
+# function sea_bed_force(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
   
 #   local exc, lspng
 #   local FΓ, t1s, t1m2, sΛ        
@@ -109,7 +109,7 @@ end
 
 
 # # Bed2
-# function forceFnc(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
+# function sea_bed_force(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
   
 #   local exc, lSpng, lstill_weight
 #   local FΓ, t1s, t1m2, sΛ        
@@ -138,7 +138,7 @@ end
 
 
 # Bed1b
-function forceFnc(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
+function sea_bed_force(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
   
   local exc, lSpng
   local FΓ, t1s, t1m2, sΛ        

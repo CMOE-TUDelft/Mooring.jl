@@ -384,7 +384,7 @@ function main(params)
   ## Parsing functions
   # ---------------------Start---------------------
   bedSpring_fnc(X, QTr, T1s, T1m, u, ∇u, v) = 
-    BedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
+    BedSpring.sea_bed_force(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
 
   stressK_fnc(QTr, P, ∇u) = 
     StressLinear.stressK_fnc(seg, QTr, P, ∇u)

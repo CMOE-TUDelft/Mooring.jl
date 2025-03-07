@@ -99,4 +99,60 @@ function ramp_linear(params::SeaBedParams, excursion::Real)
     return 0.0
 end
 
+
+"""
+sea_bed_force
+
+This function computes the force exerted by the sea bed on the mooring line. It considers the
+excursion of the line into the sea bed, the velocity of the line, and the properties of the sea bed.
+The function is defined as:
+
+[TO DO]
+```math
+````
+
+Input:
+- `params::SeaBedParams`: Sea bed parameters
+- `X::VectorValue`: Position of the line
+- `QTr::TensorValue`: Transformation matrix \$ Q^T \$
+- `T1s::TensorValue`: Stress tensor
+- `T1m::Real`: Maximum stress
+- `u::VectorValue`: Displacement of the line
+- `∇u::TensorValue`: Gradient of the displacement
+- `v::VectorValue`: Velocity of the line
+
+Output:
+- `VectorValue`: Force exerted by the sea bed at a given point in the line
+"""
+function sea_bed_force(params::SeaBedParams, X::Vectorvalue, 
+    QTr::TensorValue, T1s::VectorValue, T1m::Real, 
+    u::VectorValue, ∇u::TensorValue, v::VectorValue)
+  
+    # Define local variables
+    local excursion, lSpng
+    local FΓ, t1s, t1m2, sΛ        
+  
+    excursion = VectorValue(0.0,-1.0) ⋅ (X + u) # assumes flat bed in the x-y plane
+    lSpng = ramp_tanh(params, excursion)
+    lstill_weight = min(1.0, lSpng)
+  
+    vz = VectorValue(0.0, 1.0) ⋅ v # velocity in the z direction
+  
+    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
+    t1s = FΓ ⋅ T1s
+    t1m2 = t1s ⋅ t1s    
+  
+    sΛ = (t1m2.^0.5) / T1m
+    
+    # params.cnstz = params.kn * params.od / params.A
+  
+    return lstill_weight * params.still_weight  + 
+      lSpng * params.cnstz * sΛ * ( 
+        excursion +
+        -params.linear_damping_ratio * vz +
+        -params.quadratic_damping_ratio * vz * abs(vz) 
+      )
+  
+  end
+
 end
