@@ -12,12 +12,12 @@ The following parameters are included, with default values:
 - `kn::Real = 30e3`: Normal stiffness [N/m2]
 - `linDampRatio::Real = 0.05`: Linear damping ratio [s]
 - `quadDampRatio::Real = 0.0`: Quadratic damping ratio [s^2/m]
-- `od::Real` = 0.1: Outer diameter of the line [m]
-- `A::Real` = 0.008: Area of the line [m^2]
+- `od::Real = 0.1`: Outer diameter of the line [m]
+- `A::Real = 0.008`: Area of the line [m^2]
 - `tanh_ramp::Real = 1e2`: Tanh ramp function parameter 
 - `penDepth_ramp::Real = 1e-3`: Penetration depth ramp function parameter [m]
 - `stillWei::Real = 0.0`: Still weight [N]
-- `cnstz::Real` = 0.0 : Constant spring stiffness of the sea bed [N/m]
+- `cnstz::Real = 0.0`: Constant spring stiffness of the sea bed [N/m]
 
 Relevant references:
 - Quadratic law impact damping: https://doi.org/10.1080/0020739X.2021.1954253
@@ -40,6 +40,13 @@ SeaBedParams Constructor
 
 This function creates a new instance of the SeaBedParams struct when only given
 the outer diameter `od` and the area `A` of the line.
+
+Input:
+- `od::Real`: Outer diameter of the line [m]
+- `A::Real`: Area of the line [m^2]
+
+Output:
+- `SeaBedParams`: New instance of the SeaBedParams struct
 """
 function SeaBedParams( od::Real, A::Real)    
     kn = 30e3

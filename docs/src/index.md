@@ -7,6 +7,7 @@
 ## Content
 ```@contents
 Pages = [
-    "EnvironmentalConditions.md"
+    "EnvironmentalConditions.md",
+    "SeaBed.md"
 ]
 ```

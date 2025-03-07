@@ -2,7 +2,8 @@ using Documenter, Mooring
 
 pages = [
     "Home" => "index.md",
-    "Environmental Conditions" => "EnvironmentalConditions.md"
+    "Environmental Conditions" => "EnvironmentalConditions.md",
+    "Sea Bed" => "SeaBed.md",
 ]
 
 makedocs(
