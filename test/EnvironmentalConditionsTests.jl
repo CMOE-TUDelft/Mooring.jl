@@ -10,12 +10,12 @@ function read_params(params::WaveParameters)
 end
 @test read_params(waveparams)
 
-# Testing getCurrentField
+# Testing get_current_field
 h0 = 23 # Water depth
 h_vals = [-23.0, -11.0, 0.0] # Depths of the current field definition
 u_vals = [0.0, 10.0, 20.0] # Current velocities at the prescribed depths
 currentparams = CurrentStat(h0, h_vals, u_vals)
 Xh(r) = VectorValue(0.0, r)
-@test EC.getCurrentField(0.0, Xh, currentparams) == VectorValue(0.0, 0.0)
-@test EC.getCurrentField(12.0, Xh, currentparams) == VectorValue(10.0, 0.0)
-@test EC.getCurrentField(23.0, Xh, currentparams) == VectorValue(20.0, 0.0)
+@test EC.get_current_field(0.0, Xh, currentparams) == VectorValue(0.0, 0.0)
+@test EC.get_current_field(12.0, Xh, currentparams) == VectorValue(10.0, 0.0)
+@test EC.get_current_field(23.0, Xh, currentparams) == VectorValue(20.0, 0.0)

@@ -32,7 +32,7 @@ The following parameters are included, with default values:
 end
 
 """
-getCurrentField
+get_current_field
 
 This function returns the current field at a given point
 of the undeformed configuration \$ r \\rightarrow X_h(r) \$.
@@ -45,7 +45,7 @@ Input:
 Output:
 - `VectorValue`: Current field at the point `r`
 """
-function getCurrentField(r::Real, Xh, curObj::CurrentStat)
+function get_current_field(r::Real, Xh, curObj::CurrentStat)
   
     X_qp = Xh(r)
     pz = X_qp ⋅ VectorValue(0.0,1.0) - curObj.h0
@@ -55,6 +55,14 @@ function getCurrentField(r::Real, Xh, curObj::CurrentStat)
     return VectorValue( curObj.itp( pz ), 0.0 )   
   
 end
+
+function getWaveVel(t, sp, x)
+    
+    w_u, w_w = waveAiry1D_vel(sp, t, 
+      x[1], x[2]-sp.h0 )
+  
+    return VectorValue(w_u, w_w)
+  end
 
 
 
