@@ -1,6 +1,7 @@
 module SeaBed
 
 using Parameters
+using Gridap.TensorValues
 
 export SeaBedParams
 
@@ -124,7 +125,7 @@ Input:
 Output:
 - `VectorValue`: Force exerted by the sea bed at a given point in the line
 """
-function sea_bed_force(params::SeaBedParams, X::Vectorvalue, 
+function sea_bed_force(params::SeaBedParams, X::VectorValue, 
     QTr::TensorValue, T1s::VectorValue, T1m::Real, 
     u::VectorValue, ∇u::TensorValue, v::VectorValue)
   

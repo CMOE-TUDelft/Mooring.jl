@@ -22,3 +22,15 @@ modified_params = SB.set_still_weight(sea_bed_params, 1.0)
 # Testing ramp_linear
 @test SB.ramp_linear(sea_bed_params, 1.0) == 1000.0
 @test SB.ramp_linear(sea_bed_params, -1.0) == 0.0
+
+# Testing sea_bed_force
+X = VectorValue(0.0, 0.0)
+QTr = TensorValue(1.0, 0.0, 0.0, 1.0)
+T1s = VectorValue(1.0, 0.0)
+T1m = 2.0
+u = VectorValue(0.0, 0.0)
+∇u = TensorValue(1.0, 0.0, 0.0, 1.0)
+v = VectorValue(0.0, 0.0)
+@test SB.sea_bed_force(sea_bed_params, X, QTr, T1s, T1m, u, ∇u, v) == VectorValue(0.0, 0.0)
+u = VectorValue(0.0, -1.0)
+@test SB.sea_bed_force(sea_bed_params, X, QTr, T1s, T1m, u, ∇u, v) == VectorValue(0.0, 0.0)
