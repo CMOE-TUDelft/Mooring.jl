@@ -8,5 +8,5 @@ Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 WaveSpec = "908d4cf6-a6c0-449c-92e4-852c8f288332"
 
 [compat]
-Gridap = "0.18.10"
-WaveSpec = "0.1.1"
+Gridap = "0.18"
+
