@@ -10,11 +10,11 @@ using DataFrames
 using CSV
 using Tables
 
-include( srcdir("subroutines","GnlCommon.jl") )
-include( srcdir("subroutines","BedSpring.jl") )
-include( srcdir("subroutines","Drag.jl") )
-include( srcdir("subroutines","FairLeadMotion.jl") )
-include( srcdir("subroutines","StressLinear.jl") )
+include( joinpath("subroutines","GnlCommon.jl") )
+include( joinpath("subroutines","BedSpring.jl") )
+include( joinpath("subroutines","Drag.jl") )
+include( joinpath("subroutines","FairLeadMotion.jl") )
+include( joinpath("subroutines","StressLinear.jl") )
 
 export GnlCommon
 export BedSpring

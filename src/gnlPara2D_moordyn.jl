@@ -1,9 +1,5 @@
 module gnlPara2D
 
-using DrWatson
-@quickactivate "Mooring"
-
-
 using Revise
 using Gridap
 using Gridap.Algebra
@@ -34,7 +30,7 @@ using Mooring.FairLeadMotion
 
 
 
-include(srcdir("subroutines","testParams.jl"))
+include(joinpath("subroutines","testParams.jl"))
 
 
 
@@ -60,6 +56,12 @@ function main(params)
   showTer(a::Any) = showTerAndFile(a,outFile0)  
   # ----------------------End----------------------  
 
+
+  # ## tagsave git commit
+  # gitCommit = Dict(:message=>"git info")
+  # gitCommit = tag!(gitCommit; commit_message=true)
+  # printTer("[SHOW] git commit"); showTer(gitCommit)
+  # printTer()
 
   @unpack ρw = params #Kg/m3 density of water      
 
