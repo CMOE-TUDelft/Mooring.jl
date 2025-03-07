@@ -1,9 +1,5 @@
 module gnlPara2D
 
-using DrWatson
-@quickactivate "Mooring"
-
-
 using Revise
 using Gridap
 using Gridap.Algebra
@@ -34,7 +30,7 @@ using Mooring.FairLeadMotion
 
 
 
-include(srcdir("subroutines","testParams.jl"))
+include(joinpath("subroutines","testParams.jl"))
 
 
 
@@ -61,6 +57,12 @@ function main(params)
   # ----------------------End----------------------  
 
 
+  # ## tagsave git commit
+  # gitCommit = Dict(:message=>"git info")
+  # gitCommit = tag!(gitCommit; commit_message=true)
+  # printTer("[SHOW] git commit"); showTer(gitCommit)
+  # printTer()
+
   @unpack ρw = params #Kg/m3 density of water      
 
   # Line properties
@@ -73,7 +75,7 @@ function main(params)
   printTer()  
 
   @unpack bedObj = params  
-  bedObj = BedSpring.setStillWei!(bedObj, seg.ρcSub*g)      
+  bedObj = BedSpring.set_still_weight(bedObj, seg.ρcSub*g)      
   printTer("[SHOW] bedObj"); showTer(bedObj)  
   printTer()
 
@@ -382,7 +384,7 @@ function main(params)
   ## Parsing functions
   # ---------------------Start---------------------
   bedSpring_fnc(X, QTr, T1s, T1m, u, ∇u, v) = 
-    BedSpring.forceFnc(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
+    BedSpring.sea_bed_force(bedObj, X, QTr, T1s, T1m, u, ∇u, v)
 
   stressK_fnc(QTr, P, ∇u) = 
     StressLinear.stressK_fnc(seg, QTr, P, ∇u)
@@ -576,9 +578,9 @@ function main(params)
         "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
         "gradU"=>∇(uh),
         "bedLin"=>
-          ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
+          ((exc) -> BedSpring.ramp_linear(bedObj, exc))∘(excField),
         "bedTanh"=>
-          ((exc) -> BedSpring.rampTanh(bedObj, exc))∘(excField)
+          ((exc) -> BedSpring.ramp_tanh(bedObj, exc))∘(excField)
       ]
     )
   end
