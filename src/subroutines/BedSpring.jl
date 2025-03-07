@@ -73,7 +73,7 @@ function ramp_tanh(bedObj::Bed, exc)
 end
 
 
-function rampLin(bedObj::Bed, exc)
+function ramp_linear(bedObj::Bed, exc)
   if(exc >0) 
     return exc / bedObj.penetration_depth_ramp
   end

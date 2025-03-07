@@ -55,17 +55,48 @@ end
 """
 ramp_tanh
 
-This function returns the tanh ramp function for a given excitation.
+This function returns the tanh ramp function for a given excursion into the sea bed.
+It assumes the excursion is positive when there is penetration to the sea bed and negative when 
+the line is lifted from the soil. The function is defined as:
+
+```math
+x_{\\text{new}} = \\max(0, 2 \\tanh( \\text{tanh_ramp} \\cdot x ) ).
+```
 
 Input:
-- `bedObj::SeaBedParams`: Sea bed parameters
-- `exc::Real`: Excitation value at a given time
+- `params::SeaBedParams`: Sea bed parameters
+- `exc::Real`: excursion value at a given time
 
 Output:
 - `Real`: Tanh ramp function value
 """
-function ramp_tanh(params::SeaBedParams, excitation::Real)
-    return max(0.0, 2*tanh( params.tanh_ramp * excitation ) )
+function ramp_tanh(params::SeaBedParams, excursion::Real)
+    return max(0.0, 2*tanh( params.tanh_ramp * excursion ) )
+end
+
+"""
+ramp_linear
+
+This function returns the linear ramp function for a given excursion into the sea bed. It assumes
+the excursion is positive when there is penetration into the soil and computes the value based on 
+the `penetration_depth_ramp` parameter: 
+
+```math
+x_{\\text{new}} = \\frac{x}{\\text{penetration_depth_ramp}}.
+```
+
+Input:
+- `params::SeaBedParams`: Sea bed parameters
+- `exc::Real`: excursion value at a given time
+
+Output:
+- `Real`: Linear ramp function value
+"""
+function ramp_linear(params::SeaBedParams, excursion::Real)
+    if excursion > 0
+        return excursion / params.penetration_depth_ramp
+    end
+    return 0.0
 end
 
 end

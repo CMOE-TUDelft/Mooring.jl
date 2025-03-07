@@ -578,7 +578,7 @@ function main(params)
         "sigma"=>stressσ_fnc( QTrans, P, J, ∇(uh) ),
         "gradU"=>∇(uh),
         "bedLin"=>
-          ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
+          ((exc) -> BedSpring.ramp_linear(bedObj, exc))∘(excField),
         "bedTanh"=>
           ((exc) -> BedSpring.ramp_tanh(bedObj, exc))∘(excField)
       ]
