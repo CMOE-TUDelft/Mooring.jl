@@ -1,6 +1,9 @@
 module EnvironmentalConditions
 
 using Parameters
+using Gridap.TensorValues
+using WaveSpec.Currents
+
 export WaveParameters
 
 """
@@ -28,6 +31,30 @@ The following parameters are included, with default values:
 
 end
 
+"""
+getCurrentField
+
+This function returns the current field at a given point
+of the undeformed configuration \$ r \\rightarrow X_h(r) \$.
+
+Input:
+- `r::Real`: Point in the undeformed configuration
+- `Xh::Function`: Function that maps the undeformed configuration to the deformed configuration (VectorValue)
+- `curObj::CurrentStat`: Current object
+
+Output:
+- `VectorValue`: Current field at the point `r`
+"""
+function getCurrentField(r::Real, Xh, curObj::CurrentStat)
+  
+    X_qp = Xh(r)
+    pz = X_qp ⋅ VectorValue(0.0,1.0) - curObj.h0
+    pz = min(pz, 0.0)
+    pz = max(pz, -curObj.h0)
+  
+    return VectorValue( curObj.itp( pz ), 0.0 )   
+  
+end
 
 
 

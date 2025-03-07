@@ -3,6 +3,10 @@ uuid = "54d656fe-1954-4949-b509-86ef6fd939c8"
 authors = ["Shagun Agarwal <s.agarwal@tudelft.nl>"]
 
 [deps]
+Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+WaveSpec = "908d4cf6-a6c0-449c-92e4-852c8f288332"
 
 [compat]
+Gridap = "0.18.10"
+WaveSpec = "0.1.1"
