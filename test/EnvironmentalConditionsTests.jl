@@ -5,8 +5,8 @@ using WaveSpec.Jonswap
 using WaveSpec.Constants
 using Gridap.TensorValues
 
-waveparams = WaveParameters()
-function read_params(params::WaveParameters)
+waveparams = EC.WaveParameters()
+function read_params(params::EC.WaveParameters)
     @unpack Hs, Tp, h0, nω, seed, ωc, enableWaveSpec = waveparams
     return true
 end

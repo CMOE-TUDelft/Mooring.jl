@@ -15,8 +15,8 @@ Custom Structs
 @with_kw struct Bed
   kn::Real 
   # Based on Marco's suggestion of 30kN/m2/m in the OrcaFlex manual  
-  linDampRatio::Real  #sec
-  quadDampRatio::Real  #sec2/m 
+  linear_damping_ratio::Real  #sec
+  quadratic_damping_ratio::Real  #sec2/m 
   # qudratic law impact damping
   # https://doi.org/10.1080/0020739X.2021.1954253
   # Critical damping of Moordyn
@@ -25,25 +25,25 @@ Custom Structs
   od::Real
   A::Real      
   tanh_ramp::Real
-  penDepth_ramp::Real #Penetration depth ramp #m
+  penetration_depth_ramp::Real #Penetration depth ramp #m
 
-  stillWei::Real    
+  still_weight::Real    
   cnstz::Real
 
   function Bed( od::Real, A::Real;
     kn = 30e3, 
-    linDampRatio = 0.05,
-    quadDampRatio = 0.0,
+    linear_damping_ratio = 0.05,
+    quadratic_damping_ratio = 0.0,
     tanh_ramp = 1e2,
-    penDepth_ramp = 1e-3,    
-    stillWei::Real=0.0 )    
+    penetration_depth_ramp = 1e-3,    
+    still_weight::Real=0.0 )    
 
     cnstz = kn * od / A
     
-    new(kn, linDampRatio, quadDampRatio,
+    new(kn, linear_damping_ratio, quadratic_damping_ratio,
       od, A, 
-      tanh_ramp, penDepth_ramp, 
-      stillWei, cnstz)
+      tanh_ramp, penetration_depth_ramp, 
+      still_weight, cnstz)
   end
 end
 # ----------------------End----------------------
@@ -56,18 +56,18 @@ Functions
 
 """
 # ---------------------Start---------------------
-function setStillWei!(bedObj::Bed, stillWei)
+function set_still_weight(bedObj::Bed, still_weight)
   @unpack od, A, kn, tanh_ramp, 
-    linDampRatio, quadDampRatio, penDepth_ramp = bedObj  
+    linear_damping_ratio, quadratic_damping_ratio, penetration_depth_ramp = bedObj  
 
   Bed(od, A; 
-    kn, linDampRatio, quadDampRatio,
-    tanh_ramp, penDepth_ramp, 
-    stillWei)
+    kn, linear_damping_ratio, quadratic_damping_ratio,
+    tanh_ramp, penetration_depth_ramp, 
+    still_weight)
 end
 
 
-function rampTanh(bedObj::Bed, exc)
+function ramp_tanh(bedObj::Bed, exc)
   # return 0.5 + 0.5*( tanh( bedObj.tanh_ramp * exc ) )
   return max(0.0, 2*tanh( bedObj.tanh_ramp * exc ) )
 end
@@ -75,7 +75,7 @@ end
 
 function rampLin(bedObj::Bed, exc)
   if(exc >0) 
-    return exc / bedObj.penDepth_ramp
+    return exc / bedObj.penetration_depth_ramp
   end
   return 0.0
 end
@@ -100,10 +100,10 @@ end
   
 #   # bedObj.cnstz = bedObj.kn * bedObj.od / bedObj.A
 
-#   return lspng * bedObj.stillWei  + 
+#   return lspng * bedObj.still_weight  + 
 #     # lspng * bedObj.kn * bedObj.od / bedObj.A * exc * sΛ -
-#     # lspng * bedObj.linDampRatio* bedObj.kn * bedObj.od / bedObj.A * vz * sΛ
-#     lspng * bedObj.cnstz * sΛ * ( exc - bedObj.linDampRatio * vz )
+#     # lspng * bedObj.linear_damping_ratio* bedObj.kn * bedObj.od / bedObj.A * vz * sΛ
+#     lspng * bedObj.cnstz * sΛ * ( exc - bedObj.linear_damping_ratio * vz )
 
 # end
 
@@ -111,7 +111,7 @@ end
 # # Bed2
 # function forceFnc(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
   
-#   local exc, lSpng, lStillWei
+#   local exc, lSpng, lstill_weight
 #   local FΓ, t1s, t1m2, sΛ        
 
 #   exc = VectorValue(0.0,-1.0) ⋅ (X + u)
@@ -119,9 +119,9 @@ end
 
 #   lSpng = 0.0
 #   if(exc >0) 
-#     lSpng = exc / bedObj.penDepth_ramp
+#     lSpng = exc / bedObj.penetration_depth_ramp
 #   end
-#   lStillWei = min(1.0, lSpng)
+#   lstill_weight = min(1.0, lSpng)
   
 #   vz = VectorValue(0.0, 1.0) ⋅ v  
 
@@ -131,8 +131,8 @@ end
 
 #   sΛ = (t1m2.^0.5) / T1m
   
-#   return lStillWei * bedObj.stillWei  + 
-#     lSpng * bedObj.cnstz * sΛ * (exc - bedObj.linDampRatio * vz) 
+#   return lstill_weight * bedObj.still_weight  + 
+#     lSpng * bedObj.cnstz * sΛ * (exc - bedObj.linear_damping_ratio * vz) 
 
 # end
 
@@ -144,8 +144,8 @@ function forceFnc(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
   local FΓ, t1s, t1m2, sΛ        
 
   exc = VectorValue(0.0,-1.0) ⋅ (X + u)
-  lSpng = rampTanh(bedObj, exc)
-  lStillWei = min(1.0, lSpng)
+  lSpng = ramp_tanh(bedObj, exc)
+  lstill_weight = min(1.0, lSpng)
 
   vz = VectorValue(0.0, 1.0) ⋅ v
 
@@ -157,11 +157,11 @@ function forceFnc(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
   
   # bedObj.cnstz = bedObj.kn * bedObj.od / bedObj.A
 
-  return lStillWei * bedObj.stillWei  + 
+  return lstill_weight * bedObj.still_weight  + 
     lSpng * bedObj.cnstz * sΛ * ( 
       exc +
-      -bedObj.linDampRatio * vz +
-      -bedObj.quadDampRatio * vz * abs(vz) 
+      -bedObj.linear_damping_ratio * vz +
+      -bedObj.quadratic_damping_ratio * vz * abs(vz) 
     )
 
 end

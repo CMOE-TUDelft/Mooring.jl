@@ -75,7 +75,7 @@ function main(params)
   printTer()  
 
   @unpack bedObj = params  
-  bedObj = BedSpring.setStillWei!(bedObj, seg.ρcSub*g)      
+  bedObj = BedSpring.set_still_weight(bedObj, seg.ρcSub*g)      
   printTer("[SHOW] bedObj"); showTer(bedObj)  
   printTer()
 
@@ -580,7 +580,7 @@ function main(params)
         "bedLin"=>
           ((exc) -> BedSpring.rampLin(bedObj, exc))∘(excField),
         "bedTanh"=>
-          ((exc) -> BedSpring.rampTanh(bedObj, exc))∘(excField)
+          ((exc) -> BedSpring.ramp_tanh(bedObj, exc))∘(excField)
       ]
     )
   end
