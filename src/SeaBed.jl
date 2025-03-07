@@ -64,8 +64,8 @@ Input:
 Output:
 - `Real`: Tanh ramp function value
 """
-function ramp_tanh(bedObj::Bed, excitation::Real)
-    return max(0.0, 2*tanh( bedObj.tanh_ramp * excitation ) )
+function ramp_tanh(params::SeaBedParams, excitation::Real)
+    return max(0.0, 2*tanh( params.tanh_ramp * excitation ) )
 end
 
 end
