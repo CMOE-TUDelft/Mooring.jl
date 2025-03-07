@@ -9,6 +9,7 @@ module Mooring
 # using Tables
 
 include("EnvironmentalConditions.jl")
+include("SeaBed.jl")
 # include( joinpath("subroutines","GnlCommon.jl") )
 # include( joinpath("subroutines","BedSpring.jl") )
 # include( joinpath("subroutines","Drag.jl") )
@@ -16,6 +17,7 @@ include("EnvironmentalConditions.jl")
 # include( joinpath("subroutines","StressLinear.jl") )
 
 export EnvironmentalConditions
+export SeaBed
 # export GnlCommon
 # export BedSpring
 # export Drag
