@@ -1,26 +1,30 @@
 module Mooring
 
-using Revise
-using Gridap
-using Parameters
-using Printf
-using DrWatson
-using LineSearches: Static
-using DataFrames
-using CSV
-using Tables
+# using Gridap
+# using Parameters
+# using Printf
+# using LineSearches: Static
+# using DataFrames
+# using CSV
+# using Tables
 
-include( srcdir("subroutines","GnlCommon.jl") )
-include( srcdir("subroutines","BedSpring.jl") )
-include( srcdir("subroutines","Drag.jl") )
-include( srcdir("subroutines","FairLeadMotion.jl") )
-include( srcdir("subroutines","StressLinear.jl") )
+include("EnvironmentalConditions.jl")
+include("SeaBed.jl")
+include("Drag.jl")
+# include( joinpath("subroutines","GnlCommon.jl") )
+# include( joinpath("subroutines","BedSpring.jl") )
+# include( joinpath("subroutines","Drag.jl") )
+# include( joinpath("subroutines","FairLeadMotion.jl") )
+# include( joinpath("subroutines","StressLinear.jl") )
 
-export GnlCommon
-export BedSpring
+export EnvironmentalConditions
+export SeaBed
 export Drag
-export FairLeadMotion
-export StressLinear
+# export GnlCommon
+# export BedSpring
+# export Drag
+# export FairLeadMotion
+# export StressLinear
 
 
 end

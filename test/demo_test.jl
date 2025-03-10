@@ -1,20 +1,19 @@
-using DrWatson
-@quickactivate "Mooring.jl"
+# using DrWatson
+# @quickactivate "Mooring.jl"
 
 using Parameters
 using WaveSpec
 using .Constants
 using .Currents
-using .WaveTimeSeries
+using WaveSpec.WaveTimeSeries
 using Mooring.BedSpring
 using Mooring.Drag
 using Mooring.FairLeadMotion
 
-include(srcdir("gnlPara2D_moordyn.jl"))
+# include(srcdir("gnlPara2D_moordyn.jl"))
 
-
-resDir = datadir("demotest")
-
+# Temporary folder for results testing
+resDir = joinpath(@__DIR__,"..","data","demotest")
 mkpath(resDir)
 
 ffm_η = 0.1 #m

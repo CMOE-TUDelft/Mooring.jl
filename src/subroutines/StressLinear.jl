@@ -14,6 +14,12 @@ Custom Structs
 
 """
 # ---------------------Start---------------------
+
+"""
+Segment Struct
+
+This struct contains the properties of a segment of the mooring line.
+"""
 @with_kw struct Segment
   
 	ρcDry::Real	
