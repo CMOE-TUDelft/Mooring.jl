@@ -4,6 +4,7 @@ pages = [
     "Home" => "index.md",
     "Environmental Conditions" => "EnvironmentalConditions.md",
     "Sea Bed" => "SeaBed.md",
+    "Drag" => "Drag.md",
 ]
 
 makedocs(
