@@ -4,7 +4,7 @@ using Parameters
 # Testing SeaBedParams
 sea_bed_params = SB.SeaBedParams()
 function read_params(params::SB.SeaBedParams)
-    @unpack kn, linear_damping_ratio, quadratic_damping_ratio, od, A, tanh_ramp, penetration_depth_ramp, still_weight, cnstz = sea_bed_params
+    @unpack kn, linear_damping_factor, quadratic_damping_factor, od, A, tanh_ramp, penetration_depth_ramp, still_weight, cnstz = sea_bed_params
     return true
 end
 @test read_params(sea_bed_params)
@@ -31,6 +31,6 @@ T1m = 2.0
 u = VectorValue(0.0, 0.0)
 ∇u = TensorValue(1.0, 0.0, 0.0, 1.0)
 v = VectorValue(0.0, 0.0)
-@test SB.sea_bed_force(sea_bed_params, X, QTr, T1s, T1m, u, ∇u, v) == VectorValue(0.0, 0.0)
+@test SB.sea_bed_force(sea_bed_params, X, QTr, T1s, T1m, u, ∇u, v) == 0.0
 u = VectorValue(0.0, -1.0)
-@test SB.sea_bed_force(sea_bed_params, X, QTr, T1s, T1m, u, ∇u, v) == VectorValue(0.0, 0.0)
+@test SB.sea_bed_force(sea_bed_params, X, QTr, T1s, T1m, u, ∇u, v) == 2.0 * sea_bed_params.cnstz

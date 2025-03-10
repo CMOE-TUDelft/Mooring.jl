@@ -15,8 +15,8 @@ Custom Structs
 @with_kw struct Bed
   kn::Real 
   # Based on Marco's suggestion of 30kN/m2/m in the OrcaFlex manual  
-  linear_damping_ratio::Real  #sec
-  quadratic_damping_ratio::Real  #sec2/m 
+  linear_damping_factor::Real  #sec
+  quadratic_damping_factor::Real  #sec2/m 
   # qudratic law impact damping
   # https://doi.org/10.1080/0020739X.2021.1954253
   # Critical damping of Moordyn
@@ -32,15 +32,15 @@ Custom Structs
 
   function Bed( od::Real, A::Real;
     kn = 30e3, 
-    linear_damping_ratio = 0.05,
-    quadratic_damping_ratio = 0.0,
+    linear_damping_factor = 0.05,
+    quadratic_damping_factor = 0.0,
     tanh_ramp = 1e2,
     penetration_depth_ramp = 1e-3,    
     still_weight::Real=0.0 )    
 
     cnstz = kn * od / A
     
-    new(kn, linear_damping_ratio, quadratic_damping_ratio,
+    new(kn, linear_damping_factor, quadratic_damping_factor,
       od, A, 
       tanh_ramp, penetration_depth_ramp, 
       still_weight, cnstz)
@@ -58,10 +58,10 @@ Functions
 # ---------------------Start---------------------
 function set_still_weight(bedObj::Bed, still_weight)
   @unpack od, A, kn, tanh_ramp, 
-    linear_damping_ratio, quadratic_damping_ratio, penetration_depth_ramp = bedObj  
+    linear_damping_factor, quadratic_damping_factor, penetration_depth_ramp = bedObj  
 
   Bed(od, A; 
-    kn, linear_damping_ratio, quadratic_damping_ratio,
+    kn, linear_damping_factor, quadratic_damping_factor,
     tanh_ramp, penetration_depth_ramp, 
     still_weight)
 end
@@ -102,8 +102,8 @@ end
 
 #   return lspng * bedObj.still_weight  + 
 #     # lspng * bedObj.kn * bedObj.od / bedObj.A * exc * sΛ -
-#     # lspng * bedObj.linear_damping_ratio* bedObj.kn * bedObj.od / bedObj.A * vz * sΛ
-#     lspng * bedObj.cnstz * sΛ * ( exc - bedObj.linear_damping_ratio * vz )
+#     # lspng * bedObj.linear_damping_factor* bedObj.kn * bedObj.od / bedObj.A * vz * sΛ
+#     lspng * bedObj.cnstz * sΛ * ( exc - bedObj.linear_damping_factor * vz )
 
 # end
 
@@ -132,7 +132,7 @@ end
 #   sΛ = (t1m2.^0.5) / T1m
   
 #   return lstill_weight * bedObj.still_weight  + 
-#     lSpng * bedObj.cnstz * sΛ * (exc - bedObj.linear_damping_ratio * vz) 
+#     lSpng * bedObj.cnstz * sΛ * (exc - bedObj.linear_damping_factor * vz) 
 
 # end
 
@@ -160,8 +160,8 @@ function sea_bed_force(bedObj::Bed, X, QTr, T1s, T1m, u, ∇u, v)
   return lstill_weight * bedObj.still_weight  + 
     lSpng * bedObj.cnstz * sΛ * ( 
       exc +
-      -bedObj.linear_damping_ratio * vz +
-      -bedObj.quadratic_damping_ratio * vz * abs(vz) 
+      -bedObj.linear_damping_factor * vz +
+      -bedObj.quadratic_damping_factor * vz * abs(vz) 
     )
 
 end

@@ -11,8 +11,8 @@ SeaBedParams Struct
 This struct contains the properties of the seabed.
 The following parameters are included, with default values:
 - `kn::Real = 30e3`: Normal stiffness [N/m2]
-- `linear_damping_ratio::Real = 0.05`: Linear damping ratio [s]
-- `quadratic_damping_ratio::Real = 0.0`: Quadratic damping ratio [s^2/m]
+- `linear_damping_factor::Real = 0.05`: Linear damping ratio [s]
+- `quadratic_damping_factor::Real = 0.0`: Quadratic damping ratio [s^2/m]
 - `od::Real = 0.1`: Outer diameter of the line [m]
 - `A::Real = 0.008`: Area of the line [m^2]
 - `tanh_ramp::Real = 1e2`: Tanh ramp function parameter 
@@ -26,8 +26,8 @@ Relevant references:
 """
 @with_kw struct SeaBedParams
     kn::Real = 30e3
-    linear_damping_ratio::Real = 0.05
-    quadratic_damping_ratio::Real = 0.0  
+    linear_damping_factor::Real = 0.05
+    quadratic_damping_factor::Real = 0.0  
     od::Real = 0.1
     A::Real = 0.008 
     tanh_ramp::Real = 1.0e2
@@ -108,9 +108,9 @@ This function computes the force exerted by the sea bed on the mooring line. It 
 excursion of the line into the sea bed, the velocity of the line, and the properties of the sea bed.
 The function is defined as:
 
-[TO DO]
 ```math
-````
+\\alpha_1 * w + \\alpha_2 * k * s_\\Lambda * ( x_z - \\beta_1 * v_z - \\beta_2 * v_z * \\abs(v_z) )
+```
 
 Input:
 - `params::SeaBedParams`: Sea bed parameters
@@ -130,12 +130,12 @@ function sea_bed_force(params::SeaBedParams, X::VectorValue,
     u::VectorValue, ∇u::TensorValue, v::VectorValue)
   
     # Define local variables
-    local excursion, lSpng
+    local excursion, ramp_factor
     local FΓ, t1s, t1m2, sΛ        
   
     excursion = VectorValue(0.0,-1.0) ⋅ (X + u) # assumes flat bed in the x-y plane
-    lSpng = ramp_tanh(params, excursion)
-    lstill_weight = min(1.0, lSpng)
+    ramp_factor = ramp_tanh(params, excursion)
+    half_ramp_factor = min(1.0, ramp_factor)
   
     vz = VectorValue(0.0, 1.0) ⋅ v # velocity in the z direction
   
@@ -143,15 +143,16 @@ function sea_bed_force(params::SeaBedParams, X::VectorValue,
     t1s = FΓ ⋅ T1s
     t1m2 = t1s ⋅ t1s    
   
-    sΛ = (t1m2.^0.5) / T1m
+    sΛ = (t1m2.^0.5) / T1m # Stretch along the line
     
     # params.cnstz = params.kn * params.od / params.A
-  
-    return lstill_weight * params.still_weight  + 
-      lSpng * params.cnstz * sΛ * ( 
+    @unpack still_weight, cnstz, linear_damping_factor, quadratic_damping_factor = params
+
+    return half_ramp_factor * still_weight  + 
+      ramp_factor * cnstz * sΛ * ( 
         excursion +
-        -params.linear_damping_ratio * vz +
-        -params.quadratic_damping_ratio * vz * abs(vz) 
+        -linear_damping_factor * vz +
+        -quadratic_damping_factor * vz * abs(vz) 
       )
   
   end
