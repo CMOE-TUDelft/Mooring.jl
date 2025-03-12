@@ -4,6 +4,7 @@ using Gridap.CellData
 using Gridap.TensorValues
 
 export J, G, Q, ∇ₓΓdir, FΓ, P
+export j, g, q, Λ
 
 """
 J (Jacobian operator)
@@ -88,5 +89,11 @@ The projection operator is defined as:
 Note that the dimensions of the projection operator are `n×n`, where `n` is the dimension of the physical space.
 """
 P(J) = (J⋅J')/(J⊙J)
+
+j(FΓ,J) = FΓ'⋅J
+g(j) = j'⋅j
+q(j) = j⋅inv(g(j))
+
+Λ(j,J) = (det(g(j))).^(0.5)/(det(G(J))).^(0.5)
 
 end
