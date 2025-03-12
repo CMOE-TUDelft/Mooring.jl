@@ -12,6 +12,7 @@ include("EnvironmentalConditions.jl")
 include("SeaBed.jl")
 include("Drag.jl")
 include("PointMotion.jl")
+include("TangentialDiffCalculus.jl")
 # include( joinpath("subroutines","GnlCommon.jl") )
 # include( joinpath("subroutines","BedSpring.jl") )
 # include( joinpath("subroutines","Drag.jl") )
@@ -22,6 +23,7 @@ export EnvironmentalConditions
 export SeaBed
 export Drag
 export PointMotion
+export TangentialDiffCalculus
 # export GnlCommon
 # export BedSpring
 # export Drag
