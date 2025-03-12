@@ -21,12 +21,26 @@ uₕ = interpolate(u,V)
 Xq = get_cell_points(dΩ) # Quadrature point at the center of the element (0.5,)
 J = TDC.J(Xₕ)
 G = TDC.G(J)
+G_composed = TDC.G∘(J)
 Q = TDC.Q(J)
+Q_composed = TDC.Q∘(J)
 ∇ₓΓdir = TDC.∇ₓΓdir(uₕ,Xₕ)
+∇ₓΓdir_composed = TDC.∇ₓΓdir∘(∇(uₕ),J)
+FΓ = TDC.FΓ(uₕ,Xₕ)
+FΓ_composed = TDC.FΓ∘(∇ₓΓdir)
+P = TDC.P(J)
+P_composed = TDC.P∘(J)
 @test J(Xq) == [[TensorValue{2,1,Float64}(2.0,0.0)]]
 @test G(Xq) == [[TensorValue{1,1,Float64}(4.0)]]
+@test G_composed(Xq) == [[TensorValue{1,1,Float64}(4.0)]]
 @test Q(Xq) == [[TensorValue{2,1,Float64}(0.5,0.0)]]
+@test Q_composed(Xq) == [[TensorValue{2,1,Float64}(0.5,0.0)]]
 @test ∇ₓΓdir(Xq) == [[TensorValue{2,2,Float64}(0.5,0.0,0.0,0.0)]]
+@test ∇ₓΓdir_composed(Xq) == [[TensorValue{2,2,Float64}(0.5,0.0,0.0,0.0)]]
+@test FΓ(Xq) == [[TensorValue{2,2,Float64}(1.5,0.0,0.0,1.0)]]
+@test FΓ_composed(Xq) == [[TensorValue{2,2,Float64}(1.5,0.0,0.0,1.0)]]
+@test P(Xq) == [[TensorValue{2,2,Float64}(1.0,0.0,0.0,0.0)]]
+@test P_composed(Xq) == [[TensorValue{2,2,Float64}(1.0,0.0,0.0,0.0)]]
 
 # 3D map
 reffe = ReferenceFE(lagrangian,VectorValue{3,Float64},1)
@@ -39,11 +53,25 @@ uₕ = interpolate(u,V)
 # Test operators (3D)
 J = TDC.J(Xₕ)
 G = TDC.G(J)
-Q = TDC.Q(J)
+G_composed = TDC.G∘(J)
+Q = TDC.Q∘(J)
+Q_composed = TDC.Q(J)
 ∇ₓΓdir = TDC.∇ₓΓdir(uₕ,Xₕ)
+∇ₓΓdir_composed = TDC.∇ₓΓdir∘(∇(uₕ),J)
+FΓ = TDC.FΓ(uₕ,Xₕ)
+FΓ_composed = TDC.FΓ∘(∇ₓΓdir)
+P = TDC.P(J)
+P_composed = TDC.P∘(J)
 @test J(Xq) == [[TensorValue{3,1,Float64}(2.0,0.0,0.0)]]
 @test G(Xq) == [[TensorValue{1,1,Float64}(4.0)]]
+@test G_composed(Xq) == [[TensorValue{1,1,Float64}(4.0)]]
 @test Q(Xq) == [[TensorValue{3,1,Float64}(0.5,0.0,0.0)]]
+@test Q_composed(Xq) == [[TensorValue{3,1,Float64}(0.5,0.0,0.0)]]
 @test ∇ₓΓdir(Xq) == [[TensorValue{3,3,Float64}(0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)]]
+@test ∇ₓΓdir_composed(Xq) == [[TensorValue{3,3,Float64}(0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)]]
+@test FΓ(Xq) == [[TensorValue{3,3,Float64}(1.5,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0)]]
+@test FΓ_composed(Xq) == [[TensorValue{3,3,Float64}(1.5,0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0)]]
+@test P(Xq) == [[TensorValue{3,3,Float64}(1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)]]
+@test P_composed(Xq) == [[TensorValue{3,3,Float64}(1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)]]
 
 end

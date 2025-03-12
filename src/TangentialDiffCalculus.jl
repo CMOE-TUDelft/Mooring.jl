@@ -1,8 +1,9 @@
 module TangentialDiffCalculus
 
 using Gridap.CellData
+using Gridap.TensorValues
 
-export J, G, Q, ∇ₓΓdir
+export J, G, Q, ∇ₓΓdir, FΓ, P
 
 """
 J (Jacobian operator)
@@ -52,6 +53,40 @@ This function returns the tangential gradient of a given vector field `u`. The t
 
 Note that the dimensions of the tangential gradient are `n×n`, where `n` is the dimension of the physical space.
 """
-∇ₓΓdir(u,X) = ∇(u)'⋅(Q(J(X))')
+∇ₓΓdir(u::CellField,X::CellField) = ∇(u)'⋅(Q(J(X))')
+∇ₓΓdir(∇u::TensorValue,J::TensorValue) = ∇u'⋅(Q(J)')
+
+"""
+FΓ (line deformation gradient)
+
+This function returns the line deformation gradient for a given displacement field `u`, and 
+a map field `X`. The line deformation gradient is defined as:
+
+```math
+F_Γ = ∇ₓΓdir(u) + I
+```
+
+where `I` is the identity tensor. The dimensions of the line deformation gradient are `n×n`, where `n` is the dimension of the physical space.
+"""
+function FΓ(u::CellField,X::CellField)
+    ∇u = ∇ₓΓdir(u,X)
+    I = one∘(∇u)
+    return ∇u + I
+end
+FΓ(∇xΓdir_u::TensorValue) = ∇xΓdir_u + one(∇xΓdir_u)
+
+"""
+P (Projection operator)
+
+This function returns the projection operator of a given vector field `u` onto the tangent space of the map field `X`.
+The projection operator is defined as:
+
+```math
+\\mathbf{P} = \\frac{ \\mathbf{J}⋅\\mathbf{J} }{ \\|\\mathbf{J}\\|}^2}}
+```
+
+Note that the dimensions of the projection operator are `n×n`, where `n` is the dimension of the physical space.
+"""
+P(J) = (J⋅J')/(J⊙J)
 
 end
