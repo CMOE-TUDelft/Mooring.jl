@@ -4,6 +4,8 @@ using Parameters
 using Gridap.TensorValues
 using WaveSpec.Currents
 using WaveSpec.WaveTimeSeries
+using WaveSpec.Jonswap
+using WaveSpec.Constants
 
 export WaveParameters
 

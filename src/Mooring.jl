@@ -11,6 +11,7 @@ module Mooring
 include("EnvironmentalConditions.jl")
 include("SeaBed.jl")
 include("Drag.jl")
+include("PointMotion.jl")
 # include( joinpath("subroutines","GnlCommon.jl") )
 # include( joinpath("subroutines","BedSpring.jl") )
 # include( joinpath("subroutines","Drag.jl") )
@@ -20,6 +21,7 @@ include("Drag.jl")
 export EnvironmentalConditions
 export SeaBed
 export Drag
+export PointMotion
 # export GnlCommon
 # export BedSpring
 # export Drag
