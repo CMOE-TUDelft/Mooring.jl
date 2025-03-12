@@ -14,7 +14,7 @@ This struct contains the parameters for the wave conditions.
 The following parameters are included, with default values:
 - `Hs::Real = 0.0`: Significant wave height
 - `Tp::Real = 0.0`: Peak wave period
-- `h0::Real = 0.0`: Water depth
+- `h0::Real = 100.0`: Water depth
 - `nω::Int = 64`: Number of frequency components
 - `seed::Int = 0`: Seed for random phase
 - `ωc::Real = -1.0`: Cut-off frequency
@@ -24,12 +24,42 @@ The following parameters are included, with default values:
 
   Hs::Real = 0.0
   Tp::Real = 0.0
-  h0::Real = 0.0
+  h0::Real = 100.0
   nω::Int = 64
   seed::Int = 0
   ωc::Real = -1.0
   enableWaveSpec::Bool = false
 
+end
+
+"""
+get_input_spectrum
+
+This function returns the wave spectrum parameters for a given set of wave parameters. The wave spectrum
+is calculated using the package [WaveSpec](https://github.com/shagun751/WaveSpec.jl).
+"""
+function get_input_spectrum(params::WaveParameters)
+  @unpack Hs, Tp, h0, nω, seed, ωc, enableWaveSpec = params
+
+  if(enableWaveSpec)
+    if(ωc < 0)
+      ω, S, A = jonswap(Hs, Tp,
+        plotflag=false, nω = nω)
+    else
+      ω, S, A = jonswap(Hs, Tp,
+        plotflag=false, nω = nω, ωc = ωc)
+    end
+  
+  else
+    ω, S, A = jonswap(0.0, 10.0,
+        plotflag=false, nω = 64)
+  end
+
+  k = dispersionRelAng.(h0, ω; msg=false)
+  α = randomPhase(ω, seed = seed)
+
+  sp = SpecStruct( h0, ω, S, A, k, α; Hs = Hs, Tp = Tp )
+  return sp
 end
 
 """
