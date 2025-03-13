@@ -90,10 +90,58 @@ Note that the dimensions of the projection operator are `n×n`, where `n` is the
 """
 P(J) = (J⋅J')/(J⊙J)
 
+"""
+j (Jacobian determinant in the physical space)
+
+This function returns the Jacobian determinant in the physical space for a given line deformation gradient `FΓ` and
+Jacobian operator `J`. The Jacobian determinant in the physical space is defined as:
+
+```math
+j = FΓ^T⋅J
+```
+
+Note that the dimensions of the Jacobian determinant in the physical space are `n×1`.
+"""
 j(FΓ,J) = FΓ'⋅J
+
+"""
+g (Metric tensor in the physical space)
+
+This function returns the metric tensor in the physical space as:
+
+```math
+g = j^T⋅j
+```
+
+Note that the dimensions of the metric tensor in the physical space are `1×1`.
+"""
 g(j) = j'⋅j
+
+"""
+q (Transformation matrix in the physical space)
+
+This function returns the transformation matrix in the physical space as:
+
+```math
+q = j⋅g^{-1}
+```
+
+Note that the dimensions of the transformation matrix in the physical space are `n×1`, where `n` is the dimension of the physical space.
+"""
 q(j) = j⋅inv(g(j))
 
+"""
+Λ (Stretch)
+
+This function returns the stretch of a given line. The stretch is defined as:
+
+```math
+Λ = \\frac{\\det(g)}{\\det(G)}
+```
+
+where `g` is the metric tensor in the physical space, and `G` is the metric tensor in the reference space.
+The result is a scalar.
+"""
 Λ(j,J) = (det(g(j))).^(0.5)/(det(G(J))).^(0.5)
 
 end
