@@ -91,7 +91,7 @@ Note that the dimensions of the projection operator are `n×n`, where `n` is the
 P(J) = (J⋅J')/(J⊙J)
 
 """
-j (Jacobian determinant in the physical space)
+j (Jacobian operator in the physical space)
 
 This function returns the Jacobian determinant in the physical space for a given line deformation gradient `FΓ` and
 Jacobian operator `J`. The Jacobian determinant in the physical space is defined as:
