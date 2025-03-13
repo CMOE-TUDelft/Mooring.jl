@@ -6,6 +6,7 @@ pages = [
     "Sea Bed" => "SeaBed.md",
     "Drag" => "Drag.md",
     "Point Motion" => "PointMotion.md",
+    "Tangential Differential Calculus" => "TangentialDiffCalculus.md",
 ]
 
 makedocs(

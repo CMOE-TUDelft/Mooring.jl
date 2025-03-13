@@ -13,7 +13,7 @@ This function returns the Jacobian operator of a given coordinate map field `X`.
 the gradient operator is defined as `∇(X)=∇×X` in Gridap. The Jacobian operator is defined as:
 
 ```math
-\\mathbf{J}(\\mathbf{X}) = ∇(\\mathbf{X}) = \\frac{∂X_i}{∂r_j}
+\\mathbf{J}(\\mathbf{X}) = ∇_r(\\mathbf{X}) = \\frac{∂X_i}{∂r_j}
 ```
 Note that the dimensions of the Jacobian operator are `n×1`, where `n` is the dimension of the physical space.
 """
@@ -49,7 +49,7 @@ Q(J) = J⋅inv(G(J))
 This function returns the tangential gradient of a given vector field `u`. The tangential gradient is defined as:
 
 ```math
-∇ₓΓdir(u) = ∇_r(u)⋅Q(J(X))
+∇_{x}^{Γ,dir}(u) = ∇_r(u)⋅Q
 ```
 
 Note that the dimensions of the tangential gradient are `n×n`, where `n` is the dimension of the physical space.
@@ -64,7 +64,7 @@ This function returns the line deformation gradient for a given displacement fie
 a map field `X`. The line deformation gradient is defined as:
 
 ```math
-F_Γ = ∇ₓΓdir(u) + I
+F_Γ = ∇_{x}^{Γ,dir}(u) + I
 ```
 
 where `I` is the identity tensor. The dimensions of the line deformation gradient are `n×n`, where `n` is the dimension of the physical space.
