@@ -1,6 +1,7 @@
 module Materials
 
 using Parameters
+using Gridap.TensorValues
 
 """
 Material Struct
@@ -87,8 +88,8 @@ The Cauchy stress is defined as:
 \mathbf{σ} = \frac{1}{Λ}\mathbf{K}⋅\mathbf{F}_Γ^T
 ```
 
-where $ Λ $ is the stretch of the line, $ \mathbf{F}_Γ $ is the deformation gradient along the line,
-and $ \mathbf{K} $ is the first Piola stress.
+where \$ Λ \$ is the stretch of the line, \$ \\mathbf{F}_Γ \$ is the deformation gradient along the line,
+and \$ \\mathbf{K} \$ is the first Piola stress.
 """
 σ(Λ::Real,FΓ::TensorValue,K::TensorValue) = (1/Λ)*(K ⋅ FΓ')
 
