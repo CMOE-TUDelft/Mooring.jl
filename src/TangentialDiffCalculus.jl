@@ -27,7 +27,7 @@ J(X::CellField) = ∇(X)'
 **Metric tensor**
 
 This function returns the metric tensor of a given coordinate map field `X`. The metric tensor is defined as:
-$ \mathbf{G} = \mathbf{J}^T \cdot \mathbf{J} $, with $ \mathbf{J} $ the [J](@ref) operator of the map field `X`.
+\$ \\mathbf{G} = \\mathbf{J}^T \\cdot \\mathbf{J} \$, with \$ \\mathbf{J} \$ the [J](@ref) operator of the map field `X`.
 
 Note that the dimensions of the metric tensor are `1×1`.
 """
@@ -38,11 +38,11 @@ G(J) = J'⋅J
 
 **Transformation matrix**
 
-This function returns the transformation matrix $ Q $ of a given coordinate map field `X`. 
+This function returns the transformation matrix \$ \\mathbf{Q} \$ of a given coordinate map field `X`. 
 The transformation matrix is defined as: 
 
 ```math
-\mathbf{Q} = \mathbf{J}\cdot\mathbf{G}^{-1}
+\\mathbf{Q} = \\mathbf{J}\\cdot\\mathbf{G}^{-1}
 ```
 
 Note that the dimensions of the transformation matrix are `n×1`, where `n` is the dimension of the physical space.
@@ -107,7 +107,7 @@ This function returns the projection operator of a given vector field `u` onto t
 The projection operator is defined as:
 
 ```math
-\mathbf{P} = \frac{ \mathbf{J}⋅\mathbf{J} }{ \|\mathbf{J}\|}^2}}
+\\mathbf{P} = \\frac{ \\mathbf{J}⋅\\mathbf{J} }{ \\|\\mathbf{J}\\|}^2}}
 ```
 
 Note that the dimensions of the projection operator are `n×n`, where `n` is the dimension of the physical space.
@@ -168,7 +168,7 @@ q(j) = j⋅inv(g(j))
 This function returns the stretch of a given line. The stretch is defined as:
 
 ```math
-Λ = \frac{\det(g)}{\det(G)}
+Λ = \\frac{\\det(g)}{\\det(G)}
 ```
 
 where `g` is the metric tensor in the physical space, and `G` is the metric tensor in the reference space.
@@ -185,7 +185,7 @@ This function returns the directional Green-Lagrange strain for a given line def
 The directional Green-Lagrange strain is defined as:
 
 ```math
-mathbf{E}_{	ext{dir}} = 0.5(mathbf{F}_Γ^T⋅mathbf{F}_Γ - mathbf{I})
+\\mathbf{E}_{\\text{dir}} = 0.5(\\mathbf{F}_Γ^T⋅\\mathbf{F}_Γ - \\mathbf{I})
 ```
 
 where `I` is the identity tensor. The dimensions of the directional Green-Lagrange strain are `n×n`, where `n` is the dimension of the physical space.
@@ -201,7 +201,7 @@ This function returns the tangential Green-Lagrange strain for a given projectio
 directional Green-Lagrange strain `Edir`. The tangential Green-Lagrange strain is defined as:
 
 ```math
-\mathbf{E}_{\text{tang}} = \mathbf{P}⋅\mathbf{E}_{\text{dir}}⋅\mathbf{P}
+\\mathbf{E}_{\\text{tang}} = \\mathbf{P}⋅\\mathbf{E}_{\\text{dir}}⋅\\mathbf{P}
 ```
 
 The dimensions of the tangential Green-Lagrange strain are `n×n`, where `n` is the dimension of the physical space.
