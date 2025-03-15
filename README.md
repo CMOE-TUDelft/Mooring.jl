@@ -1,44 +1,63 @@
 # Mooring.jl
 
-This repository is built using the [Julia Language](https://julialang.org/) and [DrWatson](https://juliadynamics.github.io/DrWatson.jl/stable/) to facilitate a reproducible scientific project named:
+**Mooring.jl** is a Julia package for simulating mooring lines using the Finite Element Method. The package is based on **dynamic finite strain theory** and **tangential differential calculus**. **Mooring.jl** supports linear elastic, nonlinear elastic and nonlinear viscoelastic material properties, providing an accurate and efficient framework for modeling the behavior of mooring lines in offshore applications, either for chain/steel based cables or synthetic ropes.
 
-> **Mooring.jl**
+## Features
+- **Finite Element Method (FEM)** for high-fidelity mooring line simulations, with arbitrary order of interpolation
+- **Dynamic finite strain theory** for large deformation analysis
+- **Tangential differential calculus** for geometric consistency in simulations with complex material models
+- **Linear and nonlinear material models** including viscoelastic effects, relevant for synthetic ropes
+- **Efficient time integration schemes** for dynamic analysis
+- **Modular and extensible** design for research and engineering applications
 
-Authored by **Shagun**.
+## Installation
 
-## Getting Started
-
-To reproduce this project locally, follow these steps:
-
-### 1. Clone the Repository
-First, download the codebase by cloning this repository:
-
-```sh
-git clone https://github.com/yourusername/Mooring.jl.git
-cd Mooring.jl
-```
-
-**Note:** Raw data files are typically **not** included in version control (git). You may need to download them separately.
-
-### 2. Start a Julia Session
-Open a terminal in the project directory and start Julia with:
-
-```sh
-julia --project=.
-```
-
-### 3. Install Dependencies
-Once in Julia, enter package manager mode by pressing `]` and run:
+You can install **Mooring.jl** using Julia's package manager:
 
 ```julia
-(Mooring) pkg> instantiate
+using Pkg
+Pkg.add("Mooring")
 ```
 
-This will install all required dependencies, ensuring that everything runs correctly, including proper resolution of local paths.
+## Usage
+
+### Basic Example
+
+```julia
+using Mooring
+
+# TO DO
+```
+
+## Results
+
+### Example Simulation Output
+
+Below is an example of a mooring line under wave loading:
+
+*(Include plots or numerical results here)*
+
+## Contributing
+
+Contributions are welcome! If you find a bug or have a feature request, please open an issue or submit a pull request. Please, use the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
+
+## License
+
+This package is licensed under the MIT License.
+
+## Authors
+
+This repository has been developed by [Shagun Agarwal](https://github.com/shagun751) and [Oriol Colomés](https://github.com/oriolcg). See also the list of [Contributors](https://github.com/CMOE-TUDelft/Mooring.jl/graphs/contributors).
+
+## Contact
+
+For questions or collaboration, please reach out to the authors or post an [issue](https://github.com/CMOE-TUDelft/Mooring.jl/issues) to the repository.
 
 ---
 
-## Updating Specific Dependencies
+## Known issues
+
+### Updating Specific Dependencies
 If you need to update specific dependencies to newer versions, enter package manager mode (`]`) and run:
 
 ```julia
@@ -48,27 +67,6 @@ If you need to update specific dependencies to newer versions, enter package man
 
 This will fetch and install the specified versions from their respective repositories.
 
----
-
-## Running Scripts
-You can execute a script using:
-
-```julia
-julia> include("test/demo_test.jl")
-```
-
-### DrWatson Integration
-Most scripts in this project begin with:
-
-```julia
-using DrWatson
-@quickactivate "Mooring.jl"
-```
-
-This automatically activates the project environment and ensures proper handling of local paths.
-
----
-
-## Additional Notes
+### Additional Notes
 - If you run into issues with missing dependencies, try running `] resolve` in Julia to fix package compatibility.
 - Ensure that your Julia version matches the one specified in `Project.toml` to avoid compatibility issues.
