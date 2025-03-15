@@ -107,7 +107,7 @@ This function returns the projection operator of a given vector field `u` onto t
 The projection operator is defined as:
 
 ```math
-\\mathbf{P} = \\frac{ \\mathbf{J}⋅\\mathbf{J} }{ \\|\\mathbf{J}\\|}^2}}
+\mathbf{P} = \frac{ \mathbf{J}⋅\mathbf{J} }{ \|\mathbf{J}\|}^2}}
 ```
 
 Note that the dimensions of the projection operator are `n×n`, where `n` is the dimension of the physical space.
@@ -175,5 +175,37 @@ where `g` is the metric tensor in the physical space, and `G` is the metric tens
 The result is a scalar.
 """
 Λ(j,J) = (det(g(j))).^(0.5)/(det(G(J))).^(0.5)
+
+"""
+    Edir(FΓ::TensorValue)
+
+**Directional Green-Lagrange strain**
+
+This function returns the directional Green-Lagrange strain for a given line deformation gradient `FΓ`. 
+The directional Green-Lagrange strain is defined as:
+
+```math
+mathbf{E}_{	ext{dir}} = 0.5(mathbf{F}_Γ^T⋅mathbf{F}_Γ - mathbf{I})
+```
+
+where `I` is the identity tensor. The dimensions of the directional Green-Lagrange strain are `n×n`, where `n` is the dimension of the physical space.
+"""
+Edir(FΓ::TensorValue) = 0.5*(FΓ'⋅FΓ - one(FΓ))
+
+"""
+    Etang(P::TensorValue,Edir::TensorValue)
+
+**Tangential Green-Lagrange strain**
+
+This function returns the tangential Green-Lagrange strain for a given projection operator `P` and
+directional Green-Lagrange strain `Edir`. The tangential Green-Lagrange strain is defined as:
+
+```math
+\mathbf{E}_{\text{tang}} = \mathbf{P}⋅\mathbf{E}_{\text{dir}}⋅\mathbf{P}
+```
+
+The dimensions of the tangential Green-Lagrange strain are `n×n`, where `n` is the dimension of the physical space.
+"""
+Etang(P::TensorValue,Edir::TensorValue) = P⋅Edir⋅P
 
 end
