@@ -4,7 +4,7 @@ using Gridap.CellData
 using Gridap.TensorValues
 
 export J, G, Q, ∇ₓΓdir, FΓ, P
-export j, g, q, Λ
+export j, g, q, Λ, Edir, Etang
 
 """
     J(X::CellField)

@@ -17,7 +17,7 @@ u(r) = VectorValue(r[1],0.0)
 Xₕ = interpolate(X,V)
 uₕ = interpolate(u,V)
 
-# Test operators (2D)
+# Define operators (2D)
 Xq = get_cell_points(dΩ) # Quadrature point at the center of the element (0.5,)
 J = TDC.J(Xₕ)
 G = TDC.G(J)
@@ -33,6 +33,10 @@ P_composed = TDC.P∘(J)
 j = TDC.j(FΓ,J)
 Λ = TDC.Λ(j,J)
 Λ_composed = TDC.Λ∘(j,J)
+Edir = TDC.Edir∘(FΓ)
+Etang = TDC.Etang∘(P,Edir)
+
+# Test operators (2D)
 @test J(Xq) == [[TensorValue{2,1,Float64}(2.0,0.0)]]
 @test G(Xq) == [[TensorValue{1,1,Float64}(4.0)]]
 @test G_composed(Xq) == [[TensorValue{1,1,Float64}(4.0)]]
@@ -46,6 +50,8 @@ j = TDC.j(FΓ,J)
 @test P_composed(Xq) == [[TensorValue{2,2,Float64}(1.0,0.0,0.0,0.0)]]
 @test Λ(Xq) == [[1.5]]
 @test Λ_composed(Xq) == [[1.5]]
+@test Edir(Xq) == [[TensorValue{2,2,Float64}(0.625,0.0,0.0,0.0)]]
+@test Etang(Xq) == [[TensorValue{2,2,Float64}(0.625,0.0,0.0,0.0)]]
 
 # 3D map
 reffe = ReferenceFE(lagrangian,VectorValue{3,Float64},1)
@@ -55,7 +61,7 @@ u(r) = VectorValue(r[1],0.0,0.0)
 Xₕ = interpolate(X,V)
 uₕ = interpolate(u,V)
 
-# Test operators (3D)
+# Define operators (3D)
 J = TDC.J(Xₕ)
 G = TDC.G(J)
 G_composed = TDC.G∘(J)
@@ -69,6 +75,10 @@ P = TDC.P(J)
 P_composed = TDC.P∘(J)
 Λ = TDC.Λ(j,J)
 Λ_composed = TDC.Λ∘(j,J)
+Edir = TDC.Edir∘(FΓ)
+Etang = TDC.Etang∘(P,Edir)
+
+# Test operators (3D)
 @test J(Xq) == [[TensorValue{3,1,Float64}(2.0,0.0,0.0)]]
 @test G(Xq) == [[TensorValue{1,1,Float64}(4.0)]]
 @test G_composed(Xq) == [[TensorValue{1,1,Float64}(4.0)]]
@@ -82,5 +92,7 @@ P_composed = TDC.P∘(J)
 @test P_composed(Xq) == [[TensorValue{3,3,Float64}(1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)]]
 @test Λ(Xq) == [[1.5]]
 @test Λ_composed(Xq) == [[1.5]]
+@test Edir(Xq) == [[TensorValue{3,3,Float64}(0.625,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)]]
+@test Etang(Xq) == [[TensorValue{3,3,Float64}(0.625,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)]]
 
 end
