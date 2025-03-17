@@ -2,6 +2,8 @@ module Materials
 
 using Parameters
 using Gridap.TensorValues
+using Gridap.CellData
+import Mooring.TangentialDiffCalculus as TDC
 
 """
 Material Struct
@@ -53,25 +55,40 @@ function (S::Material,args...)
 end
 
 """
-  S(material::LinearElastic,Etang::TensorValue)  (Second Piola stress)
+  S(material::LinearElastic,Etang)  (Second Piola stress)
 
 This function returns the second Piola stress for a given material.
 The second Piola stress is defined in terms of the derivative of the strain energy density 
-with respect to the tangential Lagrangian Green Strain: $ \mathbf{S} = \frac{∂W}{∂\mathbf{Etang}} $.
+with respect to the tangential Lagrangian Green Strain: \$ \\mathbf{S} = \\frac{∂W}{∂\\mathbf{Etang}} \$.
 
-For linear elastic material this is: $ \mathbf{S} = 2\mu \mathbf{Etang} $.
+For linear elastic material this is: \$ \\mathbf{S} = 2\\mu \\mathbf{Etang} \$.
 """
-S(material::LinearElastic,Etang::TensorValue) = 2*material.μ*Etang
+S(material::LinearElastic,Etang) = 2*material.μ*Etang
 
 """
+  S(material::Material,Xh::CellField,uh::CellField)  (Second Piola stress)
+
+This function returns the second Piola stress for a given material. This is a generic
+implementation that takes the material, the deformation map (`Xh`) and the displacement field (`uh`) as arguments.
+"""
+function S(material::Material,Xh::CellField,uh::CellField)
+  Edir = TDC.Edir∘(TDC.FΓ(uh,Xh))
+  P = TDC.P(TDC.J(Xh))
+  Etang(x) = (TDC.Etang∘(P,Edir))(x)
+  return x -> S(material,Etang(x))
+end
+
+"""
+    K(FΓ::TensorValue,S::TensorValue)
+
 K(FΓ::TensorValue,S::TensorValue)  (First Piola stress)
 
 This function returns the first Piola stress for a given material. 
-The first Piola stress is defined in terms of the deformation along the line ($ FΓ $) and 
-the second Piola stress ($ \mathbf{S} $) as:
+The first Piola stress is defined in terms of the deformation along the line (\$ FΓ \$) and 
+the second Piola stress (\$ \\mathbf{S} \$) as:
 
 ```math
-\mathbf{K} = \mathbf{FΓ}⋅\mathbf{S}
+\\mathbf{K} = \\mathbf{FΓ}⋅\\mathbf{S}
 ```
 """
 K(FΓ::TensorValue,S::TensorValue) = FΓ ⋅ S
@@ -85,7 +102,7 @@ This function returns the Cauchy stress for a given material.
 The Cauchy stress is defined as: 
 
 ```math
-\mathbf{σ} = \frac{1}{Λ}\mathbf{K}⋅\mathbf{F}_Γ^T
+\\mathbf{σ} = \\frac{1}{Λ}\\mathbf{K}⋅\\mathbf{F}_Γ^T
 ```
 
 where \$ Λ \$ is the stretch of the line, \$ \\mathbf{F}_Γ \$ is the deformation gradient along the line,
