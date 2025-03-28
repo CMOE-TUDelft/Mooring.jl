@@ -96,6 +96,9 @@ function main(params)
   @unpack sch = params
   
   printTer("[SHOW] Schapery sch"); showTer(sch)  
+  printTer("[SHOW] sch.g0"); showTer(sch.g0)  
+  printTer("[SHOW] sch.g1"); showTer(sch.g1)  
+  printTer("[SHOW] sch.g2"); showTer(sch.g2)  
 
   @show StressNLVE.DBar(sch, simΔt, 1e6)
   @show StressNLVE.DBar(sch, simΔt, 10e6)

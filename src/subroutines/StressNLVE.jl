@@ -18,40 +18,48 @@ Custom Structs
 """
 # ---------------------Start---------------------
 @with_kw struct Schapery
-  
+
   D0::Real
-  N::Real  
+  N::Real
   Dn::Vector{Real}
   λn::Vector{Real}
-  g0::Vector{Float64}  
-  g1::Vector{Float64}  
-  g2::Vector{Float64} 
+  g0::Tuple{Bool,Real,Vector{Real}} #Vector{Float64}  
+  g1::Tuple{Bool,Real,Vector{Real}} #Vector{Float64}  
+  g2::Tuple{Bool,Real,Vector{Real}} #Vector{Float64}  
+  # Tuple{Bool,Real,Vector{Real}}
+  # Bool: Turn on limiter?
+  # Real: Limiter value
+  # Vector{Real}: Coefficients
 
   # Calculated values
-  ΣDn::Real  
+  ΣDn::Real
 
 end
 
 
 function Schapery(
-  placeholder; #Ask Oriol # TODO
+  placeholder; # Ask Oriol # TODO
   D0::Real,
-  Dn::Vector{<:Real} = [0.0], 
-  λn::Vector{<:Real} = [1.0],
-  g0::Vector{<:Real} = [1.0],
-  g1::Vector{<:Real} = [1.0],
-  g2::Vector{<:Real} = [1.0] )
+  Dn::Vector{<:Real}=[0.0],
+  λn::Vector{<:Real}=[1.0],
+  g0::Union{ Tuple{Real, Vector{<:Real}}, Vector{<:Real} } = [1.0],
+  g1::Union{ Tuple{Real, Vector{<:Real}}, Vector{<:Real} } = [1.0],
+  g2::Union{ Tuple{Real, Vector{<:Real}}, Vector{<:Real} } = [1.0]
+)
+  # Determine the type of g0, g1, g2 and normalize them to Tuple form
+  g0_tuple = isa(g0, Tuple) ? (true, g0[1], g0[2]) : (false, 0.0, g0)
+  g1_tuple = isa(g1, Tuple) ? (true, g1[1], g1[2]) : (false, 0.0, g1)
+  g2_tuple = isa(g2, Tuple) ? (true, g2[1], g2[2]) : (false, 0.0, g2)
 
   nDn = length(Dn)
   nλn = length(λn)
 
   N = min(nDn, nλn)
+  ΣDn = sum(Dn[1:N])
 
-  ΣDn = sum( Dn[1:N] )
-  
-  Schapery(D0, N, 
-    Dn[1:N], λn[1:N], 
-    g0, g1, g2, 
+  Schapery(D0, N,
+    Dn[1:N], λn[1:N],
+    g0_tuple, g1_tuple, g2_tuple,
     ΣDn)
 end
 
@@ -91,8 +99,22 @@ end
 
 
 ## General polynomial evaluator
-function poly_eval(σ, coeffs::Vector{Float64})
-  return sum( c * σ^(i-1) for (i, c) in enumerate(coeffs) )
+function poly_eval(
+  σ, 
+  coeffsAll::Tuple{Bool,Real,Vector{Real}}
+)
+  
+  limOn, lim, coeffs = coeffsAll
+
+  if limOn      
+    if σ > lim
+      return sum(c * σ^(i - 1) for (i, c) in enumerate(coeffs))
+    else
+      return 1.0  # Linear viscoelastic behavior below threshold
+    end
+  end
+
+  return sum(c * σ^(i - 1) for (i, c) in enumerate(coeffs))
 end
 # ----------------------End----------------------
 
@@ -464,7 +486,7 @@ function retqnt1(S::Schapery, λn, ΔΨ, qnt0, σt0, σt1)
 end
 
 
-## Unixial stress predictor
+## Uniaxial stress predictor
 function σPredicted( S::Schapery, 
   ϵt0, ΔΨt0, qnt0, σt0,
   ϵt1, ΔΨtk, σtk )
@@ -560,6 +582,65 @@ function Residual_σPredicted( S::Schapery,
   err = σtk - ( ϵt1 - ϵt0 + tmp1 + tmp2 + tmp3 )/DBartk
 
   return abs(err)
+end
+
+
+## Uniaxial viscoelastic strain 
+function retϵve( S::Schapery, 
+  ϵt0, ΔΨt0, qnt0, σt0,
+  ΔΨtk, σtk )
+  
+  local tmp1, tmp2, tmp3, g1tk, g1t0, g2tk, g2t0
+  local DBartk, err
+
+  g1t0 = retg1(S, σt0) #known  
+  g1tk = retg1(S, σtk) #guess
+  g2t0 = retg2(S, σt0) #known  
+  g2tk = retg2(S, σtk) #guess
+  
+  # Aux functions
+  tmpfn2( ΔΨt1, g1t0, g1t1, λi, Di, qit0 ) = 
+    Di*( g1t1*retExpTerm1(λi, ΔΨt1) - g1t0 )*qit0
+  
+  tmpfn3(ΔΨt0, ΔΨt1, g1t0, g1t1, λi, Di) = 
+    Di*
+    ( g1t0*retExpTerm2(λi,ΔΨt0) - g1t1*retExpTerm2(λi,ΔΨt1) )
+
+
+  tmp1 = DBar(S, ΔΨt0, σt0) * σt0 #known  
+
+  tmp2 = sum( 
+    tmpfn2.(Ref(ΔΨtk), Ref(g1t0), Ref(g1tk), S.λn, S.Dn, qnt0) )
+
+  tmp3 = g2t0 * σt0 *
+    sum( 
+      tmpfn3.(Ref(ΔΨt0), Ref(ΔΨtk), Ref(g1t0), Ref(g1tk), S.λn, S.Dn) 
+    )
+
+  DBartk = DBar(S, ΔΨtk, σtk)
+
+  ϵt1 = ϵt0 - tmp1 - tmp2 - tmp3 + σtk*DBartk
+
+
+  ## Calculating residual
+  # This is missing the update in ΔΨk for now #TODO
+
+  g1tk = retg1(S, σtk) #guess
+  g2tk = retg2(S, σtk) #guess
+
+  tmp2 = sum( 
+    tmpfn2.(Ref(ΔΨtk), Ref(g1t0), Ref(g1tk), S.λn, S.Dn, qnt0) )
+
+  tmp3 = g2t0 * σt0 *
+    sum( 
+      tmpfn3.(Ref(ΔΨt0), Ref(ΔΨtk), Ref(g1t0), Ref(g1tk), S.λn, S.Dn) 
+    )
+
+  DBartk = DBar(S, ΔΨtk, σtk)
+
+  err = σtk - (ϵt1 - ϵt0 + tmp1 + tmp2 + tmp3)/DBartk
+  
+  return ϵt1, err
 end
 
 
