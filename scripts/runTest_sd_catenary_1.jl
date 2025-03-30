@@ -14,8 +14,12 @@ using Mooring.StressNLVE
 include(srcdir("gnlPara2D_moordyn.jl"))
 
 
-ffm_η = 3.0 #m
-ffm_f = 1/12.1 #Hz
+# ffm_η = 3.0 #m
+# ffm_f = 1/12.1 #Hz
+# ffm_η = 1.0 #m
+# ffm_f = 1/7.5 #Hz
+ffm_η = 5.0 #m
+ffm_f = 1/20.0 #Hz
 ϵ0 = 0.0
 # materialDampCoeff = 0.07
 materialDampCoeff = 0.0
@@ -29,12 +33,14 @@ caseName = savename(@dict ϵ0 ffm_f ffm_η; digits=3)
 
 # Nonlinear viscoelastic
 sch = StressNLVE.Schapery(true,
-  D0 = 1.97e-10,
+  # D0 = 1.97e-10,
+  D0 = 1.0835e-10,  
   Dn = [  1e-10,  1.5e-10,  1e-10,  1.5e-10, 
           20e-10, 1e-10,    1e-10,  100e-10],
   λn = [  1e-1,   1e-2,     1e-3,   1e-4,
           1e-5,   1e-6,     1e-7,   1e-8],
-  g0 = [0.55, -1e-10, -3e-18, 1e-26],
+  # g0 = [0.55, -1e-10, -3e-18, 1e-26],
+  g0 = [1.0, -1.82e-10, -5.45e-18, 1.82e-26],
   g1 = [0.10, 6.6e-11, 4.2e-19, -2.7e-27],
   g2 = [1.7, -8.8e-9, 4.4e-17, 5.0e-28]
 )
@@ -42,12 +48,14 @@ typeName = "NLVE"
 
 # # Linear viscoelastic
 # sch = StressNLVE.Schapery(true,
-#   D0 = 1.97e-10,
+#   # D0 = 1.97e-10,
+#   D0 = 1.0835e-10,
 #   Dn = [  1e-10,  1.5e-10,  1e-10,  1.5e-10, 
 #           20e-10, 1e-10,    1e-10,  100e-10],
 #   λn = [  1e-1,   1e-2,     1e-3,   1e-4,
 #           1e-5,   1e-6,     1e-7,   1e-8],
-#   g0 = [0.55, 0.0],
+#   # g0 = [0.55, 0.0],
+#   g0 = [1.0, 0.0],
 #   g1 = [0.10, 0.0],
 #   g2 = [1.7, 0.0]
 # )
@@ -55,7 +63,8 @@ typeName = "NLVE"
 
 # # Linear elastic
 # sch = StressNLVE.Schapery(true,
-#   D0 = 1.97e-10,
+#   # D0 = 1.97e-10,
+#   D0 = 1.0835e-10,
 #   Dn = [0.0, 0.0, 0.0, 0.0],
 #   λn = [1e-1, 1e-2, 1e-3, 1e-4],
 #   g0 = [1, 0],
@@ -82,7 +91,8 @@ params = gnlPara2D.Test_params(
   resDir = resDir,
   
   # Material properties
-  E = 5.076e9, #N
+  # E = 5.076e9, #N
+  E = 9.229e9, #N
   L = 835.35, #m
   AStr = AStr, #m2 Str cross-section area
   nd = dia,  #m Nominal diameter
@@ -116,7 +126,7 @@ params = gnlPara2D.Test_params(
 
   # Time Parameters
   t0 = 0.0,
-  simT = 20/ffm_f,
+  simT = 50/ffm_f,
   simΔt = 1/ffm_f/tStepsPerT,
   outΔt = 1/ffm_f/4.0,
   maxIter = 100,
