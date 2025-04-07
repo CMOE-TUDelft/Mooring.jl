@@ -7,6 +7,7 @@ version = "0.0.1"
 Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
 Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 WaveSpec = "908d4cf6-a6c0-449c-92e4-852c8f288332"
 
 [compat]

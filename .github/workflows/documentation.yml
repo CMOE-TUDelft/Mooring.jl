@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - main
-      - develop 
+      - dev/*
+      - refactoring 
     tags: '*'
   pull_request:
+      - main
+      - dev/*
+      - refactoring
 
 jobs:
   build:
