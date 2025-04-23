@@ -50,8 +50,8 @@ This struct is used to define the properties of the Scharpery material. This inc
   g2::Function = (σ) -> 1.0
 end
 
-function (S::Material,args...)
-  error("Second Piola stress (S) not implemented for $(typeof(S)).")
+function S(material::Material,args...)
+  error("Second Piola stress (S) not implemented for $(typeof(material)).")
 end
 
 """
