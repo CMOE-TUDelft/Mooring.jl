@@ -4,12 +4,14 @@ on:
   push:
     branches:
       - main
-      - develop
+      - dev/*
+      - refactoring
     tags: ['*']
   pull_request:
     branches:
       - main
-      - develop
+      - dev/*
+      - refactoring
   workflow_dispatch:
 
 concurrency:
