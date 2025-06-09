@@ -8,12 +8,12 @@ module Mooring
 # using CSV
 # using Tables
 
-include("EnvironmentalConditions.jl")
-include("SeaBed.jl")
-include("Drag.jl")
-include("PointMotion.jl")
-include("TangentialDiffCalculus.jl")
-include("Materials.jl")
+include("Physics/EnvironmentalConditions.jl")
+include("Physics/SeaBed.jl")
+include("Physics/Drag.jl")
+include("Physics/PointMotion.jl")
+include("Physics/TangentialDiffCalculus.jl")
+include("Physics/Materials.jl")
 # include( joinpath("subroutines","GnlCommon.jl") )
 # include( joinpath("subroutines","BedSpring.jl") )
 # include( joinpath("subroutines","Drag.jl") )
