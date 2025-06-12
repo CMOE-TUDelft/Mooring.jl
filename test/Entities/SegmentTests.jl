@@ -30,6 +30,9 @@ btrian1 = Pt.get_triangulation(point1)
 btrian2 = Pt.get_triangulation(point2)
 @test get_cell_coordinates(btrian1)[1][1] == VectorValue(0.0, )
 @test get_cell_coordinates(btrian2)[1][1] == VectorValue(1.0,)
+@test Seg.get_material(segment) == material
+@test Seg.get_density(segment) == 1.0
+@test Seg.get_area(segment) == 1.0
 
 # Test segment FE spaces
 dirichlet_tags = Seg.get_dirichlet_tags(segment)
@@ -45,3 +48,7 @@ dΩ, dΓ1, dΓ2 = Seg.get_measures(segment)
 @test isa(dΩ, Measure)
 @test isa(dΓ1, Measure)
 @test isa(dΓ2, Measure)
+
+# Test segment reference configuration
+Xₕ = Seg.get_reference_configuration(segment, U(0.0))
+@test isa(Xₕ, FEFunction)

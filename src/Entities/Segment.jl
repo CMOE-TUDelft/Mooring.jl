@@ -19,6 +19,8 @@ It includes the following fields:
 - `map::Function`: Function to map the segment from reference configuration
 to undeformed configuration.
 - `material::Material`: [Material](../Physics/Materals) properties of the segment
+- `density::Real`: Submerged density of the segment (default is 1.0)
+- `area::Real`: Effective cross-sectional area of the segment (default is 1.0)
 """
 struct Segment
   tag::String
@@ -26,6 +28,8 @@ struct Segment
   points::Vector{Pts.MooringPoint} # boundary triangulations
   map::Function
   material::Material
+  density::Real
+  area::Real
 end
 
 """
@@ -37,7 +41,8 @@ and boundaries are created from the model. The segment is defined by its tag, th
 the mapping function, and the material properties.
 """
 function Segment(model::DiscreteModel, segment_tag::String, pointA_tag::String, pointB_tag::String,
-                 map::Function, material::Material, motionA::Pts.MooringPointMotion=nothing, motionB::Pts.MooringPointMotion=nothing)
+                 map::Function, material::Material, motionA::Pts.MooringPointMotion=nothing, 
+                 motionB::Pts.MooringPointMotion=nothing, density::Real=1.0, area::Real=1.0)  
 
   # Get the triangulation of the segment
   trian = Interior(model, tags=[segment_tag])
@@ -47,7 +52,7 @@ function Segment(model::DiscreteModel, segment_tag::String, pointA_tag::String, 
   pointB = Pts.MooringPoint(model, pointB_tag, motionB)
 
   # Create the segment
-  return Segment(segment_tag, trian, [pointA, pointB], map, material)
+  return Segment(segment_tag, trian, [pointA, pointB], map, material, density, area)
 end
 
 """
@@ -88,6 +93,18 @@ get_map(s::Segment) = s.map
 get_material(s::Segment) = s.material
 
 """
+  get_density(s::Segment)
+  Get the density of a segment
+"""
+get_density(s::Segment) = s.density
+
+"""
+  get_area(s::Segment)
+  Get the area of a segment
+"""
+get_area(s::Segment) = s.area
+
+"""
   get_dirichlet_tags(s::Segment)
   Get the Dirichlet tags of a segment. These tags are used to define the boundary conditions
   for the segment in the finite element space. A segment has as many Dirichlet tags as points with 
@@ -97,7 +114,7 @@ function get_dirichlet_tags(s::Segment)
   tags = String[]
   for point in s.points
     if Pts.get_motion_type(point) !== nothing
-      push!(tags, get_tag(point))
+      push!(tags, Pts.get_tag(point))
     end
   end
   return tags
@@ -182,5 +199,25 @@ function get_measures(s::Segment, degree::Int=2)
   return dΩ, dΓ1, dΓ2
 end
 
+"""
+  get_reference_configuration(s::Segment, U::SingleFieldFESpace)
+
+  Get the reference configuration of a segment. This function uses the map function of the segment
+  to create a FEFunction that represents the reference configuration.
+  Input:
+  - `s::Segment`: The segment for which the reference configuration is created.
+  - `U::SingleFieldFESpace`: The finite element space used for interpolation.
+Output:
+  - `Xₕ::FEFunction`: The FEFunction representing the reference configuration of the segment.
+"""
+function get_reference_configuration(s::Segment, U::SingleFieldFESpace)
+  # Get the map function of the segment
+  map = get_map(s)
+
+  # Interpolate the map function to create a FEFunction
+  Xₕ = interpolate_everywhere(map, U)
+
+  return Xₕ
+end
 
 end 
