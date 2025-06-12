@@ -19,12 +19,6 @@ add_tag_from_tags!(labels,"segment1",[3])
 segment = Seg.Segment(model, "segment1", "pointA", "pointB", map, material)
 
 # Crete FE spaces
-order = 1
-reffe = ReferenceFE(lagrangian,VectorValue{2,Float64},order)
-trian = Seg.get_triangulation(segment)
-dirichlet_tags = Seg.get_dirichlet_tags(segment)
-dirichlet_values = Seg.get_dirichlet_values(segment)
-V = TestFESpace(reffe, trian, dirichlet_tags=dirichlet_tags)
-
+V,U = Seg.get_transient_FESpaces(segment)
 
 end
