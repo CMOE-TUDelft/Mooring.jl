@@ -2,6 +2,7 @@ import Mooring.Segments as Seg
 import Mooring.MooringPoints as Pt
 import Mooring.Materials as M
 using Gridap
+using Gridap.FESpaces: SingleFieldFESpace, TransientTrialFESpace
 
 # Create a Discrete model
 nelem = 2
@@ -29,3 +30,12 @@ btrian1 = Pt.get_triangulation(point1)
 btrian2 = Pt.get_triangulation(point2)
 @test get_cell_coordinates(btrian1)[1][1] == VectorValue(0.0, )
 @test get_cell_coordinates(btrian2)[1][1] == VectorValue(1.0,)
+
+# Test segment FE spaces
+dirichlet_tags = Seg.get_dirichlet_tags(segment)
+@test dirichlet_tags == String[]
+dirichlet_values = Seg.get_dirichlet_values(segment)
+@test dirichlet_values == Function[]
+V, U = Seg.get_transient_FESpaces(segment)
+@test isa(V, SingleFieldFESpace)
+@test isa(U, TransientTrialFESpace)

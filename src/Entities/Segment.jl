@@ -1,7 +1,11 @@
 module Segments
 using Gridap.Geometry
+using Gridap.FESpaces
+using Gridap.ReferenceFEs
+using Gridap.TensorValues
+using Gridap.ODEs
 using Mooring.Materials: Material
-using Mooring.MooringPoints: MooringPoint, MooringPointMotion
+using Mooring.MooringPoints: MooringPoint, MooringPointMotion, get_motion_type
 
 """
 Segment Struct
@@ -105,13 +109,47 @@ end
   motion different from `nothing`. If both points have motion equal to `nothing`, the segment has no Dirichlet values.
 """
 function get_dirichlet_values(s::Segment)
-  values = MooringPointMotion[]
+  values = Function[]
   for point in s.points
     if get_motion_type(point) !== nothing
-      push!(values, get_motion(point))
+      push!(values, get_motion_function(point))
     end
   end
   return values
+end
+
+"""
+  get_transient_FESpaces(s::Segment, order::Int=1, dim::Int=2)
+
+  Get the transient finite element spaces for a segment. This function creates a test finite element space
+  and a transient trial finite element space based on the segment's triangulation, Dirichlet tags, and values.
+  It assumes that Lagrangian elements are used.
+  Input:
+  - `s::Segment`: The segment for which the finite element spaces are created.
+  - `order::Int`: The order of the finite element space (default is 1).
+  - `dim::Int`: The dimension of the finite element space (default is 2).
+Output:
+  - `V::TestFESpace`: The test finite element space.
+  - `U::TransientTrialFESpace`: The transient trial finite element space.
+"""
+function get_transient_FESpaces(s::Segment, order::Int=1, dim::Int=2)
+  # Get the triangulation of the segment
+  trian = get_triangulation(s)
+
+  # Get the Dirichlet tags and values
+  dirichlet_tags = get_dirichlet_tags(s)
+  dirichlet_values = get_dirichlet_values(s)
+
+  # Create the reference finite element space
+  reffe = ReferenceFE(lagrangian, VectorValue{dim, Float64}, order)
+
+  # Create the test finite element space
+  V = TestFESpace(trian, reffe, dirichlet_tags=dirichlet_tags)
+
+  # Create the transient trial finite element space
+  U = TransientTrialFESpace(V, dirichlet_values)
+
+  return V,U
 end
 
 end 
