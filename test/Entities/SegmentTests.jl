@@ -39,3 +39,9 @@ dirichlet_values = Seg.get_dirichlet_values(segment)
 V, U = Seg.get_transient_FESpaces(segment)
 @test isa(V, SingleFieldFESpace)
 @test isa(U, TransientTrialFESpace)
+
+# Test segment measures
+dΩ, dΓ1, dΓ2 = Seg.get_measures(segment)
+@test isa(dΩ, Measure)
+@test isa(dΓ1, Measure)
+@test isa(dΓ2, Measure)

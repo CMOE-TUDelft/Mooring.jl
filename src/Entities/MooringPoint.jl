@@ -1,6 +1,6 @@
 module MooringPoints
 using Gridap.Geometry
-using Mooring.PointMotion: get_point_motion_function
+using Mooring.PointMotion: MotionType, get_point_motion_function
 
 MooringPointMotion = Union{MotionType, Nothing}
 

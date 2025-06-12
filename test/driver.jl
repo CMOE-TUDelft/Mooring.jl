@@ -1,8 +1,10 @@
 module Driver
 
+# import Mooring.MooringPoints as Pts
 import Mooring.Segments as Seg
 import Mooring.Materials as M
 using Gridap
+using Gridap.ReferenceFEs: get_order
 
 nelem = 10
 model = CartesianDiscreteModel((0,1),(nelem,))
@@ -20,5 +22,8 @@ segment = Seg.Segment(model, "segment1", "pointA", "pointB", map, material)
 
 # Crete FE spaces
 V,U = Seg.get_transient_FESpaces(segment)
+
+# Get Measures
+dΩ, dΓ1, dΓ2 = Seg.get_measures(segment)
 
 end

@@ -4,8 +4,9 @@ using Gridap.FESpaces
 using Gridap.ReferenceFEs
 using Gridap.TensorValues
 using Gridap.ODEs
+using Gridap.CellData
 using Mooring.Materials: Material
-using Mooring.MooringPoints: MooringPoint, MooringPointMotion, get_motion_type
+import Mooring.MooringPoints as Pts
 
 """
 Segment Struct
@@ -22,7 +23,7 @@ to undeformed configuration.
 struct Segment
   tag::String
   trian::Triangulation
-  points::Vector{MooringPoint} # boundary triangulations
+  points::Vector{Pts.MooringPoint} # boundary triangulations
   map::Function
   material::Material
 end
@@ -36,14 +37,14 @@ and boundaries are created from the model. The segment is defined by its tag, th
 the mapping function, and the material properties.
 """
 function Segment(model::DiscreteModel, segment_tag::String, pointA_tag::String, pointB_tag::String,
-                 map::Function, material::Material, motionA::MooringPointMotion=nothing, motionB::MooringPointMotion=nothing)
+                 map::Function, material::Material, motionA::Pts.MooringPointMotion=nothing, motionB::Pts.MooringPointMotion=nothing)
 
   # Get the triangulation of the segment
   trian = Interior(model, tags=[segment_tag])
 
   # Define boundary points
-  pointA = MooringPoint(model, pointA_tag, motionA)
-  pointB = MooringPoint(model, pointB_tag, motionB)
+  pointA = Pts.MooringPoint(model, pointA_tag, motionA)
+  pointB = Pts.MooringPoint(model, pointB_tag, motionB)
 
   # Create the segment
   return Segment(segment_tag, trian, [pointA, pointB], map, material)
@@ -95,7 +96,7 @@ get_material(s::Segment) = s.material
 function get_dirichlet_tags(s::Segment)
   tags = String[]
   for point in s.points
-    if get_motion_type(point) !== nothing
+    if Pts.get_motion_type(point) !== nothing
       push!(tags, get_tag(point))
     end
   end
@@ -111,8 +112,8 @@ end
 function get_dirichlet_values(s::Segment)
   values = Function[]
   for point in s.points
-    if get_motion_type(point) !== nothing
-      push!(values, get_motion_function(point))
+    if Pts.get_motion_type(point) !== nothing
+      push!(values, Pts.get_motion_function(point))
     end
   end
   return values
@@ -151,5 +152,35 @@ function get_transient_FESpaces(s::Segment, order::Int=1, dim::Int=2)
 
   return V,U
 end
+
+"""
+  get_measures(s::Segment, degree::Int=2)
+
+  Get the measures for a segment. This function returns the measure for the segment and the boundary points.
+  Input:
+  - `s::Segment`: The segment for which the measures are created.
+  - `degree::Int`: The degree of the measure (default is 2).
+Output:
+  - `dΩ::Measure`: The measure for the segment.
+  - `dΓ1::Measure`: The measure for the first boundary point.
+  - `dΓ2::Measure`: The measure for the second boundary point.
+"""
+function get_measures(s::Segment, degree::Int=2)
+  # Get the triangulation of the segment
+  trian = get_triangulation(s)
+
+  # Create the measure for the segment
+  dΩ = Measure(trian, degree)
+
+  # Get the boundary points
+  point1, point2 = get_points(s)
+
+  # Create measures for the boundary points
+  dΓ1 = Measure(Pts.get_triangulation(point1), degree)
+  dΓ2 = Measure(Pts.get_triangulation(point2), degree)
+
+  return dΩ, dΓ1, dΓ2
+end
+
 
 end 
