@@ -1,4 +1,5 @@
 import Mooring.Segments as Seg
+import Mooring.MooringPoints as Pt
 import Mooring.Materials as M
 using Gridap
 
@@ -23,6 +24,8 @@ trian = Seg.get_triangulation(segment)
 @test length(get_cell_coordinates(trian)) == nelem
 map_func = Seg.get_map(segment)
 @test map_func(get_cell_coordinates(trian)[end][end]) == VectorValue(2.0, 0.0)
-btrian1, btrian2 = Seg.get_boundary_triangulations(segment)
+point1, point2 = Seg.get_points(segment)
+btrian1 = Pt.get_triangulation(point1)
+btrian2 = Pt.get_triangulation(point2)
 @test get_cell_coordinates(btrian1)[1][1] == VectorValue(0.0, )
 @test get_cell_coordinates(btrian2)[1][1] == VectorValue(1.0,)
