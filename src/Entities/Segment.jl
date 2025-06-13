@@ -5,8 +5,9 @@ using Gridap.ReferenceFEs
 using Gridap.TensorValues
 using Gridap.ODEs
 using Gridap.CellData
-using Mooring.Materials: Material
+import Mooring.Materials as M
 import Mooring.MooringPoints as Pts
+import Mooring.TangentialDiffCalculus as TDC
 
 """
 Segment Struct
@@ -27,29 +28,30 @@ struct Segment
   trian::Triangulation
   points::Vector{Pts.MooringPoint} # boundary triangulations
   map::Function
-  material::Material
+  material::M.Material
   density::Real
   area::Real
 end
 
 """
-Segment(model::DiscreteModel, segment_tag::String, pointA_tag::String, pointB_tag::String,
-        map::Function, material::Material)
+Segment(model::DiscreteModel, segment_tag::String, pointA::Pts.MooringPoint, pointB::Pts.MooringPoint,
+        map::Function, material::Material, density::Real=1.0, area::Real=1.0)
 
 Create a segment in the mooring system from a discrete model. The triangulations of the segment 
 and boundaries are created from the model. The segment is defined by its tag, the triangulation,
 the mapping function, and the material properties.
 """
-function Segment(model::DiscreteModel, segment_tag::String, pointA_tag::String, pointB_tag::String,
-                 map::Function, material::Material, motionA::Pts.MooringPointMotion=nothing, 
-                 motionB::Pts.MooringPointMotion=nothing, density::Real=1.0, area::Real=1.0)  
+function Segment(model::DiscreteModel, 
+                 segment_tag::String, 
+                 pointA::Pts.MooringPoint, 
+                 pointB::Pts.MooringPoint,
+                 map::Function, 
+                 material::M.Material,
+                 density::Real=1.0, 
+                 area::Real=1.0)  
 
   # Get the triangulation of the segment
   trian = Interior(model, tags=[segment_tag])
-
-  # Define boundary points
-  pointA = Pts.MooringPoint(model, pointA_tag, motionA)
-  pointB = Pts.MooringPoint(model, pointB_tag, motionB)
 
   # Create the segment
   return Segment(segment_tag, trian, [pointA, pointB], map, material, density, area)
@@ -218,6 +220,47 @@ function get_reference_configuration(s::Segment, U::SingleFieldFESpace)
   Xₕ = interpolate_everywhere(map, U)
 
   return Xₕ
+end
+
+"""
+  get_quasi_static_residual(s::Segment, Xₕ::CellField, g::Real=9.81)
+
+  Get the quasi-static residual for a segment. This function computes the residual based on the material properties,
+  measures, and the reference configuration of the segment. It assumes that the segment is in a quasi-static state
+  under the influence of gravity.
+  Input:
+  - `s::Segment`: The segment for which the residual is computed.
+  - `Xₕ::CellField`: The reference configuration of the segment.
+  - `g::Real`: The gravitational acceleration (default is 9.81 m/s²).
+  Output:
+  - `res::Function`: The residual function that takes two arguments: the trial function `u` and the test function `v`.
+"""
+function get_quasi_static_residual(s::Segment, Xₕ::CellField, g::Real=9.81)
+  
+  # Get the material properties
+  material = get_material(s)
+
+  # Get Measures
+  dΩ, dΓ1, dΓ2 = get_measures(s)
+
+  # TDC quantities
+  J = TDC.J(Xₕ)
+  Jabs = norm∘(J)
+  Q = TDC.Q∘J
+
+  # Define the stress functions
+  S(u) = M.S(material, Xₕ, u)
+  FΓ(u) = TDC.FΓ(u, Xₕ)
+  K(u) = M.K∘(FΓ(u), S(u))
+
+  # Define gravity force
+  Fᵨ = VectorValue(0.0, -get_density(s) * get_area(s) * g)
+
+  # Define the residual function
+  res(u, v) = ∫(((∇(v)' ⋅ Q') ⊙ K(u)) * Jabs)dΩ -
+              ∫((v ⋅ Fᵨ) * Jabs)dΩ
+
+  return res
 end
 
 end 
