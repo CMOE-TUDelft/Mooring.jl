@@ -1,4 +1,4 @@
-import Mooring.Segments as Seg
+import Mooring.MooringSegments as Seg
 import Mooring.MooringPoints as Pt
 import Mooring.Materials as M
 using Gridap
@@ -22,7 +22,7 @@ pointA = Pt.MooringPoint(model, "pointA")
 pointB = Pt.MooringPoint(model, "pointB")
 
 # Create a segment
-segment = Seg.Segment(model, "segment1", pointA, pointB, map, material)
+segment = Seg.MooringSegment(model, "segment1", pointA, pointB, map, material)
 
 # Test the segment properties
 @test Seg.get_tag(segment) == "segment1"

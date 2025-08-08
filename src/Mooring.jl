@@ -8,7 +8,7 @@ include("Physics/TangentialDiffCalculus.jl")
 include("Physics/Materials.jl")
 
 include("Entities/MooringPoint.jl")
-include("Entities/Segment.jl")
+include("Entities/MooringSegment.jl")
 
 export EnvironmentalConditions
 export SeaBed
@@ -18,6 +18,6 @@ export TangentialDiffCalculus
 export Materials
 
 export MooringPoints
-export Segments
+export MooringSegments
 
 end

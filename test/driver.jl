@@ -1,7 +1,7 @@
 module Driver
 
 import Mooring.MooringPoints as Pts
-import Mooring.Segments as Seg
+import Mooring.MooringSegments as Seg
 import Mooring.Materials as M
 import Mooring.TangentialDiffCalculus as TDC
 import Mooring.PointMotion as PM
@@ -30,7 +30,7 @@ pointA = Pts.MooringPoint(model, "pointA", pointAmotion)
 pointB = Pts.MooringPoint(model, "pointB", pointBmotion)
 
 # Create a segment
-segment = Seg.Segment(model, "segment1", pointA, pointB, map, material)
+segment = Seg.MooringSegment(model, "segment1", pointA, pointB, map, material)
 
 # Crete FE spaces
 V,U = Seg.get_transient_FESpaces(segment)
