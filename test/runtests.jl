@@ -12,6 +12,9 @@ println("Starting tests")
 @time @testset "Materials" begin include(joinpath("Physics/MaterialsTests.jl")) end
 # @time @testset "Demo" begin include(joinpath("demo_test.jl")) end
 
+# Geometry tests
+@time @testset "Topology" begin include(joinpath("Geometry/TopologyTests.jl")) end
+
 # Entities tests
 @time @testset "MooringPoint" begin include(joinpath("Entities/MooringPointTests.jl")) end
 @time @testset "MooringSegment" begin include(joinpath("Entities/MooringSegmentTests.jl")) end
