@@ -1,4 +1,5 @@
 import Mooring.Topology as Topo
+using LinearAlgebra
 
 # --- Create sample topology ---
 # 1 --(10.0)-- 2 --(5.0)-- 3
@@ -6,14 +7,14 @@ import Mooring.Topology as Topo
 #            (7.0)
 #              |
 #              4
-p1 = Topo.TopoPoint(1, [0.0, 0.0, 0.0])
-p2 = Topo.TopoPoint(2, [0.0, 0.0, 0.0])
+p1 = Topo.TopoPoint(1, [1.0, 2.0, 3.0])
+p2 = Topo.TopoPoint(2, [4.0, 6.0, 8.0])
 p3 = Topo.TopoPoint(3, [0.0, 0.0, 0.0])
 p4 = Topo.TopoPoint(4, [0.0, 0.0, 0.0])
 
-seg1 = Topo.TopoSegment(1, 1, 2, 10.0, r -> (r, 0.0, 0.0))
-seg2 = Topo.TopoSegment(2, 2, 3, 5.0,  r -> (r, 1.0, 0.0))
-seg3 = Topo.TopoSegment(3, 2, 4, 7.0,  r -> (r, 3.0, 0.0))
+seg1 = Topo.TopoSegment(1, 1, 2, 10.0)
+seg2 = Topo.TopoSegment(2, 2, 3, 5.0)
+seg3 = Topo.TopoSegment(3, 2, 4, 7.0)
 
 topo = Topo.TopologyData([p1, p2, p3, p4], [seg1, seg2, seg3])
 
@@ -38,3 +39,14 @@ coords2 = Topo.assign_coords(topo; anchor=3)
 @test coords2[2] == 5.0
 @test coords2[1] == 15.0
 @test coords2[4] == 12.0
+
+# Check map
+x_p1 = Topo.get_coords(p1)
+x_p2 = Topo.get_coords(p2)
+length1 = norm(x_p2 .- x_p1)
+map1 = Topo.get_physical_map(seg1,topo)
+
+@test map1(0.0) ≈ x_p1
+@test map1(length1) ≈ x_p2
+mid1 = map1(length1/2)
+@test mid1 ≈ [(x_p1[i] + x_p2[i])/2 for i in 1:3]

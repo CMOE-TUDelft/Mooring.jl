@@ -1,4 +1,5 @@
 module Topology
+using LinearAlgebra
 
 export TopoPoint, TopoLine, TopologyData, build_adjacency, assign_coords
 
@@ -15,22 +16,51 @@ struct TopoPoint
 end
 
 """
+get_id((p::TopoPoint)
+
+Get the unique identifier of a topological point.
+"""
+get_id(p::TopoPoint) = p.id
+
+"""
+get_coords(p::TopoPoint)
+
+Get the coordinates of a topological point.
+"""
+get_coords(p::TopoPoint) = p.coords
+
+"""
 TopoSegment Struct
 
-Topological segment with start/end point ids, length, and physical mapping. It includes the fields:
+Topological segment with start/end point ids and length. It includes the fields:
 - id: Unique identifier for the segment
 - start: ID of the start point
 - stop: ID of the stop point  
 - length: Length of the segment
-- physmap: Physical mapping function
 """
 struct TopoSegment
     id::Int
     start::Int
     stop::Int
     length::Float64
-    physmap::Function   # function r in [0,length] -> (x,y,z)
 end
+
+"""
+"""
+get_id(s::TopoSegment) = s.id
+
+"""
+"""
+get_start_point(s::TopoSegment) = s.start
+
+"""
+"""
+get_stop_point(s::TopoSegment) = s.stop
+
+"""
+"""
+get_length(s::TopoSegment) = s.length
+
 
 """
 TopoloyData struct
@@ -95,6 +125,23 @@ function assign_coords(topo::TopologyData; anchor=1)
         end
     end
     return coords
+end
+
+"""
+get_physical_map(seg::TopoSegment, data::TopologyData)
+
+This function makes the physical map between two points of a segment.
+Given a coordinate along the segment `r`, it returns the coordinate in the physical space.
+"""
+function get_physical_map(seg::TopoSegment, data::TopologyData)
+  p1 = data.points[get_start_point(seg)]
+  p2 = data.points[get_stop_point(seg)]
+  x_p1 = get_coords(p1)
+  x_p2 = get_coords(p2)
+  return function(r::Float64)
+      t = r / norm(x_p2 .- x_p1)         # normalize parameter to [0,1]
+      return x_p1 .+ t .* (x_p2 .- x_p1) # linear interpolation
+  end
 end
 
 end # module
