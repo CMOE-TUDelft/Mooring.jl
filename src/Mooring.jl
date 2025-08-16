@@ -8,6 +8,7 @@ include("Physics/TangentialDiffCalculus.jl")
 include("Physics/Materials.jl")
 
 include("Geometry/Topology.jl")
+include("Geometry/MooringDiscreteModel.jl")
 
 include("Entities/MooringPoint.jl")
 include("Entities/MooringSegment.jl")

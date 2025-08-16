@@ -9,10 +9,24 @@ TopoPoint Struct
 Topological point with coordinates. It includes the fields:
 - id: Unique identifier for the point
 - coords: Coordinates (x, y) or (x, y, z) of the point
+- mesh_size: Size of the mesh element associated with the point
 """
 struct TopoPoint
     id::Int
+    tag::String
     coords::Vector{Float64}  # coordinates (x, y, z)  
+    mesh_size::Float64
+end
+
+"""
+TopoPoint(id::Int, coords::Vector{Float64}, mesh_size::Float64=1.0)
+
+Constructor without tag and with default mesh size. The tag is defined as
+"Point_[id]".
+"""
+function TopoPoint(id::Int, coords::Vector{Float64},mesh_size::Float64=1.0)
+  tag = "Point_$id"
+  return TopoPoint(id, tag, coords, mesh_size)
 end
 
 """
@@ -40,9 +54,20 @@ Topological segment with start/end point ids and length. It includes the fields:
 """
 struct TopoSegment
     id::Int
+    tag::String
     start::Int
     stop::Int
     length::Float64
+end
+
+"""
+TopoSegment(id::Int, start::Int, stop::Int, length::Float64)
+
+Constructor without tag. Default tag name is "Segment_[id]".
+"""
+function TopoSegment(id::Int, start::Int, stop::Int, length::Float64)
+    tag = "Segment_$id"
+    return TopoSegment(id, tag, start, stop, length)
 end
 
 """
