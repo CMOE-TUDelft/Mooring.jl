@@ -42,4 +42,10 @@ end
 TO DO -> generate_discrete_model
 """
 
+function generate_discrete_model(topo::Topo.TopologyData)
+  gmsh = generate_mesh(topo)
+  model = GmshDiscreteModel(gmsh)
+  return model
+end
+
 end # module MooringDiscreteModel
