@@ -1,5 +1,6 @@
 module Topology
 using LinearAlgebra
+using Gridap.TensorValues
 
 export TopoPoint, TopoLine, TopologyData, build_adjacency, assign_coords
 
@@ -163,9 +164,9 @@ function get_physical_map(seg::TopoSegment, data::TopologyData)
   p2 = data.points[get_stop_point(seg)]
   x_p1 = get_coords(p1)
   x_p2 = get_coords(p2)
-  return function(r::Float64)
+  return function(r::VectorValue{1,Float64})
       t = r / norm(x_p2 .- x_p1)         # normalize parameter to [0,1]
-      return x_p1 .+ t .* (x_p2 .- x_p1) # linear interpolation
+      return VectorValue(x_p1 .+ t[1] .* (x_p2 .- x_p1)) # linear interpolation
   end
 end
 
