@@ -45,6 +45,7 @@ TO DO -> generate_discrete_model
 function generate_discrete_model(topo::Topo.TopologyData)
   gmsh = generate_mesh(topo)
   model = GmshDiscreteModel(gmsh)
+  gmsh.finalize()
   return model
 end
 
