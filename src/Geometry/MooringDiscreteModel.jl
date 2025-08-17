@@ -14,13 +14,13 @@ function generate_mesh(topo::Topo.TopologyData)
   gmsh.initialize()
   gmsh.model.add("mooring_model")
 
+  # 1D topological graph coordinates
+  coords_dict = Topo.assign_coords(topo)
+
   # Add points
   for p in topo.points
-    coords = p.coords
-    if length(coords) == 2
-      push!(coords,0.0)
-    end
-    gmsh.model.geo.addPoint(coords..., p.mesh_size, p.id)
+    coords = coords_dict[p.id]
+    gmsh.model.geo.addPoint(coords, 0.0, 0.0, p.mesh_size, p.id)
     gmsh.model.addPhysicalGroup(0, [p.id], p.id)
     gmsh.model.setPhysicalName(0, p.id, p.tag)
   end
