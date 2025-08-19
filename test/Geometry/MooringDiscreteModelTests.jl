@@ -1,5 +1,7 @@
 import Mooring.MooringDiscreteModel as DM
 import Mooring.Topology as Topo
+using GridapGmsh: GmshDiscreteModel
+using Gridap.Geometry
 
 # Minimal topology
 p1 = Topo.TopoPoint(1, [0.0, 0.0], 0.1)
@@ -16,7 +18,7 @@ gmsh = DM.generate_mesh(topo)
 # Retrieve points from gmsh
 point_coords = Dict(id => gmsh.model.getValue(0, id, []) for id in [1, 2])
 @test isapprox(point_coords[1][1:2], [0.0, 0.0], atol=1e-8)
-@test isapprox(point_coords[2][1:2], [1.0, 0.0], atol=1e-8)
+@test isapprox(point_coords[2][1:2], [1.5, 0.0], atol=1e-8)
 
 # Check that line exists
 lines = gmsh.model.getEntities(1) # 1D entities
@@ -46,3 +48,19 @@ nodes = gmsh.model.mesh.getNodes()
 @test length(nodes[2]) > 0  # node coords must exist
 
 gmsh.finalize()
+
+# Test discrete model
+model = DM.generate_discrete_model(topo)
+
+# 1. Check type
+@test model isa UnstructuredDiscreteModel
+
+# 2. Check topology (entities in model)
+labels = get_face_labeling(model)
+dim_ids = labels.d_to_dface_to_entity
+point_ids = dim_ids[1]
+line_ids = dim_ids[2]
+id_to_name = labels.tag_to_name
+@test id_to_name[point_ids[1]] == "Point_1"
+@test id_to_name[point_ids[2]] == "Point_2"
+@test id_to_name[line_ids[1]] == "line1"

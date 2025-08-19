@@ -46,7 +46,7 @@ x_p2 = Topo.get_coords(p2)
 length1 = norm(x_p2 .- x_p1)
 map1 = Topo.get_physical_map(seg1,topo)
 
-@test map1(0.0) ≈ x_p1
-@test map1(length1) ≈ x_p2
-mid1 = map1(length1/2)
-@test mid1 ≈ [(x_p1[i] + x_p2[i])/2 for i in 1:3]
+@test map1(VectorValue(0.0)) ≈ VectorValue(x_p1)
+@test map1(VectorValue(length1)) ≈ VectorValue(x_p2)
+mid1 = map1(VectorValue(length1/2))
+@test mid1 ≈ VectorValue([(x_p1[i] + x_p2[i])/2 for i in 1:3])

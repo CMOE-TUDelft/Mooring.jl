@@ -39,9 +39,10 @@ function generate_mesh(topo::Topo.TopologyData)
 end
 
 """
-TO DO -> generate_discrete_model
-"""
+generate_discrete_model(topo::Topo.TopologyData)
 
+This function generates a discrete model from the given topology data.
+"""
 function generate_discrete_model(topo::Topo.TopologyData)
   gmsh = generate_mesh(topo)
   model = GmshDiscreteModel(gmsh)
