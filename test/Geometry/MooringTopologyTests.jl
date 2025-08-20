@@ -1,4 +1,4 @@
-import Mooring.Topology as Topo
+import Mooring.MooringTopology as Topo
 using LinearAlgebra
 
 # --- Create sample topology ---
@@ -16,7 +16,7 @@ seg1 = Topo.TopoSegment(1, 1, 2, 10.0)
 seg2 = Topo.TopoSegment(2, 2, 3, 5.0)
 seg3 = Topo.TopoSegment(3, 2, 4, 7.0)
 
-topo = Topo.TopologyData([p1, p2, p3, p4], [seg1, seg2, seg3])
+topo = Topo.MooringTopologyData([p1, p2, p3, p4], [seg1, seg2, seg3])
 
 # --- Test build_adjacency ---
 adj = Topo.build_adjacency(topo)

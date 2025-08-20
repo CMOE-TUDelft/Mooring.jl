@@ -7,7 +7,7 @@ include("Physics/PointMotion.jl")
 include("Physics/TangentialDiffCalculus.jl")
 include("Physics/Materials.jl")
 
-include("Geometry/Topology.jl")
+include("Geometry/MooringTopology.jl")
 include("Geometry/MooringDiscreteModel.jl")
 
 include("Entities/MooringPoint.jl")
@@ -20,7 +20,7 @@ export PointMotion
 export TangentialDiffCalculus
 export Materials
 
-export TopologyData
+export MooringTopologyData
 
 export MooringPoints
 export MooringSegments

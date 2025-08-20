@@ -5,7 +5,7 @@ import Mooring.MooringSegments as Seg
 import Mooring.Materials as M
 import Mooring.TangentialDiffCalculus as TDC
 import Mooring.PointMotion as PM
-import Mooring.Topology as Topo
+import Mooring.MooringTopology as Topo
 import Mooring.MooringDiscreteModel as DM
 using Gridap
 using Gridap.ReferenceFEs: get_order
@@ -57,13 +57,13 @@ using GridapGmsh: gmsh, GmshDiscreteModel
 # model = GmshDiscreteModel("model_geo_points_lines.msh")
 # writevtk(model, "model_geo_points_lines.vtu")
 
-# Topology
+# MooringTopology
 p1 = Topo.TopoPoint(1, [0.0, 0.0], 1.0)
 p2 = Topo.TopoPoint(2, [5.0, 3.0], 1.0)
 p3 = Topo.TopoPoint(3, [10.0, 5.0], 1.0)
 s1 = Topo.TopoSegment(1, 1, 2, 10.0)
 s2 = Topo.TopoSegment(2, 2, 3, 15.0)
-topo = Topo.TopologyData([p1,p2,p3],[s1,s2])
+topo = Topo.MooringTopologyData([p1,p2,p3],[s1,s2])
 
 # Discrete model
 model = DM.generate_discrete_model(topo)

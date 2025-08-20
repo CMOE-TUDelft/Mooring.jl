@@ -1,5 +1,5 @@
 import Mooring.MooringDiscreteModel as DM
-import Mooring.Topology as Topo
+import Mooring.MooringTopology as Topo
 using GridapGmsh: GmshDiscreteModel
 using Gridap.Geometry
 
@@ -8,7 +8,7 @@ p1 = Topo.TopoPoint(1, [0.0, 0.0], 0.1)
 p2 = Topo.TopoPoint(2, [1.0, 0.0], 0.2)
 seg = Topo.TopoSegment(1, "line1", p1.id, p2.id, 1.5)
 
-topo = Topo.TopologyData([p1, p2], [seg])
+topo = Topo.MooringTopologyData([p1, p2], [seg])
 
 gmsh = DM.generate_mesh(topo)
 

@@ -1,16 +1,16 @@
 module MooringDiscreteModel
 
 using GridapGmsh: gmsh, GmshDiscreteModel
-import Mooring.Topology as Topo
+import Mooring.MooringTopology as Topo
 
 """
-generate_mesh(topo::Topo.TopologyData)
+generate_mesh(topo::Topo.MooringTopologyData)
 
 Generate a 1D mesh of the topological graph defined in `topo`. The mesh size
 can be controlled by the `mesh_size` parameter in the `TopoPoint` struct.
 The function returns a `gmsh` model. 
 """
-function generate_mesh(topo::Topo.TopologyData)   
+function generate_mesh(topo::Topo.MooringTopologyData)   
   gmsh.initialize()
   gmsh.model.add("mooring_model")
 
@@ -39,11 +39,11 @@ function generate_mesh(topo::Topo.TopologyData)
 end
 
 """
-generate_discrete_model(topo::Topo.TopologyData)
+generate_discrete_model(topo::Topo.MooringTopologyData)
 
 This function generates a discrete model from the given topology data.
 """
-function generate_discrete_model(topo::Topo.TopologyData)
+function generate_discrete_model(topo::Topo.MooringTopologyData)
   gmsh = generate_mesh(topo)
   model = GmshDiscreteModel(gmsh)
   gmsh.finalize()

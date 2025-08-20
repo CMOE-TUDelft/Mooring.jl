@@ -1,8 +1,8 @@
-module Topology
+module MooringTopology
 using LinearAlgebra
 using Gridap.TensorValues
 
-export TopoPoint, TopoLine, TopologyData, build_adjacency, assign_coords
+export TopoPoint, TopoLine, MooringTopologyData, build_adjacency, assign_coords
 
 """
 TopoPoint Struct
@@ -95,13 +95,13 @@ This struct is used to store the topology data, including:
 - points: Vector of topological points
 - segments: Vector of topological segments
 """
-struct TopologyData
+struct MooringTopologyData
     points::Vector{TopoPoint}
     segments::Vector{TopoSegment}
 end
 
 """
-build_adjacency(topo::TopologyData)
+build_adjacency(topo::MooringTopologyData)
 
 This function builds a graph representation of the topology, where each point
 stores the IDs and lengths of all directly connected points. 
@@ -113,7 +113,7 @@ adj = build_adjacency(topo)
 neighbors = adj[1]  # e.g. [(2, 10.0), (3, 5.5)]
 ```
 """
-function build_adjacency(topo::TopologyData)
+function build_adjacency(topo::MooringTopologyData)
     adj = Dict{Int, Vector{Tuple{Int, Float64}}}()
     for p in topo.points
         adj[p.id] = Vector{Tuple{Int, Float64}}()
@@ -126,12 +126,12 @@ function build_adjacency(topo::TopologyData)
 end
 
 """
-assign_coords(topo::TopologyData; anchor=1)
+assign_coords(topo::MooringTopologyData; anchor=1)
 
 This function assigns 1D coordinates along the topological graph given the lengths of the segments.
 It uses a depth-first search (DFS) approach to traverse the topology and assign coordinates.
 """
-function assign_coords(topo::TopologyData; anchor=1)
+function assign_coords(topo::MooringTopologyData; anchor=1)
     adj = build_adjacency(topo)
     coords = Dict{Int, Float64}()
     visited = Set{Int}()
@@ -154,12 +154,12 @@ function assign_coords(topo::TopologyData; anchor=1)
 end
 
 """
-get_physical_map(seg::TopoSegment, data::TopologyData)
+get_physical_map(seg::TopoSegment, data::MooringTopologyData)
 
 This function makes the physical map between two points of a segment.
 Given a coordinate along the segment `r`, it returns the coordinate in the physical space.
 """
-function get_physical_map(seg::TopoSegment, data::TopologyData)
+function get_physical_map(seg::TopoSegment, data::MooringTopologyData)
   p1 = data.points[get_start_point(seg)]
   p2 = data.points[get_stop_point(seg)]
   x_p1 = get_coords(p1)
