@@ -11,3 +11,11 @@ println("Starting tests")
 @time @testset "TangentialDiffCalculus" begin include(joinpath("Physics/TangentialDiffCalculusTests.jl")) end
 @time @testset "Materials" begin include(joinpath("Physics/MaterialsTests.jl")) end
 # @time @testset "Demo" begin include(joinpath("demo_test.jl")) end
+
+# Geometry tests
+@time @testset "MooringTopology" begin include(joinpath("Geometry/MooringTopologyTests.jl")) end
+@time @testset "MooringDiscreteModel" begin include(joinpath("Geometry/MooringDiscreteModelTests.jl")) end
+
+# Entities tests
+@time @testset "MooringPoint" begin include(joinpath("Entities/MooringPointTests.jl")) end
+@time @testset "MooringSegment" begin include(joinpath("Entities/MooringSegmentTests.jl")) end
