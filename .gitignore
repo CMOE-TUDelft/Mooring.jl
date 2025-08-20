@@ -31,6 +31,7 @@ Manifest.toml
 *.vscode
 *.pvsm
 *.csv
+*.msh
 
 # Folders
 data/*
