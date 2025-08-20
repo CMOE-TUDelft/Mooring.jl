@@ -2,11 +2,11 @@ using Documenter, Mooring
 
 pages = [
     "Home" => "index.md",
-    "Environmental Conditions" => "EnvironmentalConditions.md",
-    "Sea Bed" => "SeaBed.md",
-    "Drag" => "Drag.md",
-    "Point Motion" => "PointMotion.md",
-    "Tangential Differential Calculus" => "TangentialDiffCalculus.md",
+    "Environmental Conditions" => "Physics/EnvironmentalConditions.md",
+    "Sea Bed" => "Physics/SeaBed.md",
+    "Drag" => "Physics/Drag.md",
+    "Point Motion" => "Physics/PointMotion.md",
+    "Tangential Differential Calculus" => "Physics/TangentialDiffCalculus.md",
 ]
 
 makedocs(
