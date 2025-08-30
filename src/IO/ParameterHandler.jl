@@ -14,12 +14,12 @@ struct PointParameters
     id::Int
     tag::String
     coords::Vector{Float64}
-    motion::String
+    motion_tag::String
     mesh_size::Float64
 end
 
 """
-    default_point(id::Int; tag="Point_1", coords=[0.0,0.0,0.0], motion=nothing, mesh_size=1.0) -> PointParameters
+    default_point(id::Int; tag="Point_1", coords=[0.0,0.0,0.0], motion_tag="default", mesh_size=1.0) -> PointParameters
 
 Return a default `Point` struct with basic values.
 
@@ -27,7 +27,7 @@ Return a default `Point` struct with basic values.
 - `id`: Point identifier
 - `tag`: Human-readable name
 - `coords`: Coordinates in 2D or 3D
-- `motion`: Optional motion definition
+- `motion_tag`: Optional motion tag
 - `mesh_size`: Characteristic mesh size for meshing
 
 # Example
@@ -35,9 +35,9 @@ Return a default `Point` struct with basic values.
 p = default_point(1; coords=[0.0, 10.0, -5.0])
 ```
 """
-function default_point(id::Int; coords=[0.0,0.0,0.0], motion="default", mesh_size=1.0)
+function default_point(id::Int; coords=[0.0,0.0,0.0], motion_tag="default", mesh_size=1.0)
   tag = "Point_$id"
-  return PointParameters(id, tag, coords, motion, mesh_size)
+  return PointParameters(id, tag, coords, motion_tag, mesh_size)
 end
 
 """
@@ -55,16 +55,17 @@ struct SegmentParameters
   material::String
   density::Float64
   area::Float64
+  drag_tag::String
 end
 
 """
-default_segment(id::Int; tag="S", start=1, stop=2, length=10.0, material="steel", density=7850.0, area=0.01) -> SegmentParameters
+default_segment(id::Int; tag="S", start=1, stop=2, length=10.0, material="steel", density=7850.0, area=0.01, drag_tag="default") -> SegmentParameters
 
 Return a default Segment struct with nominal values.
 """
-function default_segment(id::Int; start=1, stop=2, length=10.0, material="default", density=7850.0, area=0.01)
+function default_segment(id::Int; start=1, stop=2, length=10.0, material="default", density=7850.0, area=0.01, drag_tag="default")
   tag = "Segment_$id"
-  return SegmentParameters(id, tag, start, stop, length, material, density, area)
+  return SegmentParameters(id, tag, start, stop, length, material, density, area, drag_tag)
 end
 
 """
@@ -127,6 +128,7 @@ DragParameters
       - `dd_t::Real = nd / π`: Drag diameter tangent
 """
 struct DragParameters
+  tag::String
   dragType::String
   ρw::Float64
   nd::Float64
@@ -143,16 +145,16 @@ struct DragParameters
   Cfd_t::Float64
 end
 """
-default_drag(; dragType="NoDrag", ρw=0.0, nd=0.0, od=0.0, id=0.0, AStr=0.0,
+default_drag(; tag="default", dragType="NoDrag", ρw=0.0, nd=0.0, od=0.0, id=0.0, AStr=0.0,
 Cd_n=0.0, Cd_t=0.0, dd_n=0.0, dd_t=0.0,
 Ca_n=0.0, Ca_t=0.0, Cfd_n=0.0, Cfd_t=0.0) -> DragProperties
 
 Return default parameters for NoDrag option.
 """
-function default_drag(; dragType="NoDrag", ρw=0.0, nd=0.1, od=0.1, id=0.0, AStr=0.01,
+function default_drag(; tag="default", dragType="NoDrag", ρw=0.0, nd=0.1, od=0.1, id=0.0, AStr=0.01,
   Cd_n=0.0, Cd_t=0.0, dd_n=0.0, dd_t=0.0,
   Ca_n=0.0, Ca_t=0.0, Cfd_n=0.0, Cfd_t=0.0)
-  return DragParameters(dragType, ρw, nd, od, id, AStr, Cd_n, Cd_t, dd_n, dd_t, Ca_n, Ca_t, Cfd_n, Cfd_t)
+  return DragParameters(tag, dragType, ρw, nd, od, id, AStr, Cd_n, Cd_t, dd_n, dd_t, Ca_n, Ca_t, Cfd_n, Cfd_t)
 end
 
 
