@@ -15,7 +15,7 @@ include("Geometry/MooringDiscreteModel.jl")
 include("Entities/MooringPoint.jl")
 include("Entities/MooringSegment.jl")
 
-export ParameterHandler
+export ParameterHandlers
 
 export EnvironmentalConditions
 export SeaBed

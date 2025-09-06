@@ -6,6 +6,7 @@ using WaveSpec.Currents
 using WaveSpec.WaveTimeSeries
 using WaveSpec.Jonswap
 using WaveSpec.Constants
+using Mooring.ParameterHandlers: WaveParameters
 
 """
 get_input_spectrum

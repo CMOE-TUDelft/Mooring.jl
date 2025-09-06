@@ -1,8 +1,8 @@
-module ParameterHandler
+module ParameterHandlers
 
 using Parameters
 using YAML
-using JSON
+using JSON3
 
 """
  PointParameters
@@ -72,7 +72,7 @@ LineParameters
     - `points::Vector{Int}=[1,2]`: List of point IDs.
     - `segments::Vector{Int}=[1]`: List of segment IDs.
 """
-struct LineParameters
+@with_kw struct LineParameters
   id::Int = 1
   tag::String = "Line_1"
   points::Vector{Int} = [1,2]
@@ -135,7 +135,7 @@ DragParameters
   Ca_t::Float64 = 0.0
   Cfd_n::Float64 = 0.0
   Cfd_t::Float64 = 0.0
-  function DragParameters(; tag="default", dragType="NoDrag", ρw=0.0, nd=0.0, od=0.0, id=0.0, AStr=0.0,
+  function DragParameters(tag="default", dragType="NoDrag", ρw=0.0, nd=0.0, od=0.0, id=0.0, AStr=0.0,
     Cd_n=0.0, Cd_t=0.0, dd_n=0.0, dd_t=0.0,
     Ca_n=0.0, Ca_t=0.0, Cfd_n=0.0, Cfd_t=0.0)
     new(tag, dragType, ρw, nd, od, id, AStr, Cd_n, Cd_t, dd_n, dd_t, Ca_n, Ca_t, Cfd_n, Cfd_t)
@@ -284,7 +284,7 @@ ph = ParameterHandler()
 ph.points[1] = PointParameters(id=1, coords=[0.0,0.0])
   
 # Add seabed
-ph.seabeds["default"] = SeaBedParams()
+ph.seabeds["default"] = SeaBedParameters()
   
 # Query material
 steel = ph.materials["steel"]
@@ -438,7 +438,7 @@ function _dict_to_handler(data::Dict)
   # Seabed
   if haskey(data, "seabeds")
     for sb in data["seabeds"]
-      sbo = SeaBedParams(; sb...)
+      sbo = SeaBedParameters(; sb...)
       ph.seabeds[sb["tag"]] = sbo
     end
   end
@@ -461,7 +461,7 @@ function _handler_to_dict(ph::ParameterHandler)
   "waves"     => [Dict(field => getfield(w, field) for field in fieldnames(WaveParameters)) for w in values(ph.waves)],
   "materials" => [Dict(field => getfield(m, field) for field in fieldnames(MaterialParameters)) for m in values(ph.materials)],
   "motions"   => [Dict(field => getfield(mo, field) for field in fieldnames(MotionParameters)) for mo in values(ph.motions)],
-  "seabeds"   => [Dict(field => getfield(sb, field) for field in fieldnames(SeaBedParams)) for sb in values(ph.seabeds)],
+  "seabeds"   => [Dict(field => getfield(sb, field) for field in fieldnames(SeaBedParameters)) for sb in values(ph.seabeds)],
   )
 end
 
