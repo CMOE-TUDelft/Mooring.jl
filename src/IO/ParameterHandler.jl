@@ -1,10 +1,8 @@
 module ParameterHandler
 
 using Parameters
-
-# using YAML
-# using JSON
-
+using YAML
+using JSON
 
 """
  PointParameters
@@ -19,15 +17,15 @@ using Parameters
     - `mesh_size::Float64=1.0`: Mesh size for the point.
 """
 @with_kw struct PointParameters
-    id::Int = 1
-    tag::String = "Point_1"
-    coords::Vector{Float64} = [0.0, 0.0]
-    motion_tag::String = "default_motion"
-    mesh_size::Float64 = 1.0
-    function PointParameters(id::Int; coords::Vector{Float64}=[0.0,0.0], motion_tag::String="default", mesh_size::Float64=1.0)
-      tag = "Point_$id"
-      new(id, tag, coords, motion_tag, mesh_size)
-    end
+  id::Int = 1
+  tag::String = "Point_1"
+  coords::Vector{Float64} = [0.0, 0.0]
+  motion_tag::String = "default_motion"
+  mesh_size::Float64 = 1.0
+  function PointParameters(id::Int; coords::Vector{Float64}=[0.0,0.0], motion_tag::String="default", mesh_size::Float64=1.0)
+    tag = "Point_$id"
+    new(id, tag, coords, motion_tag, mesh_size)
+  end
 end
 
 """
@@ -55,9 +53,10 @@ about the segment properties. The following parameters and default values are us
   area::Float64 = 0.01
   material_tag::String = "default_material"
   drag_tag::String = "default_drag"
+  seabed_tag::String = "default_seabed"
   function SegmentParameters(id::Int; start_point::Int=1, stop_point::Int=2, length::Float64=10.0,
-    density::Float64=7850.0, area::Float64=0.01, material_tag::String="default_material", 
-    drag_tag::String="default_drag")
+    density::Float64=7850.0, area::Float64=0.01, material_tag::String="default_material",
+    drag_tag::String="default_drag", seabed_tag::String="default_seabed")
     tag = "Segment_$id"
     new(id, tag, start_point, stop_point, length, density, area, material_tag, drag_tag)
   end
@@ -81,11 +80,12 @@ struct LineParameters
   function LineParameters(id::Int; points::Vector{Int}=[1,2], segments::Vector{Int}=[1])
     tag = "Line_$id"
     new(id, tag, points, segments)
+  end
 end
 
 """
 DragParameters
-
+  
   This struct is used to define the drag properties of a segment in the mooring system.
   The default type is "NoDrag", which does not require additional parameters. Possible drag
   types are:
@@ -144,7 +144,7 @@ end
 
 """
 WaveParameters
-
+  
 This struct contains the parameters for the wave conditions.
 The following parameters are included, with default values:
 - `Hs::Real = 0.0`: Significant wave height
@@ -164,12 +164,11 @@ The following parameters are included, with default values:
   seed::Int = 0
   ωc::Real = -1.0
   enableWaveSpec::Bool = false
-
 end
 
 """
 MaterialParameters
-
+  
 This struct contains the material properties for a given mooring segment. There are two implemented
 material models: "LinearElastic" and "Scharpery". The default choice is "LinearElastic". The following
 parameters and default values are used:
@@ -205,7 +204,7 @@ end
 
 """
 MotionParameters
-
+  
 This struct contains the parameters required to describe a point motion. The following motion 
 types are supported:
 - `CustomMotion`: User-defined motion with custom function.
@@ -228,216 +227,242 @@ for `WaveMotion`:
   wave_tag::String = "default_waves"
 end
 
-#### HERE!
-
-
 """
-default_seabed(; kn=30e3, linear_damping_factor=0.05, quadratic_damping_factor=0.0,
-od=0.1, A=0.008, tanh_ramp=1.0e2, penetration_depth_ramp=1.0e-3,
-still_weight=0.0) -> SeaBedParameters
-
-Return default seabed parameters with moderate stiffness and light damping.
+SeaBedParameters Struct
+  
+This struct contains the properties of the seabed.
+The following parameters are included, with default values:
+- tag::String = "default_seabed": Identifier for the seabed
+- `kn::Real = 30e3`: Normal stiffness [N/m2]
+- `linear_damping_factor::Real = 0.05`: Linear damping ratio [s]
+- `quadratic_damping_factor::Real = 0.0`: Quadratic damping ratio [s^2/m]
+- `od::Real = 0.1`: Outer diameter of the line [m]
+- `A::Real = 0.008`: Area of the line [m^2]
+- `tanh_ramp::Real = 1e2`: Tanh ramp function parameter 
+- `penetration_depth_ramp::Real = 1e-3`: Penetration depth ramp function parameter [m]
+- `still_weight::Real = 0.0`: Still weight [N]
+- `cnstz::Real = 0.0`: Constant spring stiffness of the sea bed [N/m]
+  
+Relevant references:
+- Quadratic law impact damping: https://doi.org/10.1080/0020739X.2021.1954253
+- Critical damping of Moordyn: https://moordyn.readthedocs.io/en/latest/troubleshooting.html#model-stability-and-segment-damping
 """
-function default_seabed(; kn=30e3, linear_damping_factor=0.05, quadratic_damping_factor=0.0,
-  od=0.1, A=0.008, tanh_ramp=1.0e2, penetration_depth_ramp=1.0e-3,
-  still_weight=0.0)
-  cnstz = kn * od / A
-  return SeaBedParameters(kn, linear_damping_factor, quadratic_damping_factor,
-  od, A, tanh_ramp, penetration_depth_ramp,
-  still_weight, cnstz)
+@with_kw struct SeaBedParameters
+  tag::String = "default_seabed"
+  kn::Real = 30e3
+  linear_damping_factor::Real = 0.05
+  quadratic_damping_factor::Real = 0.0  
+  od::Real = 0.1
+  A::Real = 0.008 
+  tanh_ramp::Real = 1.0e2
+  penetration_depth_ramp::Real = 1.0e-3
+  still_weight::Real = 0.0
+  cnstz::Real = kn * od / A
 end
 
----------------------------------------------------------------------
-Central ParameterHandler Struct
----------------------------------------------------------------------
 """
 ParameterHandler
-
-Unified container for all experiment parameters in the Mooring library.
-
-Fields:
-
-points::Dict{Int, Point}
-
-segments::Dict{Int, Segment}
-
-lines::Dict{Int, Line}
-
-drag::Dict{String, DragProperties}
-
-waves::WaveParameters
-
-materials::Dict{String, Material}
-
-motions::Dict{Int, Motion}
-
-seabed::SeaBedParameters
+  
+Central container for all parameters in a mooring system experiment.
+It aggregates all other parameter structs into a single unified object.
+  
+# Fields
+- `points::Dict{Int, PointParameters}` : Dictionary of point parameters keyed by point ID
+- `segments::Dict{Int, SegmentParameters}` : Dictionary of segment parameters keyed by segment ID
+- `lines::Dict{Int, LineParameters}` : Dictionary of line parameters keyed by line ID
+- `drags::Dict{String, DragParameters}` : Dictionary of drag properties keyed by drag tag
+- `waves::Dict{String, WaveParameters}` : Dictionary of wave parameter sets keyed by wave tag
+- `materials::Dict{String, MaterialParameters}` : Dictionary of material models keyed by material tag
+- `motions::Dict{String, MotionParameters}` : Dictionary of motions keyed by motion tag
+- `seabeds::Dict{String, SeaBedParameters}` : Dictionary of seabed parameter sets keyed by tag
+  
+# Usage
+```julia
+ph = ParameterHandler()
+  
+# Add a point
+ph.points[1] = PointParameters(id=1, coords=[0.0,0.0])
+  
+# Add seabed
+ph.seabeds["default"] = SeaBedParams()
+  
+# Query material
+steel = ph.materials["steel"]
 """
-struct ParameterHandler
-  points::Dict{Int, Point}
-  segments::Dict{Int, Segment}
-  lines::Dict{Int, Line}
-  drag::Dict{String, DragProperties}
-  waves::WaveParameters
-  materials::Dict{String, Material}
-  motions::Dict{Int, Motion}
-  seabed::SeaBedParameters
+mutable struct ParameterHandler
+  points::Dict{Int, PointParameters}
+  segments::Dict{Int, SegmentParameters}
+  lines::Dict{Int, LineParameters}
+  drags::Dict{String, DragParameters}
+  waves::Dict{String, WaveParameters}
+  materials::Dict{String, MaterialParameters}
+  motions::Dict{String, MotionParameters}
+  seabeds::Dict{String, SeaBedParameters}
 end
 
 """
-from_defaults() -> ParameterHandler
-
-Construct a ParameterHandler with a single point, segment, line, drag property,
-material, wave definition, and seabed parameters using the default_* functions.
+Create an empty ParameterHandler with default parameters.
 """
-function from_defaults()
+function ParameterHandler()
   return ParameterHandler(
-  Dict(1 => default_point(1)),
-  Dict(1 => default_segment(1)),
-  Dict(1 => default_line(1)),
-  Dict("default" => default_drag()),
-  default_waves(),
-  Dict("steel" => default_material("steel")),
-  Dict(1 => default_motion(1)),
-  default_seabed()
+  Dict{Int, PointParameters}(),
+  Dict{Int, SegmentParameters}(),
+  Dict{Int, LineParameters}(),
+  Dict{String, DragParameters}(),
+  Dict{String, WaveParameters}(),
+  Dict{String, MaterialParameters}(),
+  Dict{String, MotionParameters}(),
+  Dict{String, SeaBedParameters}()
   )
 end
 
+# -------------------------------
+# YAML I/O
+# -------------------------------
+
 """
-  ParameterHandler
-
-A unified container for all experiment parameters in the Mooring library.
-It stores the following fields:
-
-# Fields
-- `points::Dict{Int, Point}`: Dictionary of topological points by ID.
-- `segments::Dict{Int, Segment}`: Dictionary of segments by ID.
-- `lines::Dict{Int, Line}`: Dictionary of lines by ID.
-- `drag::Dict{String, DragProperties}`: Dictionary of drag property sets.
-- `waves::WaveParameters`: Global wave parameters.
-- `materials::Dict{String, Material}`: Dictionary of materials.
-- `motions::Dict{Int, Motion}`: Dictionary of motions for points.
-- `seabed::SeaBedParameters`: Global seabed interaction parameters.
-
-All input methods (`from_defaults`, `from_yaml`, `from_json`, `from_dat_folder`)
-produce a consistent `ParameterHandler` object.
+    load_from_yaml(path::String) -> ParameterHandler
+  
+Load a YAML file defining experiment parameters into a `ParameterHandler`.
 """
-struct ParameterHandler
-  points::Dict{Int, Point}
-  segments::Dict{Int, Segment}
-  lines::Dict{Int, Line}
-  drag::Dict{String, DragProperties}
-  waves::WaveParameters
-  materials::Dict{String, Material}
-  motions::Dict{Int, Motion}
-  seabed::SeaBedParameters
+function load_from_yaml(path::String)
+  data = YAML.load_file(path)
+  return _dict_to_handler(data)
+end
+
+"""
+    save_to_yaml(ph::ParameterHandler, path::String)
+  
+Save the current parameter handler into a YAML file.
+"""
+function save_to_yaml(ph::ParameterHandler, path::String)
+  open(path, "w") do io
+    YAML.write(io, _handler_to_dict(ph))
+  end
+end
+
+# -------------------------------
+# JSON I/O
+# -------------------------------
+
+"""
+    load_from_json(path::String) -> ParameterHandler
+  
+Load a JSON file defining experiment parameters into a `ParameterHandler`.
+"""
+function load_from_json(path::String)
+  data = JSON3.read(read(path, String))
+  return _dict_to_handler(data)
+end
+
+"""
+    save_to_json(ph::ParameterHandler, path::String)
+  
+Save the current parameter handler into a JSON file.
+"""
+function save_to_json(ph::ParameterHandler, path::String)
+  json_str = JSON3.write(_handler_to_dict(ph); indent=4)
+  open(path, "w") do io
+    write(io, json_str)
+  end
+end
+
+# -------------------------------
+# Internal converters
+# -------------------------------
+
+"""
+    _dict_to_handler(data::Dict) -> ParameterHandler
+  
+Convert a parsed YAML/JSON dictionary into a `ParameterHandler`.
+"""
+function _dict_to_handler(data::Dict)
+  ph = ParameterHandler()
+  
+  # Points
+  if haskey(data, "points")
+    for p in data["points"]
+      pp = PointParameters(; p...)
+      ph.points[pp.id] = pp
+    end
+  end
+  
+  # Segments
+  if haskey(data, "segments")
+    for s in data["segments"]
+      sp = SegmentParameters(; s...)
+      ph.segments[sp.id] = sp
+    end
+  end
+  
+  # Lines
+  if haskey(data, "lines")
+    for l in data["lines"]
+      lp = LineParameters(; l...)
+      ph.lines[lp.id] = lp
+    end
+  end
+  
+  # Drags
+  if haskey(data, "drags")
+    for d in data["drags"]
+      dp = DragParameters(; d...)
+      ph.drags[dp.tag] = dp
+    end
+  end
+  
+  # Waves
+  if haskey(data, "waves")
+    for w in data["waves"]
+      wp = WaveParameters(; w...)
+      ph.waves[wp.tag] = wp
+    end
+  end
+  
+  # Materials
+  if haskey(data, "materials")
+    for m in data["materials"]
+      mp = MaterialParameters(; m...)
+      ph.materials[mp.tag] = mp
+    end
+  end
+  
+  # Motions
+  if haskey(data, "motions")
+    for m in data["motions"]
+      mo = MotionParameters(; m...)
+      ph.motions[mo.tag] = mo
+    end
+  end
+  
+  # Seabed
+  if haskey(data, "seabeds")
+    for sb in data["seabeds"]
+      sbo = SeaBedParams(; sb...)
+      ph.seabeds[sb["tag"]] = sbo
+    end
+  end
+  
+  return ph
 end
 
 
-# """
-#     from_defaults() -> ParameterHandler
-
-# Initialize a ParameterHandler with default values.
-# """
-# function from_defaults()
-#     return ParameterHandler(
-#         Dict{Int, Point}(),
-#         Dict{Int, Segment}(),
-#         Dict{Int, Line}(),
-#         Dict{String, DragProperties}(),
-#         WaveParameters(),  # default constructor
-#         Dict{String, Material}(),
-#         Dict{Int, Motion}(),
-#         SeaBedParameters()
-#     )
-# end
-
-# """
-#     from_yaml(path::String) -> ParameterHandler
-
-# Parse YAML input into a ParameterHandler.
-# """
-# function from_yaml(path::String)
-#     data = YAML.load_file(path)
-#     return parse_dict(data)
-# end
-
-# """
-#     from_json(path::String) -> ParameterHandler
-# """
-# function from_json(path::String)
-#     data = JSON.parsefile(path)
-#     return parse_dict(data)
-# end
-
-# """
-#     from_dat_folder(folder::String) -> ParameterHandler
-
-# Aggregate multiple .dat files into a single ParameterHandler and 
-# produce a YAML export.
-# """
-# function from_dat_folder(folder::String)
-#     # (placeholder) implement file aggregation
-#     data = Dict()  # aggregated dictionary from .dat files
-#     handler = parse_dict(data)
-
-#     # export aggregated version for reproducibility
-#     to_yaml(handler, joinpath(folder, "aggregated.yaml"))
-#     return handler
-# end
-
-# # --- Export ---
-# function to_yaml(ph::ParameterHandler, path::String)
-#     open(path, "w") do io
-#         YAML.write(io, to_dict(ph))
-#     end
-# end
-
-# function to_json(ph::ParameterHandler, path::String)
-#     open(path, "w") do io
-#         JSON.print(io, to_dict(ph))
-#     end
-# end
-
-# # --- Internal Conversion Utilities ---
-# function parse_dict(data::Dict)::ParameterHandler
-#     # Map Dict to strongly typed structs
-#     points = Dict(id => Point(id, d["tag"], d["coordinates"], d["motion"], d["mesh_size"]) for (id, d) in data["points"])
-#     segments = Dict(id => Segment(id, d["tag"], d["start"], d["stop"], d["length"],
-#                                   d["material"], d["density"], d["area"]) for (id, d) in data["segments"])
-#     lines = Dict(id => Line(d["points"], d["segments"]) for (id, d) in data["lines"])
-#     drag = Dict(name => DragProperties(; d... ) for (name, d) in data["drag"])
-#     waves = WaveParameters(; data["waves"]...)
-#     materials = Dict(name => Material(d["type"], d["properties"]) for (name, d) in data["materials"])
-#     motions = Dict(id => Motion(d["type"], d["properties"]) for (id, d) in data["motions"])
-#     seabed = SeaBedParameters(; data["seabed"]...)
-
-#     return ParameterHandler(points, segments, lines, drag, waves, materials, motions, seabed)
-# end
-
-# function to_dict(ph::ParameterHandler)::Dict
-#     return Dict(
-#         "points"    => Dict(id => Dict("tag" => p.tag, "coordinates" => p.coordinates,
-#                                        "motion" => p.motion, "mesh_size" => p.mesh_size) for (id,p) in ph.points),
-#         "segments"  => Dict(id => Dict("tag"=>s.tag, "start"=>s.start_point,
-#                                        "stop"=>s.stop_point, "length"=>s.length,
-#                                        "material"=>s.material, "density"=>s.density, "area"=>s.area) for (id,s) in ph.segments),
-#         "lines"     => Dict(id => Dict("points"=>l.points, "segments"=>l.segments) for (id,l) in ph.lines),
-#         "drag"      => Dict(name => Dict(field=>getfield(d, field) for field in fieldnames(DragProperties)) for (name,d) in ph.drag),
-#         "waves"     => Dict(field=>getfield(ph.waves, field) for field in fieldnames(WaveParameters)),
-#         "materials" => Dict(name => Dict("type"=>m.type, "properties"=>m.properties) for (name,m) in ph.materials),
-#         "motions"   => Dict(id => Dict("type"=>m.type, "properties"=>m.properties) for (id,m) in ph.motions),
-#         "seabed"    => Dict(field=>getfield(ph.seabed, field) for field in fieldnames(SeaBedParameters))
-#     )
-# end
-
-# # --- Query/Modify ---
-# function get_parameter(ph::ParameterHandler, category::Symbol, key)
-#     return getfield(ph, category)[key]
-# end
-
-# function set_parameter!(ph::ParameterHandler, category::Symbol, key, value)
-#     getfield(ph, category)[key] = value
-# end
+"""
+    _handler_to_dict(ph::ParameterHandler) -> Dict
+  
+Convert a `ParameterHandler` back into a dictionary for YAML/JSON export.
+"""
+function _handler_to_dict(ph::ParameterHandler)
+  return Dict(
+  "points"    => [Dict(field => getfield(p, field) for field in fieldnames(PointParameters)) for p in values(ph.points)],
+  "segments"  => [Dict(field => getfield(s, field) for field in fieldnames(SegmentParameters)) for s in values(ph.segments)],
+  "lines"     => [Dict(field => getfield(l, field) for field in fieldnames(LineParameters)) for l in values(ph.lines)],
+  "drags"     => [Dict(field => getfield(d, field) for field in fieldnames(DragParameters)) for d in values(ph.drags)],
+  "waves"     => [Dict(field => getfield(w, field) for field in fieldnames(WaveParameters)) for w in values(ph.waves)],
+  "materials" => [Dict(field => getfield(m, field) for field in fieldnames(MaterialParameters)) for m in values(ph.materials)],
+  "motions"   => [Dict(field => getfield(mo, field) for field in fieldnames(MotionParameters)) for mo in values(ph.motions)],
+  "seabeds"   => [Dict(field => getfield(sb, field) for field in fieldnames(SeaBedParams)) for sb in values(ph.seabeds)],
+  )
+end
 
 end # module
