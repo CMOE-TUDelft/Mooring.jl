@@ -3,6 +3,9 @@ using Test
 # Run test suite
 println("Starting tests")
 
+# ParameterHandler
+@time @testset "ParameterHandler" begin include(joinpath("IO/ParameterHandlerTests.jl")) end
+
 # Physics tests
 @time @testset "EnvironmentalConditions" begin include(joinpath("Physics/EnvironmentalConditionsTests.jl")) end
 @time @testset "SeaBed" begin include(joinpath("Physics/SeaBedTests.jl")) end

@@ -1,14 +1,14 @@
 import Mooring.SeaBed as SB
 using Parameters
 
-# Testing SeaBedParams
-sea_bed_params = SB.SeaBedParams()
-function read_params(params::SB.SeaBedParams)
+# Testing SeaBedParameters
+sea_bed_params = SB.SeaBedParameters()
+function read_params(params::SB.SeaBedParameters)
     @unpack kn, linear_damping_factor, quadratic_damping_factor, od, A, tanh_ramp, penetration_depth_ramp, still_weight, cnstz = sea_bed_params
     return true
 end
 @test read_params(sea_bed_params)
-@test read_params(SB.SeaBedParams(od=1.0, A=1.0))
+@test read_params(SB.SeaBedParameters(od=1.0, A=1.0))
 
 # Testing set_still_weight
 @test sea_bed_params.still_weight == 0.0
