@@ -22,10 +22,16 @@ using JSON3
   coords::Vector{Float64} = [0.0, 0.0]
   motion_tag::String = "default_motion"
   mesh_size::Float64 = 1.0
-  function PointParameters(id::Int; coords::Vector{Float64}=[0.0,0.0], motion_tag::String="default", mesh_size::Float64=1.0)
-    tag = "Point_$id"
-    new(id, tag, coords, motion_tag, mesh_size)
-  end
+end
+
+"""
+PointParameters constructor
+
+This constructor creates a new instance of the PointParameters struct with the given ID and optional parameters.
+"""
+function PointParameters(id::Int; coords::Vector{Float64}=[0.0,0.0], motion_tag::String="default", mesh_size::Float64=1.0)
+  tag = "Point_$id"
+  return PointParameters(id, tag, coords, motion_tag, mesh_size)
 end
 
 """
@@ -54,12 +60,18 @@ about the segment properties. The following parameters and default values are us
   material_tag::String = "default_material"
   drag_tag::String = "default_drag"
   seabed_tag::String = "default_seabed"
-  function SegmentParameters(id::Int; start_point::Int=1, stop_point::Int=2, length::Float64=10.0,
-    density::Float64=7850.0, area::Float64=0.01, material_tag::String="default_material",
-    drag_tag::String="default_drag", seabed_tag::String="default_seabed")
-    tag = "Segment_$id"
-    new(id, tag, start_point, stop_point, length, density, area, material_tag, drag_tag)
-  end
+end
+
+"""
+SegmentParameters constructor
+
+This constructor creates a new instance of the SegmentParameters struct with the given ID and optional parameters.
+"""
+function SegmentParameters(id::Int; start_point::Int=1, stop_point::Int=2, length::Float64=10.0,
+  density::Float64=7850.0, area::Float64=0.01, material_tag::String="default_material",
+  drag_tag::String="default_drag", seabed_tag::String="default_seabed")
+  tag = "Segment_$id"
+  SegmentParameters(id, tag, start_point, stop_point, length, density, area, material_tag, drag_tag, seabed_tag)
 end
 
 """
@@ -77,10 +89,16 @@ LineParameters
   tag::String = "Line_1"
   points::Vector{Int} = [1,2]
   segments::Vector{Int} = [1]
-  function LineParameters(id::Int; points::Vector{Int}=[1,2], segments::Vector{Int}=[1])
-    tag = "Line_$id"
-    new(id, tag, points, segments)
-  end
+end
+
+"""
+LineParameters constructor
+
+This constructor creates a new instance of the LineParameters struct with the given ID and optional parameters.
+"""
+function LineParameters(id::Int; points::Vector{Int}=[1,2], segments::Vector{Int}=[1])
+  tag = "Line_$id"
+  LineParameters(id, tag, points, segments)
 end
 
 """
@@ -351,8 +369,10 @@ end
 Load a JSON file defining experiment parameters into a `ParameterHandler`.
 """
 function load_from_json(path::String)
-  data = JSON3.read(read(path, String))
-  return _dict_to_handler(data)
+    raw = read(path, String)
+    data = JSON3.read(raw)
+    dict_data = _json_to_dict(data)   # recursive conversion
+    return _dict_to_handler(dict_data)
 end
 
 """
@@ -361,10 +381,41 @@ end
 Save the current parameter handler into a JSON file.
 """
 function save_to_json(ph::ParameterHandler, path::String)
-  json_str = JSON3.write(_handler_to_dict(ph); indent=4)
+  # json_data = _dict_to_json(_handler_to_dict(ph))
+  json_data = _handler_to_dict(ph)
+  json_str = JSON3.write(json_data; indent=4)
   open(path, "w") do io
     write(io, json_str)
   end
+end
+
+"""
+    _json_to_dict(x)
+
+Recursively convert `JSON3.Object` / `JSON3.Array` to plain Julia
+`Dict{String,Any}` / `Vector{Any}` for uniform handling.
+"""
+function _json_to_dict(x)
+    if x isa JSON3.Object
+        return Dict(string(k) => _json_to_dict(v) for (k,v) in pairs(x))
+    elseif x isa JSON3.Array
+        return [_json_to_dict(v) for v in x]
+    else
+        return x
+    end
+end
+
+"""
+  _dict_to_json(x)
+
+Recursively convert a Julia dictionary or array to a JSON3-compatible format.
+"""
+function _dict_to_json(x)
+    if x isa Dict
+        return JSON3.Object(Dict(string(k) => _dict_to_json(v) for (k,v) in pairs(x)))
+    else
+        return x
+    end
 end
 
 # -------------------------------
@@ -378,11 +429,11 @@ Convert a parsed YAML/JSON dictionary into a `ParameterHandler`.
 """
 function _dict_to_handler(data::Dict)
   ph = ParameterHandler()
-  
+    
   # Points
   if haskey(data, "points")
     for p in data["points"]
-      pp = PointParameters(; p...)
+      pp = PointParameters(;_dict2kwargs(p)...)
       ph.points[pp.id] = pp
     end
   end
@@ -390,7 +441,7 @@ function _dict_to_handler(data::Dict)
   # Segments
   if haskey(data, "segments")
     for s in data["segments"]
-      sp = SegmentParameters(; s...)
+      sp = SegmentParameters(;_dict2kwargs(s)...)
       ph.segments[sp.id] = sp
     end
   end
@@ -398,7 +449,7 @@ function _dict_to_handler(data::Dict)
   # Lines
   if haskey(data, "lines")
     for l in data["lines"]
-      lp = LineParameters(; l...)
+      lp = LineParameters(; _dict2kwargs(l)...)
       ph.lines[lp.id] = lp
     end
   end
@@ -406,7 +457,7 @@ function _dict_to_handler(data::Dict)
   # Drags
   if haskey(data, "drags")
     for d in data["drags"]
-      dp = DragParameters(; d...)
+      dp = DragParameters(; _dict2kwargs(d)...)
       ph.drags[dp.tag] = dp
     end
   end
@@ -414,7 +465,7 @@ function _dict_to_handler(data::Dict)
   # Waves
   if haskey(data, "waves")
     for w in data["waves"]
-      wp = WaveParameters(; w...)
+      wp = WaveParameters(; _dict2kwargs(w)...)
       ph.waves[wp.tag] = wp
     end
   end
@@ -422,7 +473,7 @@ function _dict_to_handler(data::Dict)
   # Materials
   if haskey(data, "materials")
     for m in data["materials"]
-      mp = MaterialParameters(; m...)
+      mp = MaterialParameters(; _dict2kwargs(m)...)
       ph.materials[mp.tag] = mp
     end
   end
@@ -430,7 +481,7 @@ function _dict_to_handler(data::Dict)
   # Motions
   if haskey(data, "motions")
     for m in data["motions"]
-      mo = MotionParameters(; m...)
+      mo = MotionParameters(; _dict2kwargs(m)...)
       ph.motions[mo.tag] = mo
     end
   end
@@ -438,7 +489,7 @@ function _dict_to_handler(data::Dict)
   # Seabed
   if haskey(data, "seabeds")
     for sb in data["seabeds"]
-      sbo = SeaBedParameters(; sb...)
+      sbo = SeaBedParameters(; _dict2kwargs(sb)...)
       ph.seabeds[sb["tag"]] = sbo
     end
   end
@@ -463,6 +514,10 @@ function _handler_to_dict(ph::ParameterHandler)
   "motions"   => [Dict(field => getfield(mo, field) for field in fieldnames(MotionParameters)) for mo in values(ph.motions)],
   "seabeds"   => [Dict(field => getfield(sb, field) for field in fieldnames(SeaBedParameters)) for sb in values(ph.seabeds)],
   )
+end
+
+function _dict2kwargs(d::AbstractDict)
+    return [(Symbol(string(k)) => v) for (k,v) in pairs(d)]
 end
 
 end # module

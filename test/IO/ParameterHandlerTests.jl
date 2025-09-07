@@ -1,4 +1,6 @@
 import Mooring.ParameterHandlers as PH
+using YAML
+using JSON3
 
 @testset "Default constructors" begin
   p = PH.PointParameters(1; coords=[1.0, 2.0])
@@ -78,8 +80,8 @@ end
 @testset "Dict conversion" begin
   ph = PH.ParameterHandler()
   ph.points[1] = PH.PointParameters(1, coords=[3.0,4.0])
-  dict = PH.ParameterHandler._handler_to_dict(ph)
-  ph2 = PH.ParameterHandler._dict_to_handler(dict)
+  dict = PH._handler_to_dict(ph)
+  ph2 = PH._dict_to_handler(dict)
   @test ph2.points[1].coords == [3.0,4.0]
 end
 
@@ -87,10 +89,10 @@ end
   ph = PH.ParameterHandler()
   ph.waves["sea_state"] = PH.WaveParameters(tag="sea_state", Hs=5.0, Tp=15.0)
 
-  dict = PH.ParameterHandler._handler_to_dict(ph)
+  dict = PH._handler_to_dict(ph)
   yaml_str = sprint(io -> YAML.write(io, dict))
   dict2 = YAML.load(yaml_str)
-  ph2 = PH.ParameterHandler._dict_to_handler(dict2)
+  ph2 = PH._dict_to_handler(dict2)
 
   @test haskey(ph2.waves, "sea_state")
   @test ph2.waves["sea_state"].Tp == 15.0
@@ -100,10 +102,10 @@ end
   ph = PH.ParameterHandler()
   ph.drags["drag1"] = PH.DragParameters(tag="drag1", dragType="Custom", nd=0.05, AStr=0.002)
 
-  dict = PH.ParameterHandler._handler_to_dict(ph)
+  dict = PH._handler_to_dict(ph)
   json_str = JSON3.write(dict; indent=2)
-  dict2 = JSON3.read(json_str)
-  ph2 = PH.ParameterHandler._dict_to_handler(dict2)
+  dict2 = PH._json_to_dict(JSON3.read(json_str))
+  ph2 = PH._dict_to_handler(dict2)
 
   @test haskey(ph2.drags, "drag1")
   @test ph2.drags["drag1"].nd == 0.05
@@ -136,10 +138,10 @@ end
     ph.lines[1] = PH.LineParameters(1; points=[1,2], segments=[1])
 
     # --- YAML round-trip ---
-    dict = PH.ParameterHandler._handler_to_dict(ph)
+    dict = PH._handler_to_dict(ph)
     yaml_str = sprint(io -> YAML.write(io, dict))
     dict2 = YAML.load(yaml_str)
-    ph2 = PH.ParameterHandler._dict_to_handler(dict2)
+    ph2 = PH._dict_to_handler(dict2)
 
     @test haskey(ph2.segments, 1)
     seg = ph2.segments[1]
@@ -154,7 +156,7 @@ end
     # --- JSON round-trip ---
     json_str = JSON3.write(dict; indent=2)
     dict3 = JSON3.read(json_str)
-    ph3 = PH.ParameterHandler._dict_to_handler(dict3)
+    ph3 = PH._dict_to_handler(PH._json_to_dict(dict3))
 
     @test haskey(ph3.segments, 1)
     seg3 = ph3.segments[1]
