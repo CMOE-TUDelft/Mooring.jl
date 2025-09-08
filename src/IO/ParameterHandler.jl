@@ -240,7 +240,7 @@ for `WaveMotion`:
   tag::String = "default_motion"
   type::String = "CustomMotion"
   # CustomMotion parameters
-  f::String = "0.0" # function f(t,x,y,z) of time (t) and position (x,y,z) in string format
+  f::String = "(t,x) -> VectorValue(0.0, 0.0)" # function f(t,x,y,z) of time (t) and position (x,y,z) in string format
   # WaveMotion parameters
   wave_tag::String = "default_waves"
 end
