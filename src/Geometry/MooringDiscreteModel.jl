@@ -1,35 +1,37 @@
 module MooringDiscreteModel
 
 using GridapGmsh: gmsh, GmshDiscreteModel
-import Mooring.MooringTopology as Topo
+import Mooring.ParameterHandlers as PH
 
 """
-generate_mesh(topo::Topo.MooringTopologyData)
+generate_mesh(line::PH.LineParameters,ph::PH.ParameterHandler)
 
-Generate a 1D mesh of the topological graph defined in `topo`. The mesh size
-can be controlled by the `mesh_size` parameter in the `TopoPoint` struct.
+Generate a 1D mesh of the topological graph defined using the ParameterHandler. 
+The mesh size can be controlled by the `mesh_size` parameter in the PointParameters.
 The function returns a `gmsh` model. 
 """
-function generate_mesh(topo::Topo.MooringTopologyData)   
+function generate_mesh(line::PH.LineParameters, ph::PH.ParameterHandler)
   gmsh.initialize()
   gmsh.model.add("mooring_model")
 
   # 1D topological graph coordinates
-  coords_dict = Topo.assign_coords(topo)
+  coords_dict = Topo.assign_coords(line, ph)
 
   # Add points
-  for p in topo.points
-    coords = coords_dict[p.id]
-    gmsh.model.geo.addPoint(coords, 0.0, 0.0, p.mesh_size, p.id)
-    gmsh.model.addPhysicalGroup(0, [p.id], p.id)
-    gmsh.model.setPhysicalName(0, p.id, p.tag)
+  for p_id in line.points
+    p = ph.points[p_id]
+    coords = coords_dict[p_id]
+    gmsh.model.geo.addPoint(coords, 0.0, 0.0, p.mesh_size, p_id)
+    gmsh.model.addPhysicalGroup(0, [p_id], p_id)
+    gmsh.model.setPhysicalName(0, p_id, p.tag)
   end
 
   # Add lines
-  for l in topo.segments
-      gmsh.model.geo.addLine(l.start, l.stop, l.id)
-      gmsh.model.addPhysicalGroup(1, [l.id], l.id)
-      gmsh.model.setPhysicalName(1, l.id, l.tag)
+  for s_id in line.segments
+    s = ph.segments[s_id]
+    gmsh.model.geo.addLine(s.start_point, s.stop_point, s_id)
+    gmsh.model.addPhysicalGroup(1, [s_id], s_id)
+    gmsh.model.setPhysicalName(1, s_id, s.tag)
   end
 
   gmsh.model.geo.synchronize()
@@ -39,12 +41,12 @@ function generate_mesh(topo::Topo.MooringTopologyData)
 end
 
 """
-generate_discrete_model(topo::Topo.MooringTopologyData)
+generate_discrete_model(line::PH.LineParameters, ph::PH.ParameterHandler)
 
-This function generates a discrete model from the given topology data.
+This function generates a discrete model from the given line parameters and parameter handler.
 """
-function generate_discrete_model(topo::Topo.MooringTopologyData)
-  gmsh = generate_mesh(topo)
+function generate_discrete_model(line::PH.LineParameters, ph::PH.ParameterHandler)
+  gmsh = generate_mesh(line, ph)
   model = GmshDiscreteModel(gmsh)
   gmsh.finalize()
   return model
