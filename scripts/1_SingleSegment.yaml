@@ -5,7 +5,7 @@ points:
     mesh_size: 1.0
   - id: 2
     coords: [10.0, 5.0]
-    motion_tag: "wave_motion"
+    motion_tag: "custom_motion"
     mesh_size: 1.0
 
 segments:
@@ -16,7 +16,7 @@ segments:
     density: 7850.0
     area: 0.01
     material_tag: "steel"
-    drag_tag: "no_drag"
+    drag_tag: "default_drag"
     seabed_tag: "default_seabed"
 
 lines:
@@ -30,17 +30,8 @@ materials:
     E: 2.1e11
     μ: 8.1e10
 
-waves:
-  - tag: "default_waves"
-    Hs: 3.0
-    Tp: 8.0
-    h0: 100.0
-    nω: 64
-    seed: 42
-    ωc: -1.0
-    enableWaveSpec: true
-
 motions:
-  - tag: "wave_motion"
-    type: "WaveMotion"
-    wave_tag: "default_waves"
+  - tag: "fixed"
+  - tag: "custom_motion"
+    type: "Custom_motion"
+    wave_tag: "(t,(x,y))->VectorValue(sin(2π * t), 0.0)"
