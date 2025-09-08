@@ -4,6 +4,7 @@ using Parameters
 using Gridap.TensorValues
 using Gridap.CellData
 import Mooring.TangentialDiffCalculus as TDC
+import Mooring.ParameterHandlers as PH
 
 """
 Material Struct
@@ -15,6 +16,24 @@ Possible implemented options are:
 - `CustomMaterial`: Custom material
 """
 abstract type Material end
+
+"""
+Material constructor
+
+This function returns the material type given the material parameters.
+"""
+function Material(mat_params::PH.MaterialParameters)
+  if mat_params === nothing
+    return nothing
+  elseif mat_params.type == "LinearElastic"
+    return LinearElastic(E=mat_params.E, μ=mat_params.μ)
+  elseif mat_params.type == "Scharpery"
+    return Scharpery(D0=mat_params.D0, N=mat_params.N, Dn=mat_params.Dn, λn=mat_params.λn,
+                     g0=mat_params.g0, g1=mat_params.g1, g2=mat_params.g2)
+  else
+    error("Material type $(mat_params.type) not recognized.")
+  end
+end
 
 """
 LinearElastic Struct
