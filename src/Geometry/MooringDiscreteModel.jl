@@ -4,6 +4,60 @@ using GridapGmsh: gmsh, GmshDiscreteModel
 import Mooring.ParameterHandlers as PH
 
 """
+build_adjacency(line::PH.LineParameters, ph::PH.ParameterHandler)
+
+This function builds a graph representation of the line topology, where each point
+stores the IDs and lengths of all directly connected points. 
+
+## Example
+```julia
+adj = build_adjacency(line, ph)
+# Access neighbors of point with ID 1:
+neighbors = adj[1]  # e.g. [(2, 10.0), (3, 5.5)]
+```
+"""
+function build_adjacency(line::PH.LineParameters, ph::PH.ParameterHandler)
+    adj = Dict{Int, Vector{Tuple{Int, Float64}}}()
+    for p_id in line.points
+        adj[p_id] = Vector{Tuple{Int, Float64}}()
+    end
+    for s_id in line.segments
+        s = ph.segments[s_id]
+        push!(adj[s.start_point], (s.stop_point, s.length))
+        push!(adj[s.stop_point], (s.start_point, s.length))
+    end
+    return adj
+end
+
+"""
+assign_coords(line::PH.LineParameters, ph::PH.ParameterHandler; anchor=1)
+
+This function assigns 1D coordinates along the topological graph given the lengths of the segments.
+It uses a depth-first search (DFS) approach to traverse the topology and assign coordinates.
+"""
+function assign_coords(line::PH.LineParameters, ph::PH.ParameterHandler; anchor=1)
+    adj = build_adjacency(line, ph)
+    coords = Dict{Int, Float64}()
+    visited = Set{Int}()
+    
+    coords[anchor] = 0.0
+    stack = [anchor]
+    
+    while !isempty(stack)
+        current = pop!(stack)
+        push!(visited, current)
+        
+        for (nbr, length) in adj[current]
+            if !haskey(coords, nbr)
+                coords[nbr] = coords[current] + length
+                push!(stack, nbr)
+            end
+        end
+    end
+    return coords
+end
+
+"""
 generate_mesh(line::PH.LineParameters,ph::PH.ParameterHandler)
 
 Generate a 1D mesh of the topological graph defined using the ParameterHandler. 
@@ -15,7 +69,7 @@ function generate_mesh(line::PH.LineParameters, ph::PH.ParameterHandler)
   gmsh.model.add("mooring_model")
 
   # 1D topological graph coordinates
-  coords_dict = Topo.assign_coords(line, ph)
+  coords_dict = assign_coords(line, ph)
 
   # Add points
   for p_id in line.points
