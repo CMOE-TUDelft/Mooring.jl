@@ -3,12 +3,17 @@ module PointMotion
 using Parameters
 using Gridap.TensorValues
 using Interpolations
+using RuntimeGeneratedFunctions
+
+import Mooring.ParameterHandlers as PH
 import Mooring.EnvironmentalConditions as EC
 import WaveSpec.Constants as WC
 import WaveSpec.WaveTimeSeries as WTS
 
 export MotionType, WaveMotionType, CustomMotionType
 export get_point_motion
+
+RuntimeGeneratedFunctions.init(@__MODULE__)
 
 """
 MotionType Struct
@@ -90,6 +95,29 @@ get_point_motion_function(::Nothing) = nothing
 
 function get_point_motion_function(motion_type::MotionType)
     error("`get_point_motion` not implemented for this motion case")
+end
+
+"""
+get_point_motion
+
+This function returns the motion of a point given its parameters.
+Input:
+- `p_params::PointParameters`: Parameters of the point
+Output:
+- `motion::MotionType`: Motion of the point
+"""
+function get_point_motion(p_id::Int, ph::PH.ParameterHandler)
+  p_params = ph.points[p_id]
+  motion_params = ph.motions[p_params.motion_tag]
+  motion_type = motion_params.type
+  if motion_type === nothing
+    return nothing
+  elseif motion_type == "CustomMotion"
+    f = @RuntimeGeneratedFunction(Meta.parse(motion_params.f))
+    return CustomMotionType(f)
+  elseif motion_type == "WaveMotion"
+    error("Not implemented yet")
+  end
 end
 
 end
