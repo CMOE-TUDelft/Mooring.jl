@@ -14,6 +14,7 @@ include("Geometry/MooringDiscreteModel.jl")
 
 include("Entities/MooringPoint.jl")
 include("Entities/MooringSegment.jl")
+include("Entities/MooringLine.jl")
 
 export ParameterHandlers
 
@@ -28,5 +29,6 @@ export MooringTopologyData
 
 export MooringPoints
 export MooringSegments
+export MooringLines
 
 end
