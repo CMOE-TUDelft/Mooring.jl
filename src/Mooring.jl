@@ -1,5 +1,7 @@
 module Mooring
 
+include("IO/ParameterHandler.jl")
+
 include("Physics/EnvironmentalConditions.jl")
 include("Physics/SeaBed.jl")
 include("Physics/Drag.jl")
@@ -12,6 +14,8 @@ include("Geometry/MooringDiscreteModel.jl")
 
 include("Entities/MooringPoint.jl")
 include("Entities/MooringSegment.jl")
+
+export ParameterHandlers
 
 export EnvironmentalConditions
 export SeaBed
