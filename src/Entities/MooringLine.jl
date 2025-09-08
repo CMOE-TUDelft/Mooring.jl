@@ -18,7 +18,7 @@ It includes the following fields:
 - `segments::Vector{MooringSegment}`: Vector of segments that make up the mooring line
 """
 struct MooringLine
-  segments::Vector{Seg.MooringSegment}
+  segments::Dict{Int, Seg.MooringSegment}
 end
 
 """
@@ -29,30 +29,12 @@ get_segments(line::MooringLine) = line.segments
 
 
 function setup_lines(ph::PH.ParameterHandler)
-  lines = MooringLine[]
-  # for (line_id, line_params) in ph.lines
-  #   segments = MooringSegment[]
-  #   for seg_id in line_params.segments
-  #     seg_params = ph.segments[seg_id]
-  #     start_point = ph.points[seg_params.start_point]
-  #     stop_point = ph.points[seg_params.stop_point]
-  #     material = ph.materials[seg_params.material_tag]
-  #     drag = haskey(ph.drags, seg_params.drag_tag) ? ph.drags[seg_params.drag_tag] : nothing
-  #     seabed = haskey(ph.seabeds, seg_params.seabed_tag) ? ph.seabeds[seg_params.seabed_tag] : nothing
-  #     segment = MooringSegment(seg_params.id, start_point, stop_point, material, seg_params.density,
-  #                              seg_params.area, seg_params.length, drag, seabed)
-  #     push!(segments, segment)
-  #   end
-  #   mooring_line = MooringLine(segments)
-  #   push!(lines, mooring_line)
-  # end
-  # return lines
 
-  # Extract line parameters
-  ph_lines = ph.lines
+  # Dictionary to store mooring lines
+  lines = Dict{Int, MooringLine}()
 
   # Loop over lines
-  for line in values(ph_lines)
+  for (line_id,line) in ph.lines
 
     # Create discrete model
     model = DM.generate_discrete_model(line, ph)
@@ -84,7 +66,13 @@ function setup_lines(ph::PH.ParameterHandler)
       segments[s_id] = segment
     end
 
+    # Create MooringLine
+    mooring_line = MooringLine(segments)
+
+    # Store line
+    lines[line_id] = mooring_line
   end
+
   return lines
 end
 
