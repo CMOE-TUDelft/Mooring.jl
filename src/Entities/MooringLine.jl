@@ -6,6 +6,7 @@ import Mooring.PointMotion as PM
 import Mooring.MooringPoints as Pts
 import Mooring.Materials as Mat
 using Gridap.TensorValues
+using Gridap.FESpaces
 
 export setup_lines
 
@@ -27,7 +28,30 @@ end
 """
 get_segments(line::MooringLine) = line.segments
 
+"""
+get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler)
 
+This function makes the physical map between two points of a segment.
+Given a coordinate along the segment `r`, it returns the coordinate in the physical space.
+"""
+function get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler)
+  p1 = seg.start_point
+  p2 = seg.stop_point
+  x_p1 = ph.points[p1].coords
+  x_p2 = ph.points[p2].coords
+  return function(r::VectorValue{1,Float64})
+      t = r / norm(x_p2 .- x_p1)         # normalize parameter to [0,1]
+      return VectorValue(x_p1 .+ t[1] .* (x_p2 .- x_p1)) # linear interpolation
+  end
+end
+
+"""
+  setup_lines(ph::PH.ParameterHandler)
+
+This function sets up the mooring lines based on the provided parameter handler.
+It creates the discrete model, mooring points, and mooring segments for each line defined in the parameter handler.
+It returns a dictionary of mooring lines, where the keys are the line IDs and the values are the corresponding `MooringLine` objects.
+"""
 function setup_lines(ph::PH.ParameterHandler)
 
   # Dictionary to store mooring lines
@@ -77,20 +101,52 @@ function setup_lines(ph::PH.ParameterHandler)
 end
 
 """
-get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler)
+  get_Transient_FE_spaces(line::MooringLine)
 
-This function makes the physical map between two points of a segment.
-Given a coordinate along the segment `r`, it returns the coordinate in the physical space.
+This function retrieves the transient finite element spaces for all segments in a mooring line.
+It returns a tuple containing:
+- `X`: A `TransientMultiFieldFESpace` that combines the transient trial finite element spaces of all segments.
+- `Y`: A `MultiFieldFESpace` that combines the test finite element spaces of all segments.
 """
-function get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler)
-  p1 = seg.start_point
-  p2 = seg.stop_point
-  x_p1 = ph.points[p1].coords
-  x_p2 = ph.points[p2].coords
-  return function(r::VectorValue{1,Float64})
-      t = r / norm(x_p2 .- x_p1)         # normalize parameter to [0,1]
-      return VectorValue(x_p1 .+ t[1] .* (x_p2 .- x_p1)) # linear interpolation
+function get_Transient_FE_spaces(line::MooringLine)
+  test_spaces = TestFESpace[]
+  trial_spaces = TransientTrialFESpace[]
+  for (s_id, segment) in line.segments
+    U, V = Seg.get_transient_FESpaces(segment)
+    push!(test_spaces, V)
+    push!(trial_spaces, U)
   end
+  X = TransientMultiFieldFESpace(trial_spaces)
+  Y = MultiFieldFESpace(test_spaces)
+  return X, Y
 end
 
+"""
+  get_reference_configuration(line::MooringLine, X::MultiFieldFESpace)
+
+This function computes the reference configuration for a mooring line given a multi-field finite element space `X`.
+It returns a finite element function `Xₕ` that represents the reference configuration of the mooring line.
+The reference configuration is obtained by interpolating the physical maps of each segment in the mooring line
+over the provided finite element space."""
+function get_reference_configuration(line::MooringLine, X::MultiFieldFESpace)
+  maps = Function[]
+  for (s_id, segment) in line.segments
+    map = Seg.get_map(segment)
+    push!(maps, map)
+  end
+  Xₕ = interpolate_everywhere(maps, X)
+  return Xₕ
+end
+
+function get_quasi_static_residual(line::MooringLine, Xₕ::MultiFieldFEFunction, g::Float64=9.81)
+  res_terms = Function[]
+  for (s_it,(s_id, segment)) in enumerate(line.segments)
+    res = Seg.get_quasi_static_residual(segment, Xₕ[s_it], g)
+    push!(res_terms, res)
+  end
+  function res(x,y)
+    sum(res_terms[i](x[i],y[i]) for i in eachindex(res_terms))
+  end
+  return res
+end
 end

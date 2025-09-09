@@ -44,7 +44,7 @@ dirichlet_tags = Seg.get_dirichlet_tags(segment)
 @test dirichlet_tags == String[]
 dirichlet_values = Seg.get_dirichlet_values(segment)
 @test dirichlet_values == Function[]
-V, U = Seg.get_transient_FESpaces(segment)
+U, V = Seg.get_transient_FESpaces(segment)
 @test isa(V, SingleFieldFESpace)
 @test isa(U, TransientTrialFESpace)
 

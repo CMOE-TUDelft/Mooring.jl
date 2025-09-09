@@ -169,7 +169,7 @@ function get_transient_FESpaces(s::MooringSegment, order::Int=1, dim::Int=2)
   # Create the transient trial finite element space
   U = TransientTrialFESpace(V, dirichlet_values)
 
-  return V,U
+  return U,V
 end
 
 """

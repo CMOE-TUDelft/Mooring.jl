@@ -48,11 +48,8 @@ segment1 = Seg.MooringSegment(model, s1.tag, pointA, pointB, map1, material1, 10
 segment2 = Seg.MooringSegment(model, s2.tag, pointB, pointC, map2, material2, 1.0)
 
 # Create FE spaces
-V1,U1 = Seg.get_transient_FESpaces(segment1)
-V2,U2 = Seg.get_transient_FESpaces(segment2)
-
-# # Get Measures
-dΩ1, dΓ1, dΓ2 = Seg.get_measures(segment1)
+U1,V1 = Seg.get_transient_FESpaces(segment1)
+U2,V2 = Seg.get_transient_FESpaces(segment2)
 
 # Get reference configuration
 X1ₕ = Seg.get_reference_configuration(segment1, U1(0.0))
