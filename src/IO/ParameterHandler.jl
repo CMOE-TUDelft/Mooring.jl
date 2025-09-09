@@ -319,18 +319,20 @@ mutable struct ParameterHandler
 end
 
 """
-Create an empty ParameterHandler with default parameters.
+ParameterHandler constructor
+
+Create a ParameterHandler with default parameters.
 """
 function ParameterHandler()
   return ParameterHandler(
-  Dict{Int, PointParameters}(),
-  Dict{Int, SegmentParameters}(),
-  Dict{Int, LineParameters}(),
-  Dict{String, DragParameters}(),
-  Dict{String, WaveParameters}(),
-  Dict{String, MaterialParameters}(),
-  Dict{String, MotionParameters}(),
-  Dict{String, SeaBedParameters}()
+  Dict{Int, PointParameters}(1=>PointParameters()),
+  Dict{Int, SegmentParameters}(1=>SegmentParameters()),
+  Dict{Int, LineParameters}(1=>LineParameters()),
+  Dict{String, DragParameters}("default_drag"=>DragParameters()),
+  Dict{String, WaveParameters}("default_waves"=>WaveParameters()),
+  Dict{String, MaterialParameters}("default_material"=>MaterialParameters()),
+  Dict{String, MotionParameters}("default_motion"=>MotionParameters()),
+  Dict{String, SeaBedParameters}("default_seabed"=>SeaBedParameters())
   )
 end
 
@@ -505,14 +507,14 @@ Convert a `ParameterHandler` back into a dictionary for YAML/JSON export.
 """
 function _handler_to_dict(ph::ParameterHandler)
   return Dict(
-  "points"    => [Dict(field => getfield(p, field) for field in fieldnames(PointParameters)) for p in values(ph.points)],
-  "segments"  => [Dict(field => getfield(s, field) for field in fieldnames(SegmentParameters)) for s in values(ph.segments)],
-  "lines"     => [Dict(field => getfield(l, field) for field in fieldnames(LineParameters)) for l in values(ph.lines)],
-  "drags"     => [Dict(field => getfield(d, field) for field in fieldnames(DragParameters)) for d in values(ph.drags)],
-  "waves"     => [Dict(field => getfield(w, field) for field in fieldnames(WaveParameters)) for w in values(ph.waves)],
-  "materials" => [Dict(field => getfield(m, field) for field in fieldnames(MaterialParameters)) for m in values(ph.materials)],
-  "motions"   => [Dict(field => getfield(mo, field) for field in fieldnames(MotionParameters)) for mo in values(ph.motions)],
-  "seabeds"   => [Dict(field => getfield(sb, field) for field in fieldnames(SeaBedParameters)) for sb in values(ph.seabeds)],
+  "points"    => [Dict(String(field) => getfield(p, field) for field in fieldnames(PointParameters)) for p in values(ph.points)],
+  "segments"  => [Dict(String(field) => getfield(s, field) for field in fieldnames(SegmentParameters)) for s in values(ph.segments)],
+  "lines"     => [Dict(String(field) => getfield(l, field) for field in fieldnames(LineParameters)) for l in values(ph.lines)],
+  "drags"     => [Dict(String(field) => getfield(d, field) for field in fieldnames(DragParameters)) for d in values(ph.drags)],
+  "waves"     => [Dict(String(field) => getfield(w, field) for field in fieldnames(WaveParameters)) for w in values(ph.waves)],
+  "materials" => [Dict(String(field) => getfield(m, field) for field in fieldnames(MaterialParameters)) for m in values(ph.materials)],
+  "motions"   => [Dict(String(field) => getfield(mo, field) for field in fieldnames(MotionParameters)) for mo in values(ph.motions)],
+  "seabeds"   => [Dict(String(field) => getfield(sb, field) for field in fieldnames(SeaBedParameters)) for sb in values(ph.seabeds)],
   )
 end
 

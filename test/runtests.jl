@@ -21,3 +21,4 @@ println("Starting tests")
 # Entities tests
 @time @testset "MooringPoint" begin include(joinpath("Entities/MooringPointTests.jl")) end
 @time @testset "MooringSegment" begin include(joinpath("Entities/MooringSegmentTests.jl")) end
+@time @testset "MooringLine" begin include(joinpath("Entities/MooringLineTests.jl")) end

@@ -68,8 +68,6 @@ end # end of testset
   ph.segments[1] = PH.SegmentParameters(id=1, tag="line1", start_point=1, stop_point=2, length=1.5)
   ph.lines[1] = PH.LineParameters(id=1, points=[1,2], segments=[1])
 
-  println(ph)
-
   gmsh = DM.generate_mesh(ph.lines[1],ph)
 
   # Check model name
