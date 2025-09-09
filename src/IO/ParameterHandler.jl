@@ -18,7 +18,7 @@ using JSON3
 """
 @with_kw struct PointParameters
   id::Int = 1
-  tag::String = "Point_1"
+  tag::String = "Point_$id"
   coords::Vector{Float64} = [0.0, 0.0]
   motion_tag::String = "default_motion"
   mesh_size::Float64 = 1.0
@@ -51,7 +51,7 @@ about the segment properties. The following parameters and default values are us
 """
 @with_kw struct SegmentParameters
   id::Int = 1
-  tag::String = "Segment_1"
+  tag::String = "Segment_$id"
   start_point::Int = 1
   stop_point::Int = 2
   length::Float64 = 10.0
@@ -86,7 +86,7 @@ LineParameters
 """
 @with_kw struct LineParameters
   id::Int = 1
-  tag::String = "Line_1"
+  tag::String = "Line_$id"
   points::Vector{Int} = [1,2]
   segments::Vector{Int} = [1]
 end
