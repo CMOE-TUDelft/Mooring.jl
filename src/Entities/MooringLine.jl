@@ -9,6 +9,7 @@ using Gridap.TensorValues
 using Gridap.FESpaces
 using Gridap.MultiField
 using Gridap.ODEs
+using Gridap.Algebra
 
 export setup_lines
 
@@ -160,6 +161,39 @@ function get_quasi_static_residual(line::MooringLine, Xₕ::MultiFieldFEFunction
     sum(res_terms[i](x[i],y[i]) for i in eachindex(res_terms))
   end
   return res
+end
+
+function solve_quasistatic(ph::PH.ParameterHandler)
+  # Setup lines
+  mlines = setup_lines(ph)
+
+  x = FEFunction[]
+
+  # Loop over lines
+  for (line_id,line) in mlines
+
+    @info("Solving line $line_id with $(length(line.segments)) segments")
+
+    # Transient FE spaces
+    X, Y = get_transient_FE_spaces(line)
+
+    # Reference configuration
+    Xₕ = get_reference_configuration(line, X(0.0))
+
+    # Quasi-static residual
+    # TODO: add g as input parameter (global constants)
+    res = get_quasi_static_residual(line, Xₕ)
+  
+    # solve
+    # TODO: add nls parameters as input parameters (solver parameters)
+    op = FEOperator(res, X(0.0), Y)
+    nls = NLSolver(BackslashSolver(), iterations=200)
+    xₕ = solve(nls, op)
+    push!(x, xₕ)
+
+  end
+
+  return x
 end
 
 end # module

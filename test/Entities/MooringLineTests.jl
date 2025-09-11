@@ -55,3 +55,7 @@ uₕ, = solve(op)
 dΩ = Seg.get_measures(segment)[1]
 unorm = √(∑(∫(uₕ⋅uₕ)dΩ))
 @test unorm == 0.0
+
+# Solve quasi-static problem
+xₕ = ML.solve_quasistatic(ph)
+@test length(xₕ) == 1
