@@ -163,6 +163,17 @@ function get_quasi_static_residual(line::MooringLine, Xₕ::MultiFieldFEFunction
   return res
 end
 
+"""
+  solve_quasistatic(ph::PH.ParameterHandler)
+
+This function solves the quasi-static problem for all mooring lines defined in the provided parameter handler `ph`.
+It sets up the mooring lines, computes the transient finite element spaces, reference configurations, and
+quasi-static residuals for each line, and then solves the resulting nonlinear system using a Newton solver.
+
+It returns a vector of finite element functions `x`, where each function corresponds to the solution of a mooring line.
+
+Check also [`get_transient_FE_spaces`](@ref), [`get_reference_configuration`](@ref), and [`get_quasi_static_residual`](@ref) for details on the individual steps.
+"""
 function solve_quasistatic(ph::PH.ParameterHandler)
   # Setup lines
   mlines = setup_lines(ph)
