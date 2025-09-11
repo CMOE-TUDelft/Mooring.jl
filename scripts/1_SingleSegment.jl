@@ -13,6 +13,6 @@ ph.materials["steel"] = PH.MaterialParameters(tag="steel", E=2.0e11, μ=8.1e10)
 ph.motions["custom_motion"] = PH.MotionParameters(tag="custom_motion", type="CustomMotion", wave_tag="(t,(x,y))->VectorValue(sin(2π * t), 0.0)")
 ph.motions["fixed"] = PH.MotionParameters(tag="fixed")
 
-# Setup lines
-mlines = ML.setup_lines(ph)
+# Solve quasi-static lines
+sol₀ = ML.solve_quasistatic(ph)
 end # module
