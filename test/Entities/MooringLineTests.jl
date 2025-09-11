@@ -1,5 +1,6 @@
 import Mooring.ParameterHandler as PH
 import Mooring.MooringLines as ML
+using Gridap.MultiField
 
 ph = PH.ParameterHandler()
 
@@ -26,3 +27,31 @@ f = ML.get_physical_map(ph.segments[1], ph)
 mid = f(VectorValue(5.0)) # halfway along segment
 @test isapprox(mid[1], 5.0; atol=1e-8)
 @test isapprox(mid[2], 0.0; atol=1e-8)
+
+# Transient FE spaces
+X, Y = ML.get_transient_FE_spaces(line)
+@test X isa TransientMultiFieldFESpace
+@test Y isa MultiFieldFESpace
+@test length(X.spaces) == 1
+@test length(Y.spaces) == 1
+U = X.spaces[1]
+V = Y.spaces[1]
+@test U isa TransientTrialFESpace
+@test V isa SingleFieldFESpace
+
+# Reference configuration
+Xₕ = ML.get_reference_configuration(line, X(0.0))
+@test Xₕ isa MultiFieldFEFunction
+@test length(Xₕ) == 1
+X1ₕ = Xₕ[1]
+@test X1ₕ isa FEFunction
+@test Seg.get_triangulation(segment) == get_triangulation(X1ₕ)
+
+# Quasi-static residual
+res = ML.get_quasi_static_residual(line, Xₕ, 0.0)
+@test isa(res, Function)
+op = FEOperator(res, X(0.0), Y)
+uₕ, = solve(op)
+dΩ = Seg.get_measures(segment)[1]
+unorm = √(∑(∫(uₕ⋅uₕ)dΩ))
+@test unorm == 0.0

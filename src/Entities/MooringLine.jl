@@ -7,6 +7,8 @@ import Mooring.MooringPoints as Pts
 import Mooring.Materials as Mat
 using Gridap.TensorValues
 using Gridap.FESpaces
+using Gridap.MultiField
+using Gridap.ODEs
 
 export setup_lines
 
@@ -108,8 +110,8 @@ It returns a tuple containing:
 - `X`: A `TransientMultiFieldFESpace` that combines the transient trial finite element spaces of all segments.
 - `Y`: A `MultiFieldFESpace` that combines the test finite element spaces of all segments.
 """
-function get_Transient_FE_spaces(line::MooringLine)
-  test_spaces = TestFESpace[]
+function get_transient_FE_spaces(line::MooringLine)
+  test_spaces = SingleFieldFESpace[]
   trial_spaces = TransientTrialFESpace[]
   for (s_id, segment) in line.segments
     U, V = Seg.get_transient_FESpaces(segment)
@@ -138,6 +140,16 @@ function get_reference_configuration(line::MooringLine, X::MultiFieldFESpace)
   return Xₕ
 end
 
+"""
+  get_quasi_static_residual(line::MooringLine, Xₕ::MultiFieldFEFunction; g::Float64=9.81)
+
+This function computes the quasi-static residual for a mooring line given a multi-field finite element function `Xₕ`.
+It returns a function `res` that represents the quasi-static residual of the mooring line.
+The residual is computed by summing the quasi-static residuals of each segment in the mooring line.
+An optional gravitational acceleration parameter `g` can be provided (default is 9.81 m/s²).
+
+Check also [`MooringSegment.get_quasi_static_residual`](@ref) for details on the definition of the segment residual.
+"""
 function get_quasi_static_residual(line::MooringLine, Xₕ::MultiFieldFEFunction, g::Float64=9.81)
   res_terms = Function[]
   for (s_it,(s_id, segment)) in enumerate(line.segments)
@@ -149,4 +161,5 @@ function get_quasi_static_residual(line::MooringLine, Xₕ::MultiFieldFEFunction
   end
   return res
 end
-end
+
+end # module
