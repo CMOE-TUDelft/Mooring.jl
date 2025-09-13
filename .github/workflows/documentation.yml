@@ -8,9 +8,10 @@ on:
       - refactoring 
     tags: '*'
   pull_request:
-    - main
-    - dev/*
-    - refactoring
+    branches:
+      - main
+      - dev/*
+      - refactoring
 
 jobs:
   build:
