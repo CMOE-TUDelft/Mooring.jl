@@ -1,4 +1,5 @@
 # Mooring.jl
+<img src="docs/src/assets/logo.svg" width="250" title="Mooring.jl logo">
 
 **Mooring.jl** is a Julia package for simulating mooring lines using the Finite Element Method. The package is based on **dynamic finite strain theory** and **tangential differential calculus**. **Mooring.jl** supports linear elastic, nonlinear elastic and nonlinear viscoelastic material properties, providing an accurate and efficient framework for modeling the behavior of mooring lines in offshore applications, either for chain/steel based cables or synthetic ropes.
 

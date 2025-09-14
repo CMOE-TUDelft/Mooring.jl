@@ -1,6 +1,12 @@
 using Documenter, Mooring
 
-user_pages = []
+user_pages = [
+  "UserGuide.md",
+  "Installation"=>"userguide/installation.md",
+  "Points"=>"userguide/points.md",
+  "Segments"=>"userguide/segments.md",
+  "Lines"=>"userguide/lines.md",
+]
 
 developer_pages = []
 
@@ -25,23 +31,24 @@ physics_pages = [
 api_pages = [ 
   "API/API.md", 
   "Input/Output"=>"API/IO/ParameterHandler.md",
-  "Entities" => entities_pages,
-  "Geometry" => geometry_pages,
+  # "Entities" => entities_pages,
+  # "Geometry" => geometry_pages,
   "Physics" => physics_pages
 ]
 
 pages = [
     "Home" => "index.md",
     "Getting Started" => "GettingStarted.md",
-    "User Guide" => "UserGuide.md",
+    "User Guide" => user_pages,
     "Developer Guide" => "DeveloperGuide.md",
-    "API" => "API/API.md",
+    "API" => api_pages,
 ]
 
 makedocs(
     sitename = "Mooring.jl",
     format = Documenter.HTML(
-    size_threshold=nothing
+    size_threshold=nothing,
+    prettyurls=true,
     ),
     modules = [Mooring],
     doctest = false,
