@@ -8,6 +8,7 @@ on:
       - refactoring 
     tags: '*'
   pull_request:
+    branches:
       - main
       - dev/*
       - refactoring
