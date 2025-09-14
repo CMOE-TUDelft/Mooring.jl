@@ -17,7 +17,7 @@ You can install **Mooring.jl** using Julia's package manager:
 
 ```julia
 using Pkg
-Pkg.add("Mooring")
+Pkg.add("https://github.com/CMOE-TUDelft/Mooring.jl")
 ```
 
 ## Usage
