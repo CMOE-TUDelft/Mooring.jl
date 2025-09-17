@@ -13,11 +13,25 @@
 
 ## Installation
 
-You can install **Mooring.jl** using Julia's package manager:
+To install the latest version of **Mooring.jl**:
+
+### Using `Pkg` REPL mode (recommended)
+
+1. Open Julia  
+2. Enter the package manager by typing `]`  
+3. Add the package with:
+
+```julia
+pkg> add https://github.com/CMOE-TUDelft/Mooring.jl
+```
+
+### Using `Pkg` in scripts
+
+Alternatively, install directly from the Julia REPL or in your scripts:
 
 ```julia
 using Pkg
-Pkg.add("https://github.com/CMOE-TUDelft/Mooring.jl")
+Pkg.add(url="https://github.com/CMOE-TUDelft/Mooring.jl")
 ```
 
 ## Usage
@@ -40,7 +54,7 @@ Below is an example of a mooring line under wave loading:
 
 ## Contributing
 
-Contributions are welcome! If you find a bug or have a feature request, please open an issue or submit a pull request. Please, use the [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
+Contributions are welcome! If you find a bug or have a feature request, please open an issue or submit a pull request. Please, use the [CONTRIBUTING.md](https://github.com/CMOE-TUDelft/Mooring.jl/CONTRIBUTING.md) guidelines.
 
 ## License
 
