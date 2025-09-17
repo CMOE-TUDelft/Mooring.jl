@@ -156,15 +156,6 @@ DragParameters
 end
 
 """
-DragParameters constructor
-"""
-function DragParameters(tag="default_drag", dragType="NoDrag", ρw=0.0, nd=0.0, od=0.0, id=0.0, AStr=0.0,
-  Cd_n=0.0, Cd_t=0.0, dd_n=0.0, dd_t=0.0,
-  Ca_n=0.0, Ca_t=0.0, Cfd_n=0.0, Cfd_t=0.0)
-  DragParameters(tag, dragType, ρw, nd, od, id, AStr, Cd_n, Cd_t, dd_n, dd_t, Ca_n, Ca_t, Cfd_n, Cfd_t)
-end
-
-"""
 WaveParameters
   
 This struct contains the parameters for the wave conditions.
