@@ -22,6 +22,7 @@ to undeformed configuration.
 - `material::Material`: [Material](../Physics/Materals) properties of the segment
 - `density::Real`: Submerged density of the segment (default is 1.0)
 - `area::Real`: Effective cross-sectional area of the segment (default is 1.0)
+- `phys_dim::Int`: Physical dimension of the segment
 """
 struct MooringSegment
   tag::String
@@ -31,6 +32,7 @@ struct MooringSegment
   material::M.Material
   density::Real
   area::Real
+  phys_dim::Int
 end
 
 """
@@ -53,8 +55,11 @@ function MooringSegment(model::DiscreteModel,
   # Get the triangulation of the segment
   trian = Interior(model, tags=[segment_tag])
 
+  # Get physical dimension
+  phys_dim = length(map(VectorValue(0.0)))
+
   # Create the segment
-  return MooringSegment(segment_tag, trian, [pointA, pointB], map, material, density, area)
+  return MooringSegment(segment_tag, trian, [pointA, pointB], map, material, density, area, phys_dim)
 end
 
 """
@@ -68,6 +73,12 @@ get_tag(s::MooringSegment) = s.tag
   Get the triangulation of a segment
 """
 get_triangulation(s::MooringSegment) = s.trian
+
+"""
+  get_physical_dim(s::MooringSegment)
+  Get the physical dimension of a segment
+"""
+get_physical_dim(s::MooringSegment) = s.phys_dim
 
 """
   get_points(s::MooringSegment)
@@ -152,7 +163,7 @@ Output:
   - `V::TestFESpace`: The test finite element space.
   - `U::TransientTrialFESpace`: The transient trial finite element space.
 """
-function get_transient_FESpaces(s::MooringSegment, order::Int=1, dim::Int=2)
+function get_transient_FESpaces(s::MooringSegment; order::Int=1, dim::Int=2)
   # Get the triangulation of the segment
   trian = get_triangulation(s)
 
@@ -254,7 +265,9 @@ function get_quasi_static_residual(s::MooringSegment, Xₕ::CellField, g::Real=9
   K(u) = M.K∘(FΓ(u), S(u))
 
   # Define gravity force
-  Fᵨ = VectorValue(0.0, -get_density(s) * get_area(s) * g)
+  dims = get_physical_dim(s)
+  gravity_value = -get_density(s) * get_area(s) * g
+  Fᵨ = VectorValue(ntuple(i -> i == dims ? gravity_value : 0.0, dims))
 
   # Define the residual function
   res(u, v) = ∫(((∇(v)' ⋅ Q') ⊙ K(u)) * Jabs)dΩ -

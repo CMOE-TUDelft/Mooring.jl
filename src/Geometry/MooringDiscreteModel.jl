@@ -39,10 +39,16 @@ function assign_coords(line::PH.LineParameters, ph::PH.ParameterHandler; anchor=
     adj = build_adjacency(line, ph)
     coords = Dict{Int, Float64}()
     visited = Set{Int}()
-    
+
+    # Check anchor exists
+    if !haskey(adj, anchor)
+        println("Anchor point $anchor not found in line points. Assigning first point as anchor.")
+        anchor = first(keys(adj))
+    end
+
     coords[anchor] = 0.0
     stack = [anchor]
-    
+
     while !isempty(stack)
         current = pop!(stack)
         push!(visited, current)

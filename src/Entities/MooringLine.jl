@@ -10,6 +10,8 @@ using Gridap.FESpaces
 using Gridap.MultiField
 using Gridap.ODEs
 using Gridap.Algebra
+using Gridap.ReferenceFEs: num_point_dims
+using Gridap.Geometry: get_node_coordinates
 
 export setup_lines
 
@@ -32,19 +34,30 @@ end
 get_segments(line::MooringLine) = line.segments
 
 """
-get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler)
+get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
 
 This function makes the physical map between two points of a segment.
 Given a coordinate along the segment `r`, it returns the coordinate in the physical space.
 """
-function get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler)
-  p1 = seg.start_point
-  p2 = seg.stop_point
-  x_p1 = ph.points[p1].coords
-  x_p2 = ph.points[p2].coords
+function get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
+
+  # Get physical coordinates of start and stop points
+  p1_id = seg.start_point
+  p2_id = seg.stop_point
+  x_phys_p1 = ph.points[p1_id].coords
+  x_phys_p2 = ph.points[p2_id].coords
+
+  # Reference coordinates of start and stop points
+  p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
+  p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
+  x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
+  x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
+  @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
+
   return function(r::VectorValue{1,Float64})
-      t = r / norm(x_p2 .- x_p1)         # normalize parameter to [0,1]
-      return VectorValue(x_p1 .+ t[1] .* (x_p2 .- x_p1)) # linear interpolation
+      s = (r[1] -x_ref_p1) / (x_ref_p2 - x_ref_p1)        # parametric coordinate along segment
+      x_phys = x_phys_p1 .+ s .* (x_phys_p2 .- x_phys_p1) # linear interpolation
+      return VectorValue(x_phys) 
   end
 end
 
@@ -79,7 +92,9 @@ function setup_lines(ph::PH.ParameterHandler)
     segments = Dict{Int, Seg.MooringSegment}()
     for s_id in line.segments
       seg_params = ph.segments[s_id]
-      map = get_physical_map(seg_params, ph)
+      start_point = points[seg_params.start_point]
+      stop_point = points[seg_params.stop_point]
+      map = get_physical_map(seg_params, ph, start_point, stop_point)
       mat_params = ph.materials[seg_params.material_tag]
       material = Mat.Material(mat_params)
       segment = Seg.MooringSegment(model, 
@@ -115,7 +130,8 @@ function get_transient_FE_spaces(line::MooringLine)
   test_spaces = SingleFieldFESpace[]
   trial_spaces = TransientTrialFESpace[]
   for (s_id, segment) in line.segments
-    U, V = Seg.get_transient_FESpaces(segment)
+    dim = Seg.get_physical_dim(segment)
+    U, V = Seg.get_transient_FESpaces(segment,dim=dim)
     push!(test_spaces, V)
     push!(trial_spaces, U)
   end
@@ -178,7 +194,8 @@ function solve_quasistatic(ph::PH.ParameterHandler)
   # Setup lines
   mlines = setup_lines(ph)
 
-  x = FEFunction[]
+  u = FEFunction[]
+  x_ref = FEFunction[]
 
   # Loop over lines
   for (line_id,line) in mlines
@@ -198,13 +215,14 @@ function solve_quasistatic(ph::PH.ParameterHandler)
     # solve
     # TODO: add nls parameters as input parameters (solver parameters)
     op = FEOperator(res, X(0.0), Y)
-    nls = NLSolver(BackslashSolver(), iterations=200)
-    xₕ = solve(nls, op)
-    push!(x, xₕ)
+    nls = NLSolver(BackslashSolver(), iterations=100, show_trace=true, ftol=1e-8)
+    uₕ = solve(nls, op)
+    push!(u, uₕ)
+    push!(x_ref, Xₕ)
 
   end
 
-  return x
+  return u,x_ref
 end
 
 end # module
