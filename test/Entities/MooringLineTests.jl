@@ -23,9 +23,12 @@ segment = segments[1]
 @test segment isa Seg.MooringSegment
 @test segment.tag == "line1"
 
-f = ML.get_physical_map(ph.segments[1], ph)
-mid = f(VectorValue(5.0)) # halfway along segment
-@test isapprox(mid[1], 5.0; atol=1e-8)
+points = Seg.get_points(segments[1])
+start_point = points[ph.segments[1].start_point]
+stop_point = points[ph.segments[1].stop_point]
+f = ML.get_physical_map(ph.segments[1], ph, start_point, stop_point)
+mid = f(VectorValue(0.75)) # halfway along segment
+@test isapprox(mid[1], 0.5; atol=1e-8)
 @test isapprox(mid[2], 0.0; atol=1e-8)
 
 # Transient FE spaces
@@ -58,4 +61,4 @@ unorm = √(∑(∫(uₕ⋅uₕ)dΩ))
 
 # Solve quasi-static problem
 xₕ = ML.solve_quasistatic(ph)
-@test length(xₕ) == 1
+@test length(xₕ) == 2
