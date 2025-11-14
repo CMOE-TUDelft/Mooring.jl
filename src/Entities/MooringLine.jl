@@ -62,6 +62,119 @@ function get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, st
 end
 
 """
+get_physical_linear_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
+
+This function creates a linear physical map between two points of a segment.
+Given a reference coordinate along the segment `r` (from the 1D mesh), it returns the 
+corresponding coordinate in 3D physical space using linear interpolation.
+
+The mapping is constructed such that:
+- The reference coordinates `x_ref_p1` and `x_ref_p2` from the 1D mesh are mapped to
+- The physical coordinates `x_phys_p1` and `x_phys_p2` in 3D space
+- The total reference length between points must match the segment's unstretched length
+- The physical distance between endpoints can differ from the unstretched length (pre-tension/slack)
+
+Arguments:
+- `seg::PH.SegmentParameters`: Segment parameters including start/stop point IDs and length
+- `ph::PH.ParameterHandler`: Parameter handler containing point coordinates
+- `start_point::Pts.MooringPoint`: Start point with reference triangulation
+- `stop_point::Pts.MooringPoint`: Stop point with reference triangulation
+
+Returns:
+- A function that maps `r::VectorValue{1,Float64}` (reference) to `VectorValue{D,Float64}` (physical)
+"""
+function get_physical_linear_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
+
+  # Get physical coordinates of start and stop points
+  p1_id = seg.start_point
+  p2_id = seg.stop_point
+  x_phys_p1 = ph.points[p1_id].coords
+  x_phys_p2 = ph.points[p2_id].coords
+
+  # Reference coordinates of start and stop points
+  p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
+  p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
+  x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
+  x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
+  @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
+
+  return function(r::VectorValue{1,Float64})
+      s = (r[1] - x_ref_p1) / (x_ref_p2 - x_ref_p1)        # parametric coordinate s ∈ [0,1] along segment
+      x_phys = x_phys_p1 .+ s .* (x_phys_p2 .- x_phys_p1) # linear interpolation in physical space
+      return VectorValue(x_phys) 
+  end
+end
+
+"""
+get_physical_quadratic_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
+
+This function creates a quadratic physical map between two points of a segment.
+Given a reference coordinate along the segment `r` (from the 1D mesh), it returns the 
+corresponding coordinate in 3D physical space using quadratic interpolation with a catenary-like shape.
+
+The mapping is constructed such that:
+- The reference coordinates `x_ref_p1` and `x_ref_p2` from the 1D mesh are mapped to
+- The physical coordinates `x_phys_p1` and `x_phys_p2` in 3D space
+- A parabolic sag is added in the vertical direction to approximate a catenary shape
+- The sag depth is proportional to the horizontal span and segment length
+- The total reference length between points must match the segment's unstretched length
+
+The quadratic map provides a better initial guess for hanging cables compared to linear interpolation,
+reducing the number of Newton iterations needed for convergence.
+
+Arguments:
+- `seg::PH.SegmentParameters`: Segment parameters including start/stop point IDs and length
+- `ph::PH.ParameterHandler`: Parameter handler containing point coordinates
+- `start_point::Pts.MooringPoint`: Start point with reference triangulation
+- `stop_point::Pts.MooringPoint`: Stop point with reference triangulation
+
+Returns:
+- A function that maps `r::VectorValue{1,Float64}` (reference) to `VectorValue{D,Float64}` (physical)
+"""
+function get_physical_quadratic_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
+
+  # Get physical coordinates of start and stop points
+  p1_id = seg.start_point
+  p2_id = seg.stop_point
+  x_phys_p1 = ph.points[p1_id].coords
+  x_phys_p2 = ph.points[p2_id].coords
+
+  # Reference coordinates of start and stop points
+  p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
+  p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
+  x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
+  x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
+  @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
+
+  # Calculate horizontal span and sag parameters
+  dims = length(x_phys_p1)
+  horizontal_span = norm(x_phys_p2[1:dims-1] .- x_phys_p1[1:dims-1])
+  
+  # Estimate sag depth based on cable length excess over horizontal span
+  # For a catenary, the sag is approximately (L²-H²)/(8H) where L is cable length and H is horizontal span
+  excess_length = seg.length - horizontal_span
+  sag_depth = excess_length > 0 ? excess_length^2 / (8 * max(horizontal_span, 1.0)) : 0.0
+
+  return function(r::VectorValue{1,Float64})
+      s = (r[1] - x_ref_p1) / (x_ref_p2 - x_ref_p1)        # parametric coordinate s ∈ [0,1] along segment
+      
+      # Linear interpolation in horizontal directions
+      x_phys = x_phys_p1 .+ s .* (x_phys_p2 .- x_phys_p1)
+      
+      # Add parabolic sag in vertical direction (last dimension)
+      # Parabola: y = -4*h*s*(1-s) where h is the sag depth
+      # Maximum sag occurs at s=0.5
+      vertical_offset = -4.0 * sag_depth * s * (1.0 - s)
+      
+      # Create result vector with sag applied to vertical component
+      x_result = collect(x_phys)
+      x_result[dims] += vertical_offset
+      
+      return VectorValue(x_result...) 
+  end
+end
+
+"""
   setup_lines(ph::PH.ParameterHandler)
 
 This function sets up the mooring lines based on the provided parameter handler.
@@ -94,7 +207,7 @@ function setup_lines(ph::PH.ParameterHandler)
       seg_params = ph.segments[s_id]
       start_point = points[seg_params.start_point]
       stop_point = points[seg_params.stop_point]
-      map = get_physical_map(seg_params, ph, start_point, stop_point)
+      map = get_physical_quadratic_map(seg_params, ph, start_point, stop_point)
       mat_params = ph.materials[seg_params.material_tag]
       material = Mat.Material(mat_params)
       segment = Seg.MooringSegment(model, 
@@ -215,7 +328,7 @@ function solve_quasistatic(ph::PH.ParameterHandler)
     # solve
     # TODO: add nls parameters as input parameters (solver parameters)
     op = FEOperator(res, X(0.0), Y)
-    nls = NLSolver(BackslashSolver(), iterations=100, show_trace=true, ftol=1e-8)
+    nls = NLSolver(BackslashSolver(), iterations=200, show_trace=true, ftol=1e-8,method=:newton)
     uₕ = solve(nls, op)
     push!(u, uₕ)
     push!(x_ref, Xₕ)

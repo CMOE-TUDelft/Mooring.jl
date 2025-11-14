@@ -11,7 +11,7 @@ angles = [π/3, π, 5π/3]                         # line headings [rad] (60°, 
 rAnchor = 1600.0                                # anchor radius/spacing [m]
 zFair = -21.0                                   # fairlead z elevation [m]
 rFair = 20.0                                    # fairlead radius [m]
-lineLength = 1800.0                             # line unstretched length [m]
+lineLength = 2100.0                             # line unstretched length [m]
 
 # Create ParameterHandler
 ph = PH.ParameterHandler()
