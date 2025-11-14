@@ -56,7 +56,7 @@ function get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, st
   @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
 
   return function(r::VectorValue{1,Float64})
-      s = (r[1] -x_ref_p1) / (x_ref_p2 - x_ref_p1)        # parametric coordinate along segment
+      s = (r[1] - x_ref_p1) / (x_ref_p2 - x_ref_p1)        # parametric coordinate along segment
       x_phys = x_phys_p1 .+ s .* (x_phys_p2 .- x_phys_p1) # linear interpolation
       return VectorValue(x_phys) 
   end
