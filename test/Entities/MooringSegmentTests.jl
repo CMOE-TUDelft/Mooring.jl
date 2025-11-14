@@ -2,7 +2,8 @@ import Mooring.MooringSegments as Seg
 import Mooring.MooringPoints as Pt
 import Mooring.Materials as M
 using Gridap
-using Gridap.FESpaces: SingleFieldFESpace, TransientTrialFESpace
+using Gridap.FESpaces: SingleFieldFESpace 
+using Gridap.ODEs: TransientTrialFESpace
 using Gridap
 
 # Create a Discrete model
