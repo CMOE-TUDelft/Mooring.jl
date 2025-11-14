@@ -19,7 +19,7 @@ It includes the following fields:
 - `points::Vector{MooringPoint}`: End points of the segment, defined as [`MooringPoint`](@ref) types.
 - `map::Function`: Function to map the segment from reference configuration
 to undeformed configuration.
-- `material::Material`: [Material](../Physics/Materals) properties of the segment
+- `material::Material`: [Material](../Physics/Materials) properties of the segment
 - `density::Real`: Submerged density of the segment (default is 1.0)
 - `area::Real`: Effective cross-sectional area of the segment (default is 1.0)
 - `phys_dim::Int`: Physical dimension of the segment
