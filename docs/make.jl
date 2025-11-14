@@ -11,28 +11,33 @@ user_pages = [
 developer_pages = []
 
 entities_pages = [
-  "API/Entities/MooringPoint.md",
-  "API/Entities/MooringSegment.md",
-  "API/Entities/MooringLine.md",
+  "MooringPoint"=>"API/Entities/MooringPoint.md",
+  "MooringSegment"=>"API/Entities/MooringSegment.md",
+  "MooringLine"=>"API/Entities/MooringLine.md",
 ]
 
 geometry_pages = [
-  "API/Geometry/MooringDiscreteModel.md",
+  "MooringDiscreteModel"=>"API/Geometry/MooringDiscreteModel.md",
+]
+
+io_pages = [
+  "ParameterHandler"=>"API/IO/ParameterHandler.md",
 ]
 
 physics_pages = [
-  "API/Physics/EnvironmentalConditions.md",
-  "API/Physics/SeaBed.md",
-  "API/Physics/Drag.md",
-  "API/Physics/PointMotion.md",
-  "API/Physics/TangentialDiffCalculus.md",
+  "Materials"=>"API/Physics/Materials.md",
+  "EnvironmentalConditions"=>"API/Physics/EnvironmentalConditions.md",
+  "SeaBed"=>"API/Physics/SeaBed.md",
+  "Drag"=>"API/Physics/Drag.md",
+  "PointMotion"=>"API/Physics/PointMotion.md",
+  "TangentialDiffCalculus"=>"API/Physics/TangentialDiffCalculus.md",
 ]
 
 api_pages = [ 
-  "API/API.md", 
-  "Input/Output"=>"API/IO/ParameterHandler.md",
-  # "Entities" => entities_pages,
-  # "Geometry" => geometry_pages,
+  "Overview"=>"API/API.md",
+  "Entities" => entities_pages,
+  "Geometry" => geometry_pages,
+  "Input/Output" => io_pages,
   "Physics" => physics_pages
 ]
 
