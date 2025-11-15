@@ -4,7 +4,7 @@
 
 ## Key Features
 
-### Advanced Finite Element Method
+### 🔬 Advanced Finite Element Method
 - **Arbitrary interpolation order**: Use linear, quadratic, or higher-order finite elements for enhanced accuracy
 - **Wide variety of FE spaces**: Support for H¹-conforming spaces (continuous), L²-conforming spaces (discontinuous), and other Sobolev spaces
 - **Flexible discretization**: Independent mesh refinement and interpolation order per segment
@@ -12,19 +12,19 @@
 - **Independent FE space per segment**: Modular design enabling different discretizations for each segment
 - **Gridap.jl foundation**: Leverages powerful FEM abstractions for complex PDEs
 
-### Robust Nonlinear Mechanics
+### ⚙️ Robust Nonlinear Mechanics
 - **Dynamic finite strain theory**: Geometrically exact formulation for arbitrarily large deformations
 - **Nonlinear constitutive models**: Support for linear elastic and nonlinear viscoelastic materials (Scharpery model). Easy to extend to user-defined models
 - **Tangential differential calculus**: Rigorous geometric framework ensuring consistency in 1D cable dynamics in 2D/3D space
 - **Fully implicit time integration**: Robust schemes for highly nonlinear and dynamic problems with strong stability. Wide variety of schemes: Newmark-β, generalized-α, backward Euler, Runge-Kutta, ...
 - **Automatic differentiation**: Jacobian computation for both geometric and material nonlinearities without manual derivations
 
-### Modular and Extensible Architecture
+### 🧩 Modular and Extensible Architecture
 - **Easy material implementation**: Add custom constitutive models by implementing stress functions
 - **Flexible forcing terms**: Simple to incorporate add-hoc forcing functions. Currently, drag forces, seabed interaction, buoyancy, wave loading are implemented
 - **Clear separation**: Parameter configuration (user level) vs. FEM operations (solver level)
 
-### User-Friendly Interface
+### 💻 User-Friendly Interface
 - **YAML configuration**: Define complete mooring systems without writing code
 - **Parameter handler**: Intuitive API for programmatic setup in Julia
 - **Comprehensive documentation**: Detailed user guides and API reference
