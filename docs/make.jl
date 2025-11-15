@@ -6,6 +6,7 @@ user_pages = [
   "Points"=>"userguide/points.md",
   "Segments"=>"userguide/segments.md",
   "Lines"=>"userguide/lines.md",
+  "Materials"=>"userguide/materials.md",
 ]
 
 developer_pages = []
