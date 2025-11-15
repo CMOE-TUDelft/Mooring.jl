@@ -8,9 +8,80 @@ Mooring segments are the fundamental physical elements in **Mooring.jl** that re
 
 Each segment connects a **start point** to a **stop point** and carries material, geometric, and hydrodynamic properties.
 
-## Segment Properties
+#### Table of Contents
 
-Each segment is characterized by the following parameters:
+- [Two Types of Segment Structures](#two-types-of-segment-structures)
+- [Segment Properties (SegmentParameters)](#segment-properties-segmentparameters)
+- [Defining Segments in Julia](#defining-segments-in-julia)
+- [Defining Segments in YAML](#defining-segments-in-yaml)
+- [Working with Segments](#working-with-segments)
+- [Workflow: From SegmentParameters to MooringSegment](#workflow-from-segmentparameters-to-mooringsegment)
+- [Physical Map Functions](#physical-map-functions)
+- [Best Practices](#best-practices)
+- [Common Issues](#common-issues)
+- [Next Steps](#next-steps)
+- [See Also](#see-also)
+
+## Two Types of Segment Structures
+
+**Mooring.jl** uses two distinct structures for handling segments at different levels:
+
+### 1. `SegmentParameters` (High-Level: Parameter Handling)
+
+`SegmentParameters` is used for **defining and configuring** segments in YAML files or through the parameter handler. This struct stores all the user-specified properties needed to create a segment (cable) in the mooring system. You interact with this struct when setting up your simulation configuration.
+
+```julia
+using Mooring.ParameterHandlers as PH
+
+# Create segment parameters for configuration
+segment_params = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    length=100.0,
+    area=0.00785,
+    density=7850.0,
+    material_tag="steel_chain"
+)
+```
+
+### 2. `MooringSegment` (Low-Level: FEM Operations)
+
+`MooringSegment` is used internally for **finite element analysis** operations. This struct contains the triangulation and material properties. From these parameters it can create **its own dedicated finite element space**. The package automatically creates `MooringSegment` instances from your `SegmentParameters` when building the discrete model.
+
+```julia
+using Mooring.MooringSegments
+
+# MooringSegment is created internally from the discrete model
+# You typically don't create these directly
+mooring_segment = MooringSegment(
+    model,              # Discrete model with mesh
+    "Segment_1",        # Tag from SegmentParameters
+    pointA,             # MooringPoint instance
+    pointB,             # MooringPoint instance
+    map_function,       # Geometric map (linear/quadratic)
+    material,           # Material properties
+    density,            # Submerged density
+    area                # Cross-sectional area
+)
+
+# Key feature: Each MooringSegment gets its own FE space
+U, V = get_transient_FESpaces(mooring_segment, order=1, dim=2)
+```
+
+**Key Distinction:**
+- **`SegmentParameters`**: What you define (geometry, material, connections) → *User configuration level*
+- **`MooringSegment`**: What the solver uses (triangulation, FE space, residuals) → *FEM computation level*
+
+**Critical Feature:** Each `MooringSegment` has its **own independent finite element space**. This design allows:
+- Different mesh refinements per segment
+- Different interpolation orders per segment
+- Flexible boundary conditions at segment endpoints
+- Efficient assembly of multi-segment systems
+
+## Segment Properties (SegmentParameters)
+
+When defining segments through the parameter handler, each segment uses the following parameters:
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -371,6 +442,122 @@ mat = ph.materials[seg.material_tag]
 EA = axial_stiffness(seg, mat)
 println("Axial stiffness EA = $EA N")
 ```
+
+---
+
+## Workflow: From SegmentParameters to MooringSegment
+
+Understanding how `SegmentParameters` transforms into `MooringSegment` helps clarify the package architecture and the role of independent FE spaces:
+
+### 1. **User Configuration Stage** (`SegmentParameters`)
+
+You define segment properties in YAML or Julia:
+
+```julia
+# Define configuration
+ph.segments[1] = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    length=100.0,
+    area=0.00785,
+    density=7850.0,
+    material_tag="steel_chain"
+)
+```
+
+At this stage, you're working with **physical properties** (length, area, density, material).
+
+### 2. **Geometry Generation Stage**
+
+The package uses your `SegmentParameters` to create a discrete geometric model with mesh:
+
+```julia
+# Package internally creates geometry from your parameters
+model = create_mooring_discrete_model(ph)
+```
+
+The length and point connections from `SegmentParameters` are used to generate the 1D mesh for each segment.
+
+### 3. **FEM Setup Stage** (`MooringSegment`)
+
+The package creates `MooringSegment` instances with **dedicated FE spaces** for each segment:
+
+```julia
+# Package internally creates MooringSegment from the discrete model
+mooring_segment = MooringSegment(
+    model,              # Discrete model with mesh
+    "Segment_1",        # Tag from SegmentParameters
+    pointA,             # MooringPoint (start)
+    pointB,             # MooringPoint (stop)
+    map_function,       # Geometric map (linear/quadratic)
+    material,           # Material constitutive law
+    density,            # Submerged density
+    area                # Cross-sectional area
+)
+
+# Critical: Each segment gets its own FE space
+U1, V1 = get_transient_FESpaces(segment1, order=1, dim=2)
+U2, V2 = get_transient_FESpaces(segment2, order=1, dim=2)
+# U1 and U2 are INDEPENDENT finite element spaces
+```
+
+At this stage, you're working with **FEM structures** (triangulations, FE spaces, residual functions).
+
+### 4. **Why Each Segment Has Its Own FE Space**
+
+This is a **key architectural feature** of Mooring.jl:
+
+**Benefits:**
+- **Flexible mesh refinement**: Each segment can have different element sizes
+- **Independent DOFs**: Degrees of freedom are local to each segment
+- **Easy assembly**: Segments are coupled only at shared points through boundary conditions
+- **Modular design**: Add/remove segments without affecting others
+- **Parallel potential**: Segments can be processed independently
+
+**Example:**
+```julia
+# Three segments with different properties
+segment1: order=1, 10 elements  → FE space V1 (11 nodes × dim DOFs)
+segment2: order=2, 20 elements  → FE space V2 (41 nodes × dim DOFs)  
+segment3: order=1, 5 elements   → FE space V3 (6 nodes × dim DOFs)
+
+# Each has independent DOFs, coupled at endpoints
+```
+
+### 5. **What Each Structure Contains**
+
+| Aspect | SegmentParameters | MooringSegment |
+|--------|------------------|----------------|
+| **Purpose** | User configuration | FEM computation |
+| **Contains** | Length, area, density, material tag | Triangulation, FE space, material law, residual |
+| **Mesh info** | None (just length) | Complete 1D triangulation |
+| **FE space** | N/A | Dedicated TestFESpace & TrialFESpace |
+| **Coupling** | Point IDs (start/stop) | MooringPoint instances with boundary conditions |
+| **When used** | Parameter setup, YAML I/O | Assembly, solving, post-processing |
+| **Typical user** | You (simulation setup) | Package internals (solver) |
+
+### 6. **When You Interact With Each**
+
+**Work with `SegmentParameters` when:**
+- Reading/writing YAML configuration files
+- Setting up simulation parameters (length, area, density)
+- Defining material and drag tags
+- Connecting segments to points
+- Parametric studies (changing properties)
+
+**Work with `MooringSegment` when:**
+- Extending the package with custom residuals
+- Implementing custom material models
+- Developing advanced FEM features (higher-order elements)
+- Debugging FEM assembly and solving
+- Post-processing stress/strain fields
+
+**Key Takeaway:** You primarily work with `SegmentParameters` for configuration. The package automatically handles:
+- Conversion to `MooringSegment` with dedicated FE spaces
+- Mesh generation for each segment
+- Coupling between segments at shared points
+- Assembly of the global FEM system
 
 ---
 

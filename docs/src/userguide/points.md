@@ -5,9 +5,57 @@ Points are fundamental entities in **Mooring.jl** that define the endpoints of s
 - **Fairleads**: Connection points on floating structures
 - **Intermediate connections**: Joints between different mooring components
 
-## Point Properties
+#### Table of Contents
 
-Each point is characterized by the following parameters:
+- [Two Types of Point Structures](#two-types-of-point-structures)
+- [Point Properties (PointParameters)](#point-properties-pointparameters)
+- [Defining Points directly in Julia script](#defining-points-directly-in-julia-script)
+- [Defining Points in YAML input file](#defining-points-in-yaml-input-file)
+- [Working with Points](#working-with-points)
+- [Workflow: From PointParameters to MooringPoint](#workflow-from-pointparameters-to-mooringpoint)
+- [Common Issues](#common-issues)
+- [Next Steps](#next-steps)
+- [See Also](#see-also)
+
+## Two Types of Point Structures
+
+**Mooring.jl** uses two distinct structures for handling points at different levels:
+
+### 1. `PointParameters` (High-Level: Parameter Handling)
+
+`PointParameters` is used for **defining and configuring** points in YAML files or through the parameter handler. This struct stores all the user-specified properties needed to create a point in the mooring system. You interact with this struct when setting up your simulation configuration.
+
+```julia
+using Mooring.ParameterHandlers as PH
+
+# Create point parameters for configuration
+point_params = PH.PointParameters(
+    id=1,
+    coords=[0.0, -100.0],
+    motion_tag="fixed",
+    mesh_size=10.0
+)
+```
+
+### 2. `MooringPoint` (Low-Level: FEM Operations)
+
+`MooringPoint` is used internally for **finite element analysis** operations. This struct contains the boundary triangulation and motion functions needed for FEM computations. The package automatically creates `MooringPoint` instances from your `PointParameters` when building the discrete model.
+
+```julia
+using Mooring.MooringPoints
+
+# MooringPoint is created internally from the discrete model
+# You typically don't create these directly
+mooring_point = MooringPoint(model, "Point_1", motion_type)
+```
+
+**Key Distinction:**
+- **`PointParameters`**: What you define (coordinates, properties) → *User configuration level*
+- **`MooringPoint`**: What the solver uses (triangulation, motion functions) → *FEM computation level*
+
+## Point Properties (PointParameters)
+
+When defining points through the parameter handler, each point uses the following parameters:
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -84,7 +132,7 @@ The `mesh_size` parameter controls the finite element mesh density near the poin
 
 ---
 
-## Defining Points in Julia
+## Defining Points directly in Julia script
 
 ### Basic 2D Example
 
@@ -203,7 +251,7 @@ end
 
 ---
 
-## Defining Points in YAML
+## Defining Points in YAML input file
 
 For larger systems, YAML configuration files are more convenient:
 
@@ -347,6 +395,80 @@ ph.points[2] = PH.PointParameters(
     mesh_size=old_point.mesh_size
 )
 ```
+
+---
+
+## Workflow: From PointParameters to MooringPoint
+
+Understanding how `PointParameters` transforms into `MooringPoint` helps clarify the package architecture:
+
+### 1. **User Configuration Stage** (`PointParameters`)
+
+You define point properties in YAML or Julia:
+
+```julia
+# Define configuration
+ph.points[1] = PH.PointParameters(
+    id=1,
+    coords=[0.0, -100.0],
+    motion_tag="fixed",
+    mesh_size=10.0
+)
+```
+
+At this stage, you're working with **physical properties** (coordinates, motion type, mesh size).
+
+### 2. **Geometry Generation Stage**
+
+The package uses your `PointParameters` to create a discrete geometric model:
+
+```julia
+# Package internally creates geometry from your parameters
+model = create_mooring_discrete_model(ph)
+```
+
+The coordinates and mesh sizes from `PointParameters` are used to generate the mesh geometry.
+
+### 3. **FEM Setup Stage** (`MooringPoint`)
+
+The package creates `MooringPoint` instances for FEM operations:
+
+```julia
+# Package internally creates MooringPoint from the discrete model
+mooring_point = MooringPoint(
+    model,              # Discrete model with mesh
+    "Point_1",          # Tag from PointParameters
+    motion_type         # Motion function from motion_tag
+)
+```
+
+At this stage, you're working with **FEM structures** (triangulations, motion functions).
+
+### 4. **What Each Structure Contains**
+
+| Aspect | PointParameters | MooringPoint |
+|--------|----------------|--------------|
+| **Purpose** | User configuration | FEM computation |
+| **Contains** | Coordinates, mesh size, motion tag | Boundary triangulation, motion functions |
+| **When used** | Parameter setup, YAML I/O | Assembly, solving, post-processing |
+| **Typical user** | You (simulation setup) | Package internals (solver) |
+| **Mutability** | Can be modified | Typically fixed once created |
+
+### 5. **When You Interact With Each**
+
+**Work with `PointParameters` when:**
+- Reading/writing YAML configuration files
+- Setting up simulation parameters
+- Modifying point locations before solving
+- Parametric studies (changing coordinates, mesh sizes)
+
+**Work with `MooringPoint` when:**
+- Extending the package with custom motion types
+- Implementing custom boundary conditions
+- Developing advanced FEM features
+- Debugging low-level FEM operations
+
+**Key Takeaway:** You primarily work with `PointParameters` for configuration. The package automatically handles the conversion to `MooringPoint` for FEM computations.
 
 ---
 
