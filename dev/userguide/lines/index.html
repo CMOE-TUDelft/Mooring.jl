@@ -1,42 +1,346 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Lines · Mooring.jl</title><meta name="title" content="Lines · Mooring.jl"/><meta property="og:title" content="Lines · Mooring.jl"/><meta property="twitter:title" content="Lines · Mooring.jl"/><meta name="description" content="Documentation for Mooring.jl."/><meta property="og:description" content="Documentation for Mooring.jl."/><meta property="twitter:description" content="Documentation for Mooring.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Mooring.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Mooring.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../GettingStarted/">Getting Started</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../../UserGuide/">User Guide</a></li><li><a class="tocitem" href="../installation/">Installation</a></li><li><a class="tocitem" href="../points/">Points</a></li><li><a class="tocitem" href="../segments/">Segments</a></li><li class="is-active"><a class="tocitem" href>Lines</a><ul class="internal"><li><a class="tocitem" href="#YAML-example"><span>YAML example</span></a></li><li><a class="tocitem" href="#Julia-example"><span>Julia example</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../DeveloperGuide/">Developer Guide</a></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../API/API/">API documentation</a></li><li><a class="tocitem" href="../../API/IO/ParameterHandler/">Input/Output</a></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Physics</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Physics/EnvironmentalConditions/">Environmental Conditions</a></li><li><a class="tocitem" href="../../API/Physics/SeaBed/">Sea bed external loading</a></li><li><a class="tocitem" href="../../API/Physics/Drag/">Drag force</a></li><li><a class="tocitem" href="../../API/Physics/PointMotion/">Point Motion</a></li><li><a class="tocitem" href="../../API/Physics/TangentialDiffCalculus/">Tangential Differential Calculus</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Lines</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Lines</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Defining-Lines"><a class="docs-heading-anchor" href="#Defining-Lines">Defining Lines</a><a id="Defining-Lines-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Lines" title="Permalink"></a></h1><p>Mooring lines are <strong>assemblies of mooring segments and points</strong> that define the geometry and behavior of a complete line in the mooring system.   Each line connects (multiple) anchors to (multiple) fairleads, or intermediate points, through one or more segments.</p><p>Each line is defined by:</p><ul><li><code>id::Ing</code> - unique integer identifier</li><li><code>tag::String</code> – unique identifier of the line</li><li><code>points::Vector{Int}</code> – list of point IDs that belong to this line  </li><li><code>segments::Vector{Int}</code> – list of segment IDs that form the line  </li></ul><hr/><h2 id="YAML-example"><a class="docs-heading-anchor" href="#YAML-example">YAML example</a><a id="YAML-example-1"></a><a class="docs-heading-anchor-permalink" href="#YAML-example" title="Permalink"></a></h2><pre><code class="language-yaml hljs">lines:
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Lines · Mooring.jl</title><meta name="title" content="Lines · Mooring.jl"/><meta property="og:title" content="Lines · Mooring.jl"/><meta property="twitter:title" content="Lines · Mooring.jl"/><meta name="description" content="Documentation for Mooring.jl."/><meta property="og:description" content="Documentation for Mooring.jl."/><meta property="twitter:description" content="Documentation for Mooring.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Mooring.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Mooring.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../GettingStarted/">Getting Started</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../../UserGuide/">User Guide</a></li><li><a class="tocitem" href="../installation/">Installation</a></li><li><a class="tocitem" href="../points/">Points</a></li><li><a class="tocitem" href="../segments/">Segments</a></li><li class="is-active"><a class="tocitem" href>Lines</a><ul class="internal"><li><a class="tocitem" href="#Table-of-Contents"><span>Table of Contents</span></a></li><li><a class="tocitem" href="#Two-Types-of-Line-Structures"><span>Two Types of Line Structures</span></a></li><li><a class="tocitem" href="#Line-Properties-(LineParameters)"><span>Line Properties (LineParameters)</span></a></li><li><a class="tocitem" href="#Defining-Lines-in-YAML"><span>Defining Lines in YAML</span></a></li><li><a class="tocitem" href="#Defining-Lines-in-Julia"><span>Defining Lines in Julia</span></a></li><li><a class="tocitem" href="#Workflow:-From-LineParameters-to-MooringLine"><span>Workflow: From LineParameters to MooringLine</span></a></li><li><a class="tocitem" href="#Multi-Segment-Lines"><span>Multi-Segment Lines</span></a></li><li><a class="tocitem" href="#Independent-Line-Solves"><span>Independent Line Solves</span></a></li><li><a class="tocitem" href="#Best-Practices"><span>Best Practices</span></a></li><li><a class="tocitem" href="#See-Also"><span>See Also</span></a></li></ul></li><li><a class="tocitem" href="../materials/">Materials</a></li></ul></li><li><a class="tocitem" href="../../DeveloperGuide/">Developer Guide</a></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../API/API/">Overview</a></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox"/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">Entities</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Entities/MooringPoint/">MooringPoint</a></li><li><a class="tocitem" href="../../API/Entities/MooringSegment/">MooringSegment</a></li><li><a class="tocitem" href="../../API/Entities/MooringLine/">MooringLine</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Geometry</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Geometry/MooringDiscreteModel/">MooringDiscreteModel</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-4" type="checkbox"/><label class="tocitem" for="menuitem-5-4"><span class="docs-label">Input/Output</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/IO/ParameterHandler/">ParameterHandler</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-5" type="checkbox"/><label class="tocitem" for="menuitem-5-5"><span class="docs-label">Physics</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Physics/Materials/">Materials</a></li><li><a class="tocitem" href="../../API/Physics/EnvironmentalConditions/">EnvironmentalConditions</a></li><li><a class="tocitem" href="../../API/Physics/SeaBed/">SeaBed</a></li><li><a class="tocitem" href="../../API/Physics/Drag/">Drag</a></li><li><a class="tocitem" href="../../API/Physics/PointMotion/">PointMotion</a></li><li><a class="tocitem" href="../../API/Physics/TangentialDiffCalculus/">TangentialDiffCalculus</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Lines</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Lines</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Defining-Lines"><a class="docs-heading-anchor" href="#Defining-Lines">Defining Lines</a><a id="Defining-Lines-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Lines" title="Permalink"></a></h1><p>Mooring lines are <strong>assemblies of mooring segments and points</strong> that define the geometry and behavior of a complete line in the mooring system.   Each line connects (multiple) anchors to (multiple) fairleads, or intermediate points, through one or more segments.</p><h2 id="Table-of-Contents"><a class="docs-heading-anchor" href="#Table-of-Contents">Table of Contents</a><a id="Table-of-Contents-1"></a><a class="docs-heading-anchor-permalink" href="#Table-of-Contents" title="Permalink"></a></h2><ul><li><a href="#two-types-of-line-structures">Two Types of Line Structures</a></li><li><a href="#line-properties-lineparameters">Line Properties (LineParameters)</a></li><li><a href="#defining-lines-in-yaml">Defining Lines in YAML</a></li><li><a href="#defining-lines-in-julia">Defining Lines in Julia</a></li><li><a href="#workflow-from-lineparameters-to-mooringline">Workflow: From LineParameters to MooringLine</a></li><li><a href="#multi-segment-lines">Multi-Segment Lines</a></li><li><a href="#independent-line-solves">Independent Line Solves</a></li><li><a href="#best-practices">Best Practices</a></li><li><a href="#see-also">See Also</a></li></ul><h2 id="Two-Types-of-Line-Structures"><a class="docs-heading-anchor" href="#Two-Types-of-Line-Structures">Two Types of Line Structures</a><a id="Two-Types-of-Line-Structures-1"></a><a class="docs-heading-anchor-permalink" href="#Two-Types-of-Line-Structures" title="Permalink"></a></h2><p><strong>Mooring.jl</strong> uses two distinct structures for handling lines at different levels:</p><h3 id="1.-LineParameters-(High-Level:-Parameter-Handling)"><a class="docs-heading-anchor" href="#1.-LineParameters-(High-Level:-Parameter-Handling)">1. <code>LineParameters</code> (High-Level: Parameter Handling)</a><a id="1.-LineParameters-(High-Level:-Parameter-Handling)-1"></a><a class="docs-heading-anchor-permalink" href="#1.-LineParameters-(High-Level:-Parameter-Handling)" title="Permalink"></a></h3><p><code>LineParameters</code> is used for <strong>defining and configuring</strong> lines in YAML files or through the parameter handler. This struct stores the topology of a line: which points and segments make up the line. You interact with this struct when setting up your mooring system configuration.</p><pre><code class="language-julia hljs">using Mooring.ParameterHandlers as PH
+
+# Create line parameters for configuration
+line_params = PH.LineParameters(
+    id=1,
+    points=[1, 2, 3],      # IDs of points that belong to this line
+    segments=[1, 2]        # IDs of segments that form this line
+)</code></pre><h3 id="2.-MooringLine-(Low-Level:-FEM-Operations)"><a class="docs-heading-anchor" href="#2.-MooringLine-(Low-Level:-FEM-Operations)">2. <code>MooringLine</code> (Low-Level: FEM Operations)</a><a id="2.-MooringLine-(Low-Level:-FEM-Operations)-1"></a><a class="docs-heading-anchor-permalink" href="#2.-MooringLine-(Low-Level:-FEM-Operations)" title="Permalink"></a></h3><p><code>MooringLine</code> is used internally for <strong>finite element analysis</strong> operations. This struct contains a collection of <code>MooringSegment</code> instances and, critically, <strong>creates a multifield FE space</strong> by combining the individual FE spaces from each segment. The package automatically creates <code>MooringLine</code> instances from your <code>LineParameters</code> when setting up the simulation.</p><pre><code class="language-julia hljs">using Mooring.MooringLines
+
+# MooringLine is created internally from the parameter handler
+# You typically don&#39;t create these directly
+mooring_line = MooringLine(segments_dict)
+
+# Key feature: MooringLine creates a MultiFieldFESpace from segment FE spaces
+X, Y = get_transient_FE_spaces(mooring_line)
+# X is a TransientMultiFieldFESpace containing all segment trial spaces
+# Y is a MultiFieldFESpace containing all segment test spaces</code></pre><p><strong>Key Distinction:</strong></p><ul><li><strong><code>LineParameters</code></strong>: What you define (point IDs, segment IDs) → <em>User configuration level</em></li><li><strong><code>MooringLine</code></strong>: What the solver uses (multifield FE spaces, coupled residuals) → <em>FEM computation level</em></li></ul><p><strong>Critical Features:</strong></p><ol><li><strong>Multifield FE Space</strong>: <code>MooringLine</code> combines individual segment FE spaces into a single multifield space</li><li><strong>Independent Solve</strong>: Each <code>MooringLine</code> results in an <strong>independent solve statement</strong> (separate nonlinear system)</li><li><strong>Line-Level Coupling</strong>: Segments within a line are strongly coupled through the multifield formulation</li><li><strong>Inter-Line Independence</strong>: Different lines do not interact (can be solved in parallel)</li></ol><h2 id="Line-Properties-(LineParameters)"><a class="docs-heading-anchor" href="#Line-Properties-(LineParameters)">Line Properties (LineParameters)</a><a id="Line-Properties-(LineParameters)-1"></a><a class="docs-heading-anchor-permalink" href="#Line-Properties-(LineParameters)" title="Permalink"></a></h2><p>When defining lines through the parameter handler, each line uses the following parameters:</p><table><tr><th style="text-align: right">Parameter</th><th style="text-align: right">Type</th><th style="text-align: right">Description</th></tr><tr><td style="text-align: right"><code>id</code></td><td style="text-align: right"><code>Int</code></td><td style="text-align: right">Unique integer identifier for the line</td></tr><tr><td style="text-align: right"><code>tag</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">Human-readable name for the line (auto-generated if not provided)</td></tr><tr><td style="text-align: right"><code>points</code></td><td style="text-align: right"><code>Vector{Int}</code></td><td style="text-align: right">Ordered list of point IDs that belong to this line</td></tr><tr><td style="text-align: right"><code>segments</code></td><td style="text-align: right"><code>Vector{Int}</code></td><td style="text-align: right">List of segment IDs that form the line</td></tr></table><h3 id="Points-Vector"><a class="docs-heading-anchor" href="#Points-Vector">Points Vector</a><a id="Points-Vector-1"></a><a class="docs-heading-anchor-permalink" href="#Points-Vector" title="Permalink"></a></h3><p>The <code>points</code> vector defines all points (anchors, fairleads, intermediate) that belong to the line:</p><ul><li>Must be ordered from one end to the other</li><li>Must include all endpoints of all segments in the line</li><li>Typically: <code>[anchor_id, intermediate_1, intermediate_2, ..., fairlead_id]</code></li></ul><h3 id="Segments-Vector"><a class="docs-heading-anchor" href="#Segments-Vector">Segments Vector</a><a id="Segments-Vector-1"></a><a class="docs-heading-anchor-permalink" href="#Segments-Vector" title="Permalink"></a></h3><p>The <code>segments</code> vector lists all segments that compose the line:</p><ul><li>Order doesn&#39;t matter for the solver (topology is determined from segment start/stop points)</li><li>Each segment must connect two points from the <code>points</code> vector</li><li>Segments are automatically coupled where they share common points</li></ul><hr/><h2 id="Defining-Lines-in-YAML"><a class="docs-heading-anchor" href="#Defining-Lines-in-YAML">Defining Lines in YAML</a><a id="Defining-Lines-in-YAML-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Lines-in-YAML" title="Permalink"></a></h2><h3 id="Single-Segment-Line"><a class="docs-heading-anchor" href="#Single-Segment-Line">Single Segment Line</a><a id="Single-Segment-Line-1"></a><a class="docs-heading-anchor-permalink" href="#Single-Segment-Line" title="Permalink"></a></h3><pre><code class="language-yaml hljs"># Define points first
+points:
   - id: 1
-    tag: line1
-    points: [1, 2]
-    segments: [1]</code></pre><p>In this example:</p><p>A single line (<code>line1</code>) is created. It uses two points (&quot;anchor&quot; at the seabed and &quot;fairlead&quot; at the floater). These are connected by one segment (<code>seg1</code>, see example in <a href="../segments/">Mooring Segments</a>).</p><hr/><h2 id="Julia-example"><a class="docs-heading-anchor" href="#Julia-example">Julia example</a><a id="Julia-example-1"></a><a class="docs-heading-anchor-permalink" href="#Julia-example" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Mooring
-import Mooring.ParameterHandler as PH
-ph.points[1] = PH.PointParameters(id=1, coords=[0.0,0.0,-50.0], motion_tag=&quot;fixed&quot;)
-ph.points[2] = PH.PointParameters(id=2, coords=[10.0,0.0,0.0], motion_tag=&quot;fairlead_motion&quot;)
-ph.segments[1] = PH.SegmentParameters(id=1, start_point=1, stop_point=2, material_tag=&quot;steel&quot;, area=0.01,
-                                      density=7850.0, length=10.0, drag_tag=&quot;no_drag&quot;, seabed_tag=&quot;default_seabed&quot;)
-ph.lines[1] = PH.LineParameters(id=1, points=[1,2], segments=[1])</code></pre><hr/><p>Lines may consist of several segments joined together. Example:</p><pre><code class="language-yaml hljs">points:
-  - id: 1
-    tag: anchor
-    coords: [0.0, 0.0, -100.0]
+    coords: [0.0, 0.0, -50.0]
+    motion_tag: &quot;fixed&quot;
+    mesh_size: 10.0
   - id: 2
-    tag: midpoint
+    coords: [10.0, 0.0, 0.0]
+    motion_tag: &quot;fairlead_motion&quot;
+    mesh_size: 5.0
+
+# Define segments
+segments:
+  - id: 1
+    start_point: 1
+    stop_point: 2
+    length: 55.0
+    area: 0.01
+    density: 7850.0
+    material_tag: &quot;steel&quot;
+
+# Define line connecting them
+lines:
+  - id: 1
+    points: [1, 2]
+    segments: [1]</code></pre><p>In this example:</p><ul><li>A single line is created with two points (anchor at seabed, fairlead at floater)</li><li>Connected by one segment</li><li>Results in <strong>one solve statement</strong> with a single-field FE space (only one segment)</li></ul><h3 id="Multi-Segment-Line-(Hybrid)"><a class="docs-heading-anchor" href="#Multi-Segment-Line-(Hybrid)">Multi-Segment Line (Hybrid)</a><a id="Multi-Segment-Line-(Hybrid)-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-Segment-Line-(Hybrid)" title="Permalink"></a></h3><pre><code class="language-yaml hljs">points:
+  - id: 1
+    coords: [0.0, 0.0, -100.0]
+    motion_tag: &quot;fixed&quot;
+  - id: 2
     coords: [25.0, 0.0, -50.0]
+    motion_tag: &quot;fixed&quot;
   - id: 3
-    tag: fairlead
     coords: [50.0, 0.0, 0.0]
+    motion_tag: &quot;fairlead_motion&quot;
 
 segments:
   - id: 1
-    tag: lower
     start_point: 1
     stop_point: 2
-    material: chain
+    length: 55.0
+    material_tag: &quot;chain&quot;
     area: 0.007
     density: 7700.0
   - id: 2
-    tag: upper
     start_point: 2
     stop_point: 3
-    material: polyester
+    length: 60.0
+    material_tag: &quot;polyester&quot;
     area: 0.004
     density: 1400.0
+
 lines:
   - id: 1
-    tag: hybrid_line
     points: [1, 2, 3]
-    segments: [1, 2]</code></pre><p>This defines a hybrid line:</p><ul><li>Lower segment = chain (anchor → midpoint).</li><li>Upper segment = polyester rope (midpoint → fairlead).</li></ul><p>Lines are the system-level building blocks and are used to define <a href="@ref"><code>MooringLine</code></a> objects, which are the highest level entities in the simulation workflow.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../segments/">« Segments</a><a class="docs-footer-nextpage" href="../../DeveloperGuide/">Developer Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.0 on <span class="colophon-date" title="Friday 14 November 2025 20:28">Friday 14 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+    segments: [1, 2]</code></pre><p>This defines a hybrid line:</p><ul><li>Lower segment: chain (anchor → midpoint)</li><li>Upper segment: polyester rope (midpoint → fairlead)</li><li>Results in <strong>one solve statement</strong> with a <strong>multifield FE space</strong> (two segment spaces combined)</li></ul><hr/><h2 id="Defining-Lines-in-Julia"><a class="docs-heading-anchor" href="#Defining-Lines-in-Julia">Defining Lines in Julia</a><a id="Defining-Lines-in-Julia-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Lines-in-Julia" title="Permalink"></a></h2><h3 id="Basic-Single-Segment-Line"><a class="docs-heading-anchor" href="#Basic-Single-Segment-Line">Basic Single-Segment Line</a><a id="Basic-Single-Segment-Line-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Single-Segment-Line" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Mooring
+import Mooring.ParameterHandlers as PH
+
+# Initialize parameter handler
+ph = PH.ParameterHandler()
+
+# Define points
+ph.points[1] = PH.PointParameters(
+    id=1, 
+    coords=[0.0, 0.0, -50.0], 
+    motion_tag=&quot;fixed&quot;
+)
+ph.points[2] = PH.PointParameters(
+    id=2, 
+    coords=[10.0, 0.0, 0.0], 
+    motion_tag=&quot;fairlead_motion&quot;
+)
+
+# Define material
+ph.materials[&quot;steel&quot;] = PH.MaterialParameters(
+    E=2.1e11,  # Young&#39;s modulus [Pa]
+    ν=0.3      # Poisson&#39;s ratio
+)
+
+# Define segment
+ph.segments[1] = PH.SegmentParameters(
+    id=1, 
+    start_point=1, 
+    stop_point=2,
+    material_tag=&quot;steel&quot;, 
+    area=0.01,
+    density=7850.0, 
+    length=55.0
+)
+
+# Define line
+ph.lines[1] = PH.LineParameters(
+    id=1, 
+    points=[1, 2], 
+    segments=[1]
+)</code></pre><h3 id="Multi-Segment-Hybrid-Line"><a class="docs-heading-anchor" href="#Multi-Segment-Hybrid-Line">Multi-Segment Hybrid Line</a><a id="Multi-Segment-Hybrid-Line-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-Segment-Hybrid-Line" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Mooring
+import Mooring.ParameterHandlers as PH
+
+ph = PH.ParameterHandler()
+
+# Define points (anchor, midpoint, fairlead)
+ph.points[1] = PH.PointParameters(id=1, coords=[0.0, 0.0, -100.0], motion_tag=&quot;fixed&quot;)
+ph.points[2] = PH.PointParameters(id=2, coords=[25.0, 0.0, -50.0], motion_tag=&quot;fixed&quot;)
+ph.points[3] = PH.PointParameters(id=3, coords=[50.0, 0.0, 0.0], motion_tag=&quot;fairlead_motion&quot;)
+
+# Define materials
+ph.materials[&quot;chain&quot;] = PH.MaterialParameters(E=2.1e11, ν=0.3)
+ph.materials[&quot;polyester&quot;] = PH.MaterialParameters(E=5.0e9, ν=0.3)
+
+# Define segments
+ph.segments[1] = PH.SegmentParameters(
+    id=1, 
+    start_point=1, 
+    stop_point=2,
+    length=55.0,
+    material_tag=&quot;chain&quot;,
+    area=0.007,
+    density=7700.0
+)
+
+ph.segments[2] = PH.SegmentParameters(
+    id=2, 
+    start_point=2, 
+    stop_point=3,
+    length=60.0,
+    material_tag=&quot;polyester&quot;,
+    area=0.004,
+    density=1400.0
+)
+
+# Define line with two segments
+ph.lines[1] = PH.LineParameters(
+    id=1, 
+    points=[1, 2, 3],    # All three points
+    segments=[1, 2]       # Both segments
+)</code></pre><hr/><h2 id="Workflow:-From-LineParameters-to-MooringLine"><a class="docs-heading-anchor" href="#Workflow:-From-LineParameters-to-MooringLine">Workflow: From LineParameters to MooringLine</a><a id="Workflow:-From-LineParameters-to-MooringLine-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow:-From-LineParameters-to-MooringLine" title="Permalink"></a></h2><p>Understanding how <code>LineParameters</code> transforms into <code>MooringLine</code> reveals the multifield FE space architecture:</p><h3 id="1.-**User-Configuration-Stage**-(LineParameters)"><a class="docs-heading-anchor" href="#1.-**User-Configuration-Stage**-(LineParameters)">1. <strong>User Configuration Stage</strong> (<code>LineParameters</code>)</a><a id="1.-**User-Configuration-Stage**-(LineParameters)-1"></a><a class="docs-heading-anchor-permalink" href="#1.-**User-Configuration-Stage**-(LineParameters)" title="Permalink"></a></h3><p>You define the line topology by specifying which points and segments belong together:</p><pre><code class="language-julia hljs"># Define configuration - just topology (IDs)
+ph.lines[1] = PH.LineParameters(
+    id=1,
+    points=[1, 2, 3],
+    segments=[1, 2]
+)</code></pre><p>At this stage, you&#39;re working with <strong>topology</strong> (which points/segments form a line).</p><h3 id="2.-**Setup-Stage:-Creating-MooringLine**"><a class="docs-heading-anchor" href="#2.-**Setup-Stage:-Creating-MooringLine**">2. <strong>Setup Stage: Creating MooringLine</strong></a><a id="2.-**Setup-Stage:-Creating-MooringLine**-1"></a><a class="docs-heading-anchor-permalink" href="#2.-**Setup-Stage:-Creating-MooringLine**" title="Permalink"></a></h3><p>The package creates a <code>MooringLine</code> by:</p><ol><li>Creating a discrete model for the line</li><li>Instantiating <code>MooringPoint</code> objects from point IDs</li><li>Instantiating <code>MooringSegment</code> objects from segment IDs</li><li>Storing segments in a dictionary</li></ol><pre><code class="language-julia hljs"># Package internally creates MooringLine from LineParameters
+# This happens in setup_lines(ph)
+
+# For each line:
+model = generate_discrete_model(line_params, ph)
+
+# Create MooringPoints
+points = Dict{Int, MooringPoint}()
+for p_id in line_params.points
+    points[p_id] = MooringPoint(model, point_params.tag, motion)
+end
+
+# Create MooringSegments (each with its own FE space)
+segments = Dict{Int, MooringSegment}()
+for s_id in line_params.segments
+    segment = MooringSegment(...)
+    segments[s_id] = segment
+end
+
+# Create MooringLine
+mooring_line = MooringLine(segments)</code></pre><h3 id="3.-**FEM-Setup-Stage:-Multifield-FE-Space-Construction**"><a class="docs-heading-anchor" href="#3.-**FEM-Setup-Stage:-Multifield-FE-Space-Construction**">3. <strong>FEM Setup Stage: Multifield FE Space Construction</strong></a><a id="3.-**FEM-Setup-Stage:-Multifield-FE-Space-Construction**-1"></a><a class="docs-heading-anchor-permalink" href="#3.-**FEM-Setup-Stage:-Multifield-FE-Space-Construction**" title="Permalink"></a></h3><p>This is where the <strong>critical transformation</strong> happens. <code>MooringLine</code> creates a <strong>multifield FE space</strong>:</p><pre><code class="language-julia hljs"># Get transient FE spaces for the line
+X, Y = get_transient_FE_spaces(mooring_line)
+
+# Internally, this does:
+# 1. Get individual FE spaces from each segment
+test_spaces = []
+trial_spaces = []
+for segment in mooring_line.segments
+    U_seg, V_seg = get_transient_FESpaces(segment)
+    push!(trial_spaces, U_seg)  # Trial space for this segment
+    push!(test_spaces, V_seg)   # Test space for this segment
+end
+
+# 2. Combine into multifield spaces
+X = TransientMultiFieldFESpace(trial_spaces)  # All trial spaces
+Y = MultiFieldFESpace(test_spaces)            # All test spaces</code></pre><p><strong>Result</strong>: </p><ul><li><code>X</code> and <code>Y</code> are <strong>multifield spaces</strong> containing all segment DOFs</li><li>Segments are coupled through shared boundary points</li><li>This creates a <strong>single unified FE space for the entire line</strong></li></ul><h3 id="4.-**Why-Multifield-FE-Spaces?**"><a class="docs-heading-anchor" href="#4.-**Why-Multifield-FE-Spaces?**">4. <strong>Why Multifield FE Spaces?</strong></a><a id="4.-**Why-Multifield-FE-Spaces?**-1"></a><a class="docs-heading-anchor-permalink" href="#4.-**Why-Multifield-FE-Spaces?**" title="Permalink"></a></h3><p>The multifield FE space architecture provides:</p><p><strong>Benefits:</strong></p><ul><li><strong>Modular assembly</strong>: Each segment contributes its own residual</li><li><strong>Flexible coupling</strong>: Segments coupled only at shared points</li><li><strong>Independent segment properties</strong>: Different mesh, order, material per segment</li><li><strong>Efficient assembly</strong>: Leverage Gridap&#39;s multifield infrastructure</li><li><strong>Clear structure</strong>: Each field corresponds to one segment</li></ul><p><strong>Example with 2 segments:</strong></p><pre><code class="language-julia hljs"># Segment 1: 10 elements, order 1 → 11 nodes × 2D = 22 DOFs
+# Segment 2: 20 elements, order 1 → 21 nodes × 2D = 42 DOFs
+
+# Multifield space:
+# - Field 1: 22 DOFs (segment 1)
+# - Field 2: 42 DOFs (segment 2)
+# - Total: 64 DOFs before applying boundary conditions
+# - Coupling: Enforced at shared point (end of seg1 = start of seg2)</code></pre><h3 id="5.-**Independent-Solve-per-Line**"><a class="docs-heading-anchor" href="#5.-**Independent-Solve-per-Line**">5. <strong>Independent Solve per Line</strong></a><a id="5.-**Independent-Solve-per-Line**-1"></a><a class="docs-heading-anchor-permalink" href="#5.-**Independent-Solve-per-Line**" title="Permalink"></a></h3><p>Each <code>MooringLine</code> results in an <strong>independent nonlinear solve</strong>:</p><pre><code class="language-julia hljs"># For each line in the mooring system:
+for (line_id, line) in mooring_lines
+    
+    # Get multifield FE spaces for THIS line
+    X, Y = get_transient_FE_spaces(line)
+    
+    # Get reference configuration for THIS line
+    Xₕ = get_reference_configuration(line, X(0.0))
+    
+    # Get residual for THIS line (sum of segment residuals)
+    res = get_quasi_static_residual(line, Xₕ)
+    
+    # Solve THIS line independently
+    op = FEOperator(res, X(0.0), Y)
+    nls = NLSolver(...)
+    uₕ = solve(nls, op)  # ← Independent solve for this line
+    
+    # Store solution for this line
+    solutions[line_id] = uₕ
+end</code></pre><p><strong>Key Points:</strong></p><ul><li><strong>One solve per line</strong>: Each line is solved independently</li><li><strong>No inter-line coupling</strong>: Lines don&#39;t interact in the solver</li><li><strong>Parallel potential</strong>: Different lines can be solved on different processors</li><li><strong>Separate convergence</strong>: Each line converges independently</li></ul><h3 id="6.-**What-Each-Structure-Contains**"><a class="docs-heading-anchor" href="#6.-**What-Each-Structure-Contains**">6. <strong>What Each Structure Contains</strong></a><a id="6.-**What-Each-Structure-Contains**-1"></a><a class="docs-heading-anchor-permalink" href="#6.-**What-Each-Structure-Contains**" title="Permalink"></a></h3><table><tr><th style="text-align: right">Aspect</th><th style="text-align: right">LineParameters</th><th style="text-align: right">MooringLine</th></tr><tr><td style="text-align: right"><strong>Purpose</strong></td><td style="text-align: right">User configuration</td><td style="text-align: right">FEM computation</td></tr><tr><td style="text-align: right"><strong>Contains</strong></td><td style="text-align: right">Point IDs, segment IDs</td><td style="text-align: right">MooringSegment instances</td></tr><tr><td style="text-align: right"><strong>FE space</strong></td><td style="text-align: right">N/A</td><td style="text-align: right">MultiFieldFESpace (combines segment spaces)</td></tr><tr><td style="text-align: right"><strong>Topology</strong></td><td style="text-align: right">Explicit (IDs)</td><td style="text-align: right">Implicit (through segment connections)</td></tr><tr><td style="text-align: right"><strong>Solve</strong></td><td style="text-align: right">N/A</td><td style="text-align: right">One independent solve per line</td></tr><tr><td style="text-align: right"><strong>Coupling</strong></td><td style="text-align: right">None (just IDs)</td><td style="text-align: right">Segments coupled within line, lines independent</td></tr><tr><td style="text-align: right"><strong>When used</strong></td><td style="text-align: right">Parameter setup, YAML I/O</td><td style="text-align: right">Assembly, solving, post-processing</td></tr><tr><td style="text-align: right"><strong>Typical user</strong></td><td style="text-align: right">You (simulation setup)</td><td style="text-align: right">Package internals (solver)</td></tr></table><p><strong>Key Takeaway:</strong> </p><ul><li>You define lines using <code>LineParameters</code> (just topology)</li><li>Package creates <code>MooringLine</code> with multifield FE spaces (one field per segment)</li><li>Each line is solved independently (one solve statement per line)</li><li>Segments within a line are strongly coupled; lines are independent</li></ul><hr/><h2 id="Multi-Segment-Lines"><a class="docs-heading-anchor" href="#Multi-Segment-Lines">Multi-Segment Lines</a><a id="Multi-Segment-Lines-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-Segment-Lines" title="Permalink"></a></h2><p>Multi-segment lines are common in practical mooring systems:</p><h3 id="Chain-Rope-Chain-Configuration"><a class="docs-heading-anchor" href="#Chain-Rope-Chain-Configuration">Chain-Rope-Chain Configuration</a><a id="Chain-Rope-Chain-Configuration-1"></a><a class="docs-heading-anchor-permalink" href="#Chain-Rope-Chain-Configuration" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Ground chain + polyester rope + top chain
+ph.points[1] = PH.PointParameters(id=1, coords=[0.0, 0.0, -500.0], motion_tag=&quot;fixed&quot;)
+ph.points[2] = PH.PointParameters(id=2, coords=[200.0, 0.0, -480.0], motion_tag=&quot;fixed&quot;)
+ph.points[3] = PH.PointParameters(id=3, coords=[800.0, 0.0, -100.0], motion_tag=&quot;fixed&quot;)
+ph.points[4] = PH.PointParameters(id=4, coords=[900.0, 0.0, -20.0], motion_tag=&quot;vessel_motion&quot;)
+
+# Bottom chain
+ph.segments[1] = PH.SegmentParameters(
+    id=1, start_point=1, stop_point=2, length=220.0,
+    material_tag=&quot;chain&quot;, area=0.0113, density=7700.0
+)
+
+# Polyester rope (lighter, more compliant)
+ph.segments[2] = PH.SegmentParameters(
+    id=2, start_point=2, stop_point=3, length=850.0,
+    material_tag=&quot;polyester&quot;, area=0.0314, density=1100.0
+)
+
+# Top chain
+ph.segments[3] = PH.SegmentParameters(
+    id=3, start_point=3, stop_point=4, length=120.0,
+    material_tag=&quot;chain&quot;, area=0.0113, density=7700.0
+)
+
+# One line with three segments
+ph.lines[1] = PH.LineParameters(
+    id=1, 
+    points=[1, 2, 3, 4],      # Four points
+    segments=[1, 2, 3]         # Three segments
+)
+
+# This creates:
+# - One MooringLine
+# - One multifield FE space with 3 fields (one per segment)
+# - One solve statement</code></pre><h3 id="Advantages-of-Multi-Segment-Lines"><a class="docs-heading-anchor" href="#Advantages-of-Multi-Segment-Lines">Advantages of Multi-Segment Lines</a><a id="Advantages-of-Multi-Segment-Lines-1"></a><a class="docs-heading-anchor-permalink" href="#Advantages-of-Multi-Segment-Lines" title="Permalink"></a></h3><ol><li><strong>Material variation</strong>: Different properties along the line</li><li><strong>Cost optimization</strong>: Heavy chain near seabed, lighter rope in water column</li><li><strong>Dynamic response</strong>: Tuned compliance at different depths</li><li><strong>Mesh refinement</strong>: Finer mesh in high-stress regions</li><li><strong>Physical accuracy</strong>: Model actual mooring compositions</li></ol><hr/><h2 id="Independent-Line-Solves"><a class="docs-heading-anchor" href="#Independent-Line-Solves">Independent Line Solves</a><a id="Independent-Line-Solves-1"></a><a class="docs-heading-anchor-permalink" href="#Independent-Line-Solves" title="Permalink"></a></h2><h3 id="Why-Each-Line-is-Solved-Independently"><a class="docs-heading-anchor" href="#Why-Each-Line-is-Solved-Independently">Why Each Line is Solved Independently</a><a id="Why-Each-Line-is-Solved-Independently-1"></a><a class="docs-heading-anchor-permalink" href="#Why-Each-Line-is-Solved-Independently" title="Permalink"></a></h3><p><strong>Physical reasoning:</strong></p><ul><li>Mooring lines typically don&#39;t touch each other</li><li>Each line has independent boundary conditions</li><li>Load on one line doesn&#39;t directly affect others (decoupled)</li></ul><p><strong>Computational benefits:</strong></p><ul><li><strong>Smaller systems</strong>: Each line is smaller than global system</li><li><strong>Better convergence</strong>: Localized nonlinearities easier to resolve</li><li><strong>Parallel execution</strong>: Lines can be solved simultaneously</li><li><strong>Modular debugging</strong>: Test individual lines in isolation</li><li><strong>Flexible analysis</strong>: Solve only selected lines</li></ul><h3 id="Solve-Structure"><a class="docs-heading-anchor" href="#Solve-Structure">Solve Structure</a><a id="Solve-Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Solve-Structure" title="Permalink"></a></h3><pre><code class="language-julia hljs">function solve_quasistatic(ph::ParameterHandler)
+    # Setup all lines
+    mooring_lines = setup_lines(ph)
+    
+    # Storage for solutions
+    solutions = Dict{Int, FEFunction}()
+    
+    # Solve each line independently
+    for (line_id, line) in mooring_lines
+        @info &quot;Solving line $line_id with $(length(line.segments)) segments&quot;
+        
+        # Create multifield FE spaces for this line
+        X, Y = get_transient_FE_spaces(line)
+        
+        # Reference configuration
+        Xₕ = get_reference_configuration(line, X(0.0))
+        
+        # Assemble residual (sum of segment residuals)
+        res = get_quasi_static_residual(line, Xₕ)
+        
+        # Define FE operator
+        op = FEOperator(res, X(0.0), Y)
+        
+        # Solve nonlinear system for this line
+        nls = NLSolver(
+            BackslashSolver(), 
+            iterations=200, 
+            show_trace=true, 
+            ftol=1e-8,
+            method=:newton
+        )
+        uₕ = solve(nls, op)
+        
+        # Store solution
+        solutions[line_id] = uₕ
+    end
+    
+    return solutions
+end</code></pre><h3 id="Multi-Line-System-Example"><a class="docs-heading-anchor" href="#Multi-Line-System-Example">Multi-Line System Example</a><a id="Multi-Line-System-Example-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-Line-System-Example" title="Permalink"></a></h3><pre><code class="language-yaml hljs"># Three independent mooring lines (spread mooring)
+lines:
+  - id: 1  # Line at 0° azimuth
+    points: [1, 2, 3]
+    segments: [1, 2]
+    
+  - id: 2  # Line at 120° azimuth
+    points: [4, 5, 6]
+    segments: [3, 4]
+    
+  - id: 3  # Line at 240° azimuth
+    points: [7, 8, 9]
+    segments: [5, 6]</code></pre><p><strong>Solver behavior:</strong></p><pre><code class="nohighlight hljs">Solving line 1 with 2 segments...
+  Newton iteration 1: |res| = 1.2e+05
+  Newton iteration 2: |res| = 3.4e+03
+  ...
+  Newton iteration 15: |res| = 8.7e-09  ✓ Converged
+
+Solving line 2 with 2 segments...
+  Newton iteration 1: |res| = 1.1e+05
+  ...
+  Newton iteration 12: |res| = 5.2e-09  ✓ Converged
+
+Solving line 3 with 2 segments...
+  ...
+  ✓ Converged</code></pre><p>Each line converges independently!</p><hr/><h2 id="Best-Practices"><a class="docs-heading-anchor" href="#Best-Practices">Best Practices</a><a id="Best-Practices-1"></a><a class="docs-heading-anchor-permalink" href="#Best-Practices" title="Permalink"></a></h2><h3 id="Line-Definition"><a class="docs-heading-anchor" href="#Line-Definition">Line Definition</a><a id="Line-Definition-1"></a><a class="docs-heading-anchor-permalink" href="#Line-Definition" title="Permalink"></a></h3><ol><li><p><strong>Order points correctly</strong>: List points in order along the line</p><pre><code class="language-julia hljs"># Good: ordered from anchor to fairlead
+points=[1, 2, 3, 4]  # anchor → mid1 → mid2 → fairlead
+
+# Also OK: segments determine actual topology
+points=[1, 3, 2, 4]  # Order doesn&#39;t affect solver, but less clear</code></pre></li><li><p><strong>Include all necessary points</strong>: Every segment endpoint must be in the points list</p><pre><code class="language-julia hljs"># Bad: missing intermediate point
+points=[1, 3]      # Where is point 2?
+segments=[1, 2]    # But segment 1 ends at point 2!
+
+# Good: all points included
+points=[1, 2, 3]
+segments=[1, 2]</code></pre></li><li><p><strong>Use descriptive tags</strong> (optional but recommended):</p><pre><code class="language-julia hljs">ph.lines[1] = PH.LineParameters(
+    id=1,
+    tag=&quot;starboard_forward_line&quot;,  # Clear identification
+    points=[1, 2, 3],
+    segments=[1, 2]
+)</code></pre></li></ol><h3 id="Multi-Line-Systems"><a class="docs-heading-anchor" href="#Multi-Line-Systems">Multi-Line Systems</a><a id="Multi-Line-Systems-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-Line-Systems" title="Permalink"></a></h3><ol><li><p><strong>Ensure lines are physically separated</strong>: Lines should not share segments</p><pre><code class="language-julia hljs"># Good: independent lines
+ph.lines[1] = PH.LineParameters(id=1, segments=[1, 2])
+ph.lines[2] = PH.LineParameters(id=2, segments=[3, 4])
+
+# Bad: lines share segment 2
+ph.lines[1] = PH.LineParameters(id=1, segments=[1, 2])
+ph.lines[2] = PH.LineParameters(id=2, segments=[2, 3])  # Segment 2 used twice!</code></pre></li><li><p><strong>Lines can share fairlead points</strong> (same fairlead, different lines):</p><pre><code class="language-julia hljs"># OK: different lines can connect to the same fairlead
+ph.points[10] = PH.PointParameters(id=10, coords=[0.0, 0.0, 0.0], motion_tag=&quot;vessel&quot;)
+ph.lines[1] = PH.LineParameters(id=1, points=[1, 2, 10], segments=[1, 2])
+ph.lines[2] = PH.LineParameters(id=2, points=[3, 4, 10], segments=[3, 4])
+# Both lines end at point 10, but solve independently</code></pre></li></ol><h3 id="Performance-Considerations"><a class="docs-heading-anchor" href="#Performance-Considerations">Performance Considerations</a><a id="Performance-Considerations-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-Considerations" title="Permalink"></a></h3><ol><li><p><strong>Balance segment count</strong>: More segments = more fields = larger multifield space</p><pre><code class="language-julia hljs"># Trade-off: accuracy vs. computational cost
+# More segments: better material variation representation, larger system
+# Fewer segments: faster solve, less flexibility</code></pre></li><li><p><strong>Symmetry</strong>: Identical lines can reuse geometry/materials</p><pre><code class="language-julia hljs"># Define material once, use for multiple segments/lines
+ph.materials[&quot;chain&quot;] = PH.MaterialParameters(...)
+ph.segments[1] = PH.SegmentParameters(..., material_tag=&quot;chain&quot;)
+ph.segments[2] = PH.SegmentParameters(..., material_tag=&quot;chain&quot;)</code></pre></li></ol><hr/><h2 id="See-Also"><a class="docs-heading-anchor" href="#See-Also">See Also</a><a id="See-Also-1"></a><a class="docs-heading-anchor-permalink" href="#See-Also" title="Permalink"></a></h2><ul><li><a href="../../API/Entities/MooringLine/">API: MooringLine</a></li><li><a href="../points/">User Guide: Points</a></li><li><a href="../segments/">User Guide: Segments</a></li><li><a href="https://gridap.github.io/Gridap.jl/stable/MultiField/">API: MultiField FE Spaces</a></li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../segments/">« Segments</a><a class="docs-footer-nextpage" href="../materials/">Materials »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.0 on <span class="colophon-date" title="Saturday 15 November 2025 20:47">Saturday 15 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

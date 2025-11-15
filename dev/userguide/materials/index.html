@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Materials · Mooring.jl</title><meta name="title" content="Materials · Mooring.jl"/><meta property="og:title" content="Materials · Mooring.jl"/><meta property="twitter:title" content="Materials · Mooring.jl"/><meta name="description" content="Documentation for Mooring.jl."/><meta property="og:description" content="Documentation for Mooring.jl."/><meta property="twitter:description" content="Documentation for Mooring.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Mooring.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Mooring.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../GettingStarted/">Getting Started</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../../UserGuide/">User Guide</a></li><li><a class="tocitem" href="../installation/">Installation</a></li><li><a class="tocitem" href="../points/">Points</a></li><li><a class="tocitem" href="../segments/">Segments</a></li><li><a class="tocitem" href="../lines/">Lines</a></li><li class="is-active"><a class="tocitem" href>Materials</a><ul class="internal"><li><a class="tocitem" href="#Table-of-Contents"><span>Table of Contents</span></a></li><li><a class="tocitem" href="#Two-Types-of-Material-Structures"><span>Two Types of Material Structures</span></a></li><li><a class="tocitem" href="#Material-Properties-(MaterialParameters)"><span>Material Properties (MaterialParameters)</span></a></li><li><a class="tocitem" href="#Available-Material-Models"><span>Available Material Models</span></a></li><li><a class="tocitem" href="#Defining-Materials-in-YAML"><span>Defining Materials in YAML</span></a></li><li><a class="tocitem" href="#Defining-Materials-in-Julia"><span>Defining Materials in Julia</span></a></li><li><a class="tocitem" href="#Workflow:-From-MaterialParameters-to-Material"><span>Workflow: From MaterialParameters to Material</span></a></li><li><a class="tocitem" href="#Stress-Measures"><span>Stress Measures</span></a></li><li><a class="tocitem" href="#Material-Selection-Guide-(not-rigurously-tested)"><span>Material Selection Guide (not rigurously tested)</span></a></li><li><a class="tocitem" href="#Best-Practices"><span>Best Practices</span></a></li><li><a class="tocitem" href="#See-Also"><span>See Also</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../DeveloperGuide/">Developer Guide</a></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../API/API/">Overview</a></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox"/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">Entities</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Entities/MooringPoint/">MooringPoint</a></li><li><a class="tocitem" href="../../API/Entities/MooringSegment/">MooringSegment</a></li><li><a class="tocitem" href="../../API/Entities/MooringLine/">MooringLine</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Geometry</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Geometry/MooringDiscreteModel/">MooringDiscreteModel</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-4" type="checkbox"/><label class="tocitem" for="menuitem-5-4"><span class="docs-label">Input/Output</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/IO/ParameterHandler/">ParameterHandler</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-5" type="checkbox"/><label class="tocitem" for="menuitem-5-5"><span class="docs-label">Physics</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Physics/Materials/">Materials</a></li><li><a class="tocitem" href="../../API/Physics/EnvironmentalConditions/">EnvironmentalConditions</a></li><li><a class="tocitem" href="../../API/Physics/SeaBed/">SeaBed</a></li><li><a class="tocitem" href="../../API/Physics/Drag/">Drag</a></li><li><a class="tocitem" href="../../API/Physics/PointMotion/">PointMotion</a></li><li><a class="tocitem" href="../../API/Physics/TangentialDiffCalculus/">TangentialDiffCalculus</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Materials</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Materials</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Defining-Materials"><a class="docs-heading-anchor" href="#Defining-Materials">Defining Materials</a><a id="Defining-Materials-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Materials" title="Permalink"></a></h1><p>Materials define the constitutive behavior of mooring segments, describing how cables respond to tension and deformation. <strong>Mooring.jl</strong> provides material models for both elastic and viscoelastic* behavior (*under development).</p><h2 id="Table-of-Contents"><a class="docs-heading-anchor" href="#Table-of-Contents">Table of Contents</a><a id="Table-of-Contents-1"></a><a class="docs-heading-anchor-permalink" href="#Table-of-Contents" title="Permalink"></a></h2><ul><li><a href="#two-types-of-material-structures">Two Types of Material Structures</a></li><li><a href="#material-properties-materialparameters">Material Properties (MaterialParameters)</a></li><li><a href="#available-material-models">Available Material Models</a></li><li><a href="#defining-materials-in-yaml">Defining Materials in YAML</a></li><li><a href="#defining-materials-in-julia">Defining Materials in Julia</a></li><li><a href="#workflow-from-materialparameters-to-material">Workflow: From MaterialParameters to Material</a></li><li><a href="#stress-measures">Stress Measures</a></li><li><a href="#material-selection-guide">Material Selection Guide</a></li><li><a href="#best-practices">Best Practices</a></li><li><a href="#see-also">See Also</a></li></ul><h2 id="Two-Types-of-Material-Structures"><a class="docs-heading-anchor" href="#Two-Types-of-Material-Structures">Two Types of Material Structures</a><a id="Two-Types-of-Material-Structures-1"></a><a class="docs-heading-anchor-permalink" href="#Two-Types-of-Material-Structures" title="Permalink"></a></h2><p><strong>Mooring.jl</strong> uses two distinct structures for handling materials at different levels:</p><h3 id="1.-MaterialParameters-(High-Level:-Parameter-Handling)"><a class="docs-heading-anchor" href="#1.-MaterialParameters-(High-Level:-Parameter-Handling)">1. <code>MaterialParameters</code> (High-Level: Parameter Handling)</a><a id="1.-MaterialParameters-(High-Level:-Parameter-Handling)-1"></a><a class="docs-heading-anchor-permalink" href="#1.-MaterialParameters-(High-Level:-Parameter-Handling)" title="Permalink"></a></h3><p><code>MaterialParameters</code> is used for <strong>defining and configuring</strong> material properties in YAML files or through the parameter handler. This struct stores all the user-specified properties needed to create a material model. You interact with this struct when setting up your simulation configuration.</p><pre><code class="language-julia hljs">using Mooring.ParameterHandlers as PH
+
+# Create material parameters for configuration
+mat_params = PH.MaterialParameters(
+    tag=&quot;steel_chain&quot;,
+    type=&quot;LinearElastic&quot;,
+    E=2.1e11,      # Young&#39;s modulus [Pa]
+    μ=8.08e10      # Shear modulus [Pa]
+)</code></pre><h3 id="2.-Material-(Low-Level:-FEM-Operations)"><a class="docs-heading-anchor" href="#2.-Material-(Low-Level:-FEM-Operations)">2. <code>Material</code> (Low-Level: FEM Operations)</a><a id="2.-Material-(Low-Level:-FEM-Operations)-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Material-(Low-Level:-FEM-Operations)" title="Permalink"></a></h3><p><code>Material</code> is an abstract type with concrete implementations (<code>LinearElastic</code>, <code>Scharpery</code>) used internally for <strong>finite element analysis</strong> operations. These structs contain the constitutive model and stress calculation functions needed for FEM computations. The package automatically creates <code>Material</code> instances from your <code>MaterialParameters</code>.</p><pre><code class="language-julia hljs">using Mooring.Materials
+
+# Material is created internally from MaterialParameters
+# You typically don&#39;t create these directly
+material = LinearElastic(E=2.1e11, μ=8.08e10)
+
+# Used to compute stresses during FEM solve
+S_stress = S(material, Etang)  # Second Piola-Kirchhoff stress</code></pre><p><strong>Key Distinction:</strong></p><ul><li><strong><code>MaterialParameters</code></strong>: What you define (properties, model type) → <em>User configuration level</em></li><li><strong><code>Material</code></strong>: What the solver uses (constitutive laws, stress functions) → <em>FEM computation level</em></li></ul><p><strong>Critical Feature:</strong> The <code>Material</code> structs implement stress calculation functions that are called during FEM assembly to compute internal forces in the mooring segments.</p><h2 id="Material-Properties-(MaterialParameters)"><a class="docs-heading-anchor" href="#Material-Properties-(MaterialParameters)">Material Properties (MaterialParameters)</a><a id="Material-Properties-(MaterialParameters)-1"></a><a class="docs-heading-anchor-permalink" href="#Material-Properties-(MaterialParameters)" title="Permalink"></a></h2><p>When defining materials through the parameter handler, each material uses the following base parameters:</p><table><tr><th style="text-align: right">Parameter</th><th style="text-align: right">Type</th><th style="text-align: right">Required</th><th style="text-align: right">Description</th></tr><tr><td style="text-align: right"><code>tag</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">Yes</td><td style="text-align: right">Unique identifier for the material</td></tr><tr><td style="text-align: right"><code>type</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">Yes</td><td style="text-align: right">Material model type: &quot;LinearElastic&quot; or &quot;Scharpery&quot;</td></tr></table><p>Additional parameters depend on the material type selected.</p><hr/><h2 id="Available-Material-Models"><a class="docs-heading-anchor" href="#Available-Material-Models">Available Material Models</a><a id="Available-Material-Models-1"></a><a class="docs-heading-anchor-permalink" href="#Available-Material-Models" title="Permalink"></a></h2><h3 id="1.-Linear-Elastic-Material"><a class="docs-heading-anchor" href="#1.-Linear-Elastic-Material">1. Linear Elastic Material</a><a id="1.-Linear-Elastic-Material-1"></a><a class="docs-heading-anchor-permalink" href="#1.-Linear-Elastic-Material" title="Permalink"></a></h3><p><strong>Type</strong>: <code>&quot;LinearElastic&quot;</code></p><p>Models linear elastic behavior following Hooke&#39;s law. Suitable for steel chains, wire ropes, and materials with negligible time-dependent behavior.</p><p><strong>Parameters:</strong></p><table><tr><th style="text-align: right">Parameter</th><th style="text-align: right">Type</th><th style="text-align: right">Default</th><th style="text-align: right">Units</th><th style="text-align: right">Description</th></tr><tr><td style="text-align: right"><code>E</code></td><td style="text-align: right"><code>Real</code></td><td style="text-align: right">1.0</td><td style="text-align: right">Pa</td><td style="text-align: right">Young&#39;s modulus (stiffness)</td></tr><tr><td style="text-align: right"><code>μ</code></td><td style="text-align: right"><code>Real</code></td><td style="text-align: right">0.5*E</td><td style="text-align: right">Pa</td><td style="text-align: right">Second Lamé constant (shear modulus)</td></tr></table><p><strong>Constitutive Law:</strong></p><p>The second Piola-Kirchhoff stress is computed as:</p><p class="math-container">\[\mathbf{S} = 2\mu \mathbf{E}_{\text{tang}}\]</p><p>where <span>$\mathbf{E}_{\text{tang}}$</span> is the tangential Lagrangian Green strain.</p><p><strong>Typical Values:</strong></p><table><tr><th style="text-align: right">Material</th><th style="text-align: right">Young&#39;s Modulus E [GPa]</th><th style="text-align: right">Shear Modulus μ [GPa]</th></tr><tr><td style="text-align: right">Steel (chain/wire)</td><td style="text-align: right">200-210</td><td style="text-align: right">77-81</td></tr><tr><td style="text-align: right">Polyester rope</td><td style="text-align: right">5-10</td><td style="text-align: right">2-4</td></tr><tr><td style="text-align: right">Nylon rope</td><td style="text-align: right">2-5</td><td style="text-align: right">0.8-2</td></tr><tr><td style="text-align: right">HMPE (high-modulus polyethylene)</td><td style="text-align: right">80-120</td><td style="text-align: right">30-45</td></tr></table><p><strong>Example:</strong></p><pre><code class="language-julia hljs"># Steel chain
+ph.materials[&quot;steel&quot;] = PH.MaterialParameters(
+    tag=&quot;steel&quot;,
+    type=&quot;LinearElastic&quot;,
+    E=2.1e11,      # 210 GPa
+    μ=8.08e10      # 80.8 GPa
+)
+
+# Polyester rope
+ph.materials[&quot;polyester&quot;] = PH.MaterialParameters(
+    tag=&quot;polyester&quot;,
+    type=&quot;LinearElastic&quot;,
+    E=5.0e9,       # 5 GPa
+    μ=1.92e9       # 1.92 GPa
+)</code></pre><hr/><h3 id="2.-Scharpery-Viscoelastic-Material-(under-development)"><a class="docs-heading-anchor" href="#2.-Scharpery-Viscoelastic-Material-(under-development)">2. Scharpery Viscoelastic Material (under development)</a><a id="2.-Scharpery-Viscoelastic-Material-(under-development)-1"></a><a class="docs-heading-anchor-permalink" href="#2.-Scharpery-Viscoelastic-Material-(under-development)" title="Permalink"></a></h3><p><strong>Type</strong>: <code>&quot;Scharpery&quot;</code></p><p>Models nonlinear viscoelastic behavior using the Scharpery model. Suitable for synthetic fiber ropes (polyester, nylon) that exhibit time-dependent creep and stress relaxation.</p><p><strong>Parameters:</strong></p><table><tr><th style="text-align: right">Parameter</th><th style="text-align: right">Type</th><th style="text-align: right">Default</th><th style="text-align: right">Units</th><th style="text-align: right">Description</th></tr><tr><td style="text-align: right"><code>D0</code></td><td style="text-align: right"><code>Real</code></td><td style="text-align: right">1.0</td><td style="text-align: right">Pa⁻¹</td><td style="text-align: right">Linear elastic compliance (instantaneous)</td></tr><tr><td style="text-align: right"><code>N</code></td><td style="text-align: right"><code>Int</code></td><td style="text-align: right">1</td><td style="text-align: right">-</td><td style="text-align: right">Number of relaxation times</td></tr><tr><td style="text-align: right"><code>Dn</code></td><td style="text-align: right"><code>Vector{Real}</code></td><td style="text-align: right">[1.0]</td><td style="text-align: right">Pa⁻¹</td><td style="text-align: right">Compliance for each relaxation time</td></tr><tr><td style="text-align: right"><code>λn</code></td><td style="text-align: right"><code>Vector{Real}</code></td><td style="text-align: right">[1.0]</td><td style="text-align: right">s⁻¹</td><td style="text-align: right">Inverse of relaxation times</td></tr><tr><td style="text-align: right"><code>g0</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">&quot;1.0&quot;</td><td style="text-align: right">-</td><td style="text-align: right">Nonlinear coefficient for instantaneous compliance (function of σ)</td></tr><tr><td style="text-align: right"><code>g1</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">&quot;1.0&quot;</td><td style="text-align: right">-</td><td style="text-align: right">Nonlinear coefficient for transient compliance (function of σ)</td></tr><tr><td style="text-align: right"><code>g2</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">&quot;1.0&quot;</td><td style="text-align: right">-</td><td style="text-align: right">Nonlinear coefficient for stress rate-dependent compliance (function of σ)</td></tr></table><p><strong>Constitutive Law:</strong></p><p>The Scharpery model relates strain to stress history through:</p><p class="math-container">\[\varepsilon(t) = g_0 D_0 \sigma(t) + g_1 \sum_{n=1}^{N} D_n \int_0^t e^{-\lambda_n (t-\tau)} g_2(\sigma(\tau)) \frac{d\sigma}{d\tau} d\tau\]</p><p>where:</p><ul><li><p class="math-container">\[D_0\]</p>: Instantaneous elastic compliance</li><li><p class="math-container">\[D_n\]</p>: Transient compliance for each mode</li><li><p class="math-container">\[\lambda_n\]</p>: Relaxation rate for each mode</li><li><p class="math-container">\[g_0, g_1, g_2\]</p>: Nonlinear stress-dependent functions</li></ul><p><strong>Example:</strong></p><pre><code class="language-julia hljs"># Polyester rope with single relaxation time
+ph.materials[&quot;polyester_viscoelastic&quot;] = PH.MaterialParameters(
+    tag=&quot;polyester_viscoelastic&quot;,
+    type=&quot;Scharpery&quot;,
+    D0=2.0e-10,           # Instantaneous compliance [Pa⁻¹]
+    N=1,                  # Single relaxation mode
+    Dn=[1.0e-10],         # Transient compliance [Pa⁻¹]
+    λn=[1.0e-3],          # Relaxation rate [s⁻¹]
+    g0=&quot;1.0&quot;,             # Linear instantaneous response
+    g1=&quot;1.0&quot;,             # Linear transient response
+    g2=&quot;1.0&quot;              # Linear stress-rate response
+)
+
+# Advanced: Multiple relaxation times
+ph.materials[&quot;nylon_multimode&quot;] = PH.MaterialParameters(
+    tag=&quot;nylon_multimode&quot;,
+    type=&quot;Scharpery&quot;,
+    D0=5.0e-10,
+    N=3,                  # Three relaxation modes
+    Dn=[2.0e-10, 1.5e-10, 1.0e-10],
+    λn=[1.0e-2, 1.0e-3, 1.0e-4],  # Fast, medium, slow relaxation
+    g0=&quot;1.0 + 0.01*σ&quot;,    # Slightly nonlinear instantaneous
+    g1=&quot;1.0 + 0.02*σ&quot;,    # More nonlinear transient
+    g2=&quot;1.0&quot;
+)</code></pre><hr/><h2 id="Defining-Materials-in-YAML"><a class="docs-heading-anchor" href="#Defining-Materials-in-YAML">Defining Materials in YAML</a><a id="Defining-Materials-in-YAML-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Materials-in-YAML" title="Permalink"></a></h2><h3 id="Simple-Linear-Elastic-Material"><a class="docs-heading-anchor" href="#Simple-Linear-Elastic-Material">Simple Linear Elastic Material</a><a id="Simple-Linear-Elastic-Material-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-Linear-Elastic-Material" title="Permalink"></a></h3><pre><code class="language-yaml hljs">materials:
+  - tag: steel_chain
+    type: LinearElastic
+    E: 2.1e11        # Young&#39;s modulus [Pa]
+    μ: 8.08e10       # Shear modulus [Pa]</code></pre><h3 id="Multiple-Materials"><a class="docs-heading-anchor" href="#Multiple-Materials">Multiple Materials</a><a id="Multiple-Materials-1"></a><a class="docs-heading-anchor-permalink" href="#Multiple-Materials" title="Permalink"></a></h3><pre><code class="language-yaml hljs">materials:
+  # Steel chain for lower segment
+  - tag: chain
+    type: LinearElastic
+    E: 2.1e11
+    μ: 8.08e10
+  
+  # Polyester rope for upper segment
+  - tag: polyester
+    type: LinearElastic
+    E: 5.0e9
+    μ: 1.92e9
+  
+  # HMPE rope (high stiffness synthetic)
+  - tag: hmpe
+    type: LinearElastic
+    E: 1.0e11
+    μ: 3.85e10</code></pre><h3 id="Viscoelastic-Material"><a class="docs-heading-anchor" href="#Viscoelastic-Material">Viscoelastic Material</a><a id="Viscoelastic-Material-1"></a><a class="docs-heading-anchor-permalink" href="#Viscoelastic-Material" title="Permalink"></a></h3><pre><code class="language-yaml hljs">materials:
+  - tag: polyester_viscoelastic
+    type: Scharpery
+    D0: 2.0e-10       # Instantaneous compliance [Pa⁻¹]
+    N: 2              # Two relaxation modes
+    Dn: [1.5e-10, 1.0e-10]
+    λn: [1.0e-2, 1.0e-3]
+    g0: &quot;1.0&quot;
+    g1: &quot;1.0&quot;
+    g2: &quot;1.0&quot;</code></pre><p>Load in Julia:</p><pre><code class="language-julia hljs">using Mooring
+import Mooring.ParameterHandlers as PH
+
+ph = PH.read_parameters(&quot;mooring_config.yaml&quot;)</code></pre><hr/><h2 id="Defining-Materials-in-Julia"><a class="docs-heading-anchor" href="#Defining-Materials-in-Julia">Defining Materials in Julia</a><a id="Defining-Materials-in-Julia-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Materials-in-Julia" title="Permalink"></a></h2><h3 id="Basic-Linear-Elastic"><a class="docs-heading-anchor" href="#Basic-Linear-Elastic">Basic Linear Elastic</a><a id="Basic-Linear-Elastic-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Linear-Elastic" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Mooring
+import Mooring.ParameterHandlers as PH
+
+# Initialize parameter handler
+ph = PH.ParameterHandler()
+
+# Define steel chain material
+ph.materials[&quot;steel&quot;] = PH.MaterialParameters(
+    tag=&quot;steel&quot;,
+    type=&quot;LinearElastic&quot;,
+    E=2.1e11,      # 210 GPa
+    μ=8.08e10      # 80.8 GPa (computed from E and Poisson&#39;s ratio ν=0.3)
+)
+
+# Define polyester rope material
+ph.materials[&quot;polyester&quot;] = PH.MaterialParameters(
+    tag=&quot;polyester&quot;,
+    type=&quot;LinearElastic&quot;,
+    E=5.0e9,       # 5 GPa
+    μ=1.92e9       # 1.92 GPa
+)</code></pre><h3 id="Computing-Shear-Modulus-from-Poisson&#39;s-Ratio"><a class="docs-heading-anchor" href="#Computing-Shear-Modulus-from-Poisson&#39;s-Ratio">Computing Shear Modulus from Poisson&#39;s Ratio</a><a id="Computing-Shear-Modulus-from-Poisson&#39;s-Ratio-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-Shear-Modulus-from-Poisson&#39;s-Ratio" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Material properties
+E = 2.1e11         # Young&#39;s modulus [Pa]
+ν = 0.3            # Poisson&#39;s ratio [-]
+
+# Compute shear modulus
+μ = E / (2 * (1 + ν))
+
+ph.materials[&quot;steel&quot;] = PH.MaterialParameters(
+    tag=&quot;steel&quot;,
+    type=&quot;LinearElastic&quot;,
+    E=E,
+    μ=μ
+)</code></pre><h3 id="Viscoelastic-Material-2"><a class="docs-heading-anchor" href="#Viscoelastic-Material-2">Viscoelastic Material</a><a class="docs-heading-anchor-permalink" href="#Viscoelastic-Material-2" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Polyester rope with time-dependent behavior
+ph.materials[&quot;polyester_visco&quot;] = PH.MaterialParameters(
+    tag=&quot;polyester_visco&quot;,
+    type=&quot;Scharpery&quot;,
+    D0=2.0e-10,           # Instantaneous compliance
+    N=1,                  # Single relaxation mode
+    Dn=[1.0e-10],         # Transient compliance
+    λn=[1.0e-3],          # Relaxation rate (1000 s characteristic time)
+    g0=&quot;1.0&quot;,             # Linear behavior
+    g1=&quot;1.0&quot;,
+    g2=&quot;1.0&quot;
+)</code></pre><hr/><h2 id="Workflow:-From-MaterialParameters-to-Material"><a class="docs-heading-anchor" href="#Workflow:-From-MaterialParameters-to-Material">Workflow: From MaterialParameters to Material</a><a id="Workflow:-From-MaterialParameters-to-Material-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow:-From-MaterialParameters-to-Material" title="Permalink"></a></h2><p>Understanding how <code>MaterialParameters</code> transforms into <code>Material</code> helps clarify the constitutive modeling:</p><h3 id="1.-**User-Configuration-Stage**-(MaterialParameters)"><a class="docs-heading-anchor" href="#1.-**User-Configuration-Stage**-(MaterialParameters)">1. <strong>User Configuration Stage</strong> (<code>MaterialParameters</code>)</a><a id="1.-**User-Configuration-Stage**-(MaterialParameters)-1"></a><a class="docs-heading-anchor-permalink" href="#1.-**User-Configuration-Stage**-(MaterialParameters)" title="Permalink"></a></h3><p>You define material properties in YAML or Julia:</p><pre><code class="language-julia hljs"># Define configuration
+ph.materials[&quot;steel&quot;] = PH.MaterialParameters(
+    tag=&quot;steel&quot;,
+    type=&quot;LinearElastic&quot;,
+    E=2.1e11,
+    μ=8.08e10
+)</code></pre><p>At this stage, you&#39;re working with <strong>material properties</strong> (Young&#39;s modulus, compliance, etc.).</p><h3 id="2.-**Segment-Creation-Stage**"><a class="docs-heading-anchor" href="#2.-**Segment-Creation-Stage**">2. <strong>Segment Creation Stage</strong></a><a id="2.-**Segment-Creation-Stage**-1"></a><a class="docs-heading-anchor-permalink" href="#2.-**Segment-Creation-Stage**" title="Permalink"></a></h3><p>When creating segments, you reference materials by their tag:</p><pre><code class="language-julia hljs">ph.segments[1] = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    material_tag=&quot;steel&quot;,  # Reference to material
+    ...
+)</code></pre><h3 id="3.-**Material-Instantiation-Stage**"><a class="docs-heading-anchor" href="#3.-**Material-Instantiation-Stage**">3. <strong>Material Instantiation Stage</strong></a><a id="3.-**Material-Instantiation-Stage**-1"></a><a class="docs-heading-anchor-permalink" href="#3.-**Material-Instantiation-Stage**" title="Permalink"></a></h3><p>The package creates <code>Material</code> instances when building <code>MooringSegment</code> objects:</p><pre><code class="language-julia hljs"># Package internally creates Material from MaterialParameters
+# This happens in setup_lines(ph)
+
+mat_params = ph.materials[&quot;steel&quot;]
+material = Material(mat_params)
+
+# For LinearElastic, this creates:
+# material = LinearElastic(E=2.1e11, μ=8.08e10)</code></pre><h3 id="4.-**FEM-Assembly-Stage:-Stress-Calculation**"><a class="docs-heading-anchor" href="#4.-**FEM-Assembly-Stage:-Stress-Calculation**">4. <strong>FEM Assembly Stage: Stress Calculation</strong></a><a id="4.-**FEM-Assembly-Stage:-Stress-Calculation**-1"></a><a class="docs-heading-anchor-permalink" href="#4.-**FEM-Assembly-Stage:-Stress-Calculation**" title="Permalink"></a></h3><p>The <code>Material</code> instances are used to compute stresses during FEM assembly:</p><pre><code class="language-julia hljs"># During residual assembly for a segment
+
+# given tangential strain tensor is computed (see TangentialDiffCalculus.jl), compute second Piola-Kirchhoff stress using material law
+S_stress = S(material, Etang)
+# For LinearElastic: S = 2*μ*Etang
+
+# Then, compute first Piola-Kirchhoff stress
+K_stress = K(FΓ, S_stress)
+# K = FΓ ⋅ S
+
+# Finally, compute the residual
+res = ∫((∇(v)&#39; ⋅ Q&#39;) ⊙ K_stress * Jabs)dΩ</code></pre><h3 id="5.-**What-Each-Structure-Contains**"><a class="docs-heading-anchor" href="#5.-**What-Each-Structure-Contains**">5. <strong>What Each Structure Contains</strong></a><a id="5.-**What-Each-Structure-Contains**-1"></a><a class="docs-heading-anchor-permalink" href="#5.-**What-Each-Structure-Contains**" title="Permalink"></a></h3><table><tr><th style="text-align: right">Aspect</th><th style="text-align: right">MaterialParameters</th><th style="text-align: right">Material (LinearElastic/Scharpery)</th></tr><tr><td style="text-align: right"><strong>Purpose</strong></td><td style="text-align: right">User configuration</td><td style="text-align: right">FEM computation</td></tr><tr><td style="text-align: right"><strong>Contains</strong></td><td style="text-align: right">Material properties (E, μ, D0, etc.)</td><td style="text-align: right">Constitutive law implementation</td></tr><tr><td style="text-align: right"><strong>Functions</strong></td><td style="text-align: right">None (just data)</td><td style="text-align: right"><code>S(material, Etang)</code> - stress calculation</td></tr><tr><td style="text-align: right"><strong>When used</strong></td><td style="text-align: right">Parameter setup, YAML I/O</td><td style="text-align: right">Assembly, stress computation</td></tr><tr><td style="text-align: right"><strong>Typical user</strong></td><td style="text-align: right">You (simulation setup)</td><td style="text-align: right">Package internals (solver)</td></tr><tr><td style="text-align: right"><strong>Mutability</strong></td><td style="text-align: right">Can be modified before setup</td><td style="text-align: right">Fixed once created</td></tr></table><h3 id="6.-**When-You-Interact-With-Each**"><a class="docs-heading-anchor" href="#6.-**When-You-Interact-With-Each**">6. <strong>When You Interact With Each</strong></a><a id="6.-**When-You-Interact-With-Each**-1"></a><a class="docs-heading-anchor-permalink" href="#6.-**When-You-Interact-With-Each**" title="Permalink"></a></h3><p><strong>Work with <code>MaterialParameters</code> when:</strong></p><ul><li>Reading/writing YAML configuration files</li><li>Defining material properties for segments</li><li>Conducting parametric studies (varying E, μ)</li><li>Selecting material models (LinearElastic vs Scharpery)</li></ul><p><strong>Work with <code>Material</code> when:</strong></p><ul><li>Implementing custom constitutive models</li><li>Extending the package with new material types</li><li>Developing stress calculation methods</li><li>Debugging constitutive behavior</li></ul><h3 id="7.-**Example:-Complete-Workflow**"><a class="docs-heading-anchor" href="#7.-**Example:-Complete-Workflow**">7. <strong>Example: Complete Workflow</strong></a><a id="7.-**Example:-Complete-Workflow**-1"></a><a class="docs-heading-anchor-permalink" href="#7.-**Example:-Complete-Workflow**" title="Permalink"></a></h3><pre><code class="language-julia hljs">using Mooring
+import Mooring.ParameterHandlers as PH
+
+# Step 1: Define material parameters (MaterialParameters)
+ph = PH.ParameterHandler()
+ph.materials[&quot;steel&quot;] = PH.MaterialParameters(
+    tag=&quot;steel&quot;,
+    type=&quot;LinearElastic&quot;,
+    E=2.1e11,
+    μ=8.08e10
+)
+
+# Step 2: Reference material in segment definition
+ph.segments[1] = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    material_tag=&quot;steel&quot;,  # Links to material
+    area=0.00785,
+    density=7850.0,
+    length=100.0
+)
+
+# Step 3: Create mooring lines (internally creates Material instances)
+mooring_lines = setup_lines(ph)
+
+# Internally, for each segment:
+# mat_params = ph.materials[&quot;steel&quot;]
+# material = Material(mat_params)  # Creates LinearElastic(E=2.1e11, μ=8.08e10)
+# segment = MooringSegment(..., material, ...)
+
+# Step 4: Solve (Material used in stress calculations during assembly)
+solutions = solve_quasistatic(ph)</code></pre><p><strong>Key Takeaway:</strong> You define materials using <code>MaterialParameters</code> (properties). The package creates <code>Material</code> instances (constitutive laws) for stress calculations during FEM assembly.</p><hr/><h2 id="Stress-Measures"><a class="docs-heading-anchor" href="#Stress-Measures">Stress Measures</a><a id="Stress-Measures-1"></a><a class="docs-heading-anchor-permalink" href="#Stress-Measures" title="Permalink"></a></h2><p><strong>Mooring.jl</strong> computes several stress measures internally:</p><h3 id="Second-Piola-Kirchhoff-Stress-(\\mathbf{S})"><a class="docs-heading-anchor" href="#Second-Piola-Kirchhoff-Stress-(\\mathbf{S})">Second Piola-Kirchhoff Stress (<span>$\mathbf{S}$</span>)</a><a id="Second-Piola-Kirchhoff-Stress-(\\mathbf{S})-1"></a><a class="docs-heading-anchor-permalink" href="#Second-Piola-Kirchhoff-Stress-(\\mathbf{S})" title="Permalink"></a></h3><p><strong>Definition:</strong> <span>$\mathbf{S} = \frac{\partial W}{\partial \mathbf{E}_{\text{tang}}}$</span></p><p>where <span>$W$</span> is the strain energy density and <span>$\mathbf{E}_{\text{tang}}$</span> is the tangential Lagrangian Green strain.</p><p><strong>For LinearElastic:</strong> <span>$\mathbf{S} = 2\mu \mathbf{E}_{\text{tang}}$</span></p><p><strong>Used for:</strong> Constitutive law implementation (energy-conjugate to strain)</p><h3 id="First-Piola-Kirchhoff-Stress-(\\mathbf{K})"><a class="docs-heading-anchor" href="#First-Piola-Kirchhoff-Stress-(\\mathbf{K})">First Piola-Kirchhoff Stress (<span>$\mathbf{K}$</span>)</a><a id="First-Piola-Kirchhoff-Stress-(\\mathbf{K})-1"></a><a class="docs-heading-anchor-permalink" href="#First-Piola-Kirchhoff-Stress-(\\mathbf{K})" title="Permalink"></a></h3><p><strong>Definition:</strong> <span>$\mathbf{K} = \mathbf{F}_\Gamma \cdot \mathbf{S}$</span></p><p>where <span>$\mathbf{F}_\Gamma$</span> is the deformation gradient along the line.</p><p><strong>Used for:</strong> Weak form assembly in FEM residual</p><h3 id="Cauchy-Stress-(\\boldsymbol{\\sigma})"><a class="docs-heading-anchor" href="#Cauchy-Stress-(\\boldsymbol{\\sigma})">Cauchy Stress (<span>$\boldsymbol{\sigma}$</span>)</a><a id="Cauchy-Stress-(\\boldsymbol{\\sigma})-1"></a><a class="docs-heading-anchor-permalink" href="#Cauchy-Stress-(\\boldsymbol{\\sigma})" title="Permalink"></a></h3><p><strong>Definition:</strong> <span>$\boldsymbol{\sigma} = \frac{1}{\Lambda} \mathbf{K} \cdot \mathbf{F}_\Gamma^T$</span></p><p>where <span>$\Lambda$</span> is the stretch of the line.</p><p><strong>Used for:</strong> Physical interpretation (true stress in deformed configuration), post-processing</p><hr/><h2 id="Material-Selection-Guide-(not-rigurously-tested)"><a class="docs-heading-anchor" href="#Material-Selection-Guide-(not-rigurously-tested)">Material Selection Guide (not rigurously tested)</a><a id="Material-Selection-Guide-(not-rigurously-tested)-1"></a><a class="docs-heading-anchor-permalink" href="#Material-Selection-Guide-(not-rigurously-tested)" title="Permalink"></a></h2><h3 id="By-Application"><a class="docs-heading-anchor" href="#By-Application">By Application</a><a id="By-Application-1"></a><a class="docs-heading-anchor-permalink" href="#By-Application" title="Permalink"></a></h3><table><tr><th style="text-align: right">Application</th><th style="text-align: right">Recommended Material</th><th style="text-align: right">Type</th><th style="text-align: right">Why</th></tr><tr><td style="text-align: right">Permanent mooring (deep water)</td><td style="text-align: right">Polyester rope</td><td style="text-align: right">LinearElastic or Scharpery</td><td style="text-align: right">Lightweight, cost-effective, good fatigue</td></tr><tr><td style="text-align: right">Permanent mooring (harsh environment)</td><td style="text-align: right">Chain</td><td style="text-align: right">LinearElastic</td><td style="text-align: right">Abrasion resistance, proven reliability</td></tr><tr><td style="text-align: right">Taut-leg mooring</td><td style="text-align: right">HMPE or polyester</td><td style="text-align: right">LinearElastic</td><td style="text-align: right">High stiffness-to-weight ratio</td></tr><tr><td style="text-align: right">Compliant mooring</td><td style="text-align: right">Nylon or polyester</td><td style="text-align: right">Scharpery</td><td style="text-align: right">Energy absorption, compliance</td></tr><tr><td style="text-align: right">Temporary mooring</td><td style="text-align: right">Wire rope</td><td style="text-align: right">LinearElastic</td><td style="text-align: right">High strength, low cost</td></tr><tr><td style="text-align: right">Ultra-deep water (&gt;2000m)</td><td style="text-align: right">Synthetic fiber</td><td style="text-align: right">LinearElastic/Scharpery</td><td style="text-align: right">Weight reduction critical</td></tr></table><h3 id="By-Material-Type"><a class="docs-heading-anchor" href="#By-Material-Type">By Material Type</a><a id="By-Material-Type-1"></a><a class="docs-heading-anchor-permalink" href="#By-Material-Type" title="Permalink"></a></h3><p><strong>Steel Chain:</strong></p><pre><code class="language-julia hljs">ph.materials[&quot;chain&quot;] = PH.MaterialParameters(
+    type=&quot;LinearElastic&quot;,
+    E=2.1e11,
+    μ=8.08e10
+)</code></pre><ul><li><strong>Pros</strong>: Proven, robust, abrasion-resistant</li><li><strong>Cons</strong>: Heavy, expensive in deep water</li><li><strong>Use</strong>: Lower segments, harsh environments</li></ul><p><strong>Wire Rope:</strong></p><pre><code class="language-julia hljs">ph.materials[&quot;wire&quot;] = PH.MaterialParameters(
+    type=&quot;LinearElastic&quot;,
+    E=1.6e11,      # Lower than solid steel
+    μ=6.15e10
+)</code></pre><ul><li><strong>Pros</strong>: High strength-to-weight, flexible</li><li><strong>Cons</strong>: Fatigue-sensitive, corrosion</li><li><strong>Use</strong>: Intermediate segments, taut systems</li></ul><p><strong>Polyester Rope:</strong></p><pre><code class="language-julia hljs">ph.materials[&quot;polyester&quot;] = PH.MaterialParameters(
+    type=&quot;LinearElastic&quot;,    # or &quot;Scharpery&quot; for time-dependent
+    E=5.0e9,
+    μ=1.92e9
+)</code></pre><ul><li><strong>Pros</strong>: Lightweight, low cost, good fatigue</li><li><strong>Cons</strong>: Creep, axial stiffness variation</li><li><strong>Use</strong>: Upper segments, deep water</li></ul><p><strong>Nylon Rope:</strong></p><pre><code class="language-julia hljs">ph.materials[&quot;nylon&quot;] = PH.MaterialParameters(
+    type=&quot;Scharpery&quot;,        # Significant viscoelasticity
+    D0=4.0e-10,
+    N=2,
+    Dn=[2.0e-10, 1.0e-10],
+    λn=[1.0e-2, 1.0e-3],
+    ...
+)</code></pre><ul><li><strong>Pros</strong>: High energy absorption, compliance</li><li><strong>Cons</strong>: Large creep, temperature-sensitive</li><li><strong>Use</strong>: Shock absorption, compliant systems</li></ul><p><strong>HMPE (High-Modulus Polyethylene):</strong></p><pre><code class="language-julia hljs">ph.materials[&quot;hmpe&quot;] = PH.MaterialParameters(
+    type=&quot;LinearElastic&quot;,
+    E=1.0e11,      # Very high for synthetic
+    μ=3.85e10
+)</code></pre><ul><li><strong>Pros</strong>: Very high strength-to-weight, low creep</li><li><strong>Cons</strong>: Expensive, UV-sensitive</li><li><strong>Use</strong>: Taut moorings, ultra-deep water</li></ul><hr/><h2 id="Best-Practices"><a class="docs-heading-anchor" href="#Best-Practices">Best Practices</a><a id="Best-Practices-1"></a><a class="docs-heading-anchor-permalink" href="#Best-Practices" title="Permalink"></a></h2><h3 id="Material-Property-Selection"><a class="docs-heading-anchor" href="#Material-Property-Selection">Material Property Selection</a><a id="Material-Property-Selection-1"></a><a class="docs-heading-anchor-permalink" href="#Material-Property-Selection" title="Permalink"></a></h3><ol><li><p><strong>Use realistic values</strong>: Material properties significantly affect results</p><pre><code class="language-julia hljs"># Bad: Using default values
+ph.materials[&quot;steel&quot;] = PH.MaterialParameters(type=&quot;LinearElastic&quot;, E=1.0, μ=0.5)
+
+# Good: Using measured/literature values
+ph.materials[&quot;steel&quot;] = PH.MaterialParameters(type=&quot;LinearElastic&quot;, E=2.1e11, μ=8.08e10)</code></pre></li><li><p><strong>Account for submerged conditions</strong>: Material properties can vary underwater</p><pre><code class="language-julia hljs"># Synthetic ropes: properties may change with water absorption
+# Use wet properties, not dry properties
+E_dry = 6.0e9
+E_wet = 5.0e9  # Reduced due to water absorption
+
+ph.materials[&quot;polyester&quot;] = PH.MaterialParameters(E=E_wet, ...)</code></pre></li><li><p><strong>Consider temperature effects</strong>: If applicable</p><pre><code class="language-julia hljs"># For deep water applications, consider temperature
+# E typically decreases with increasing temperature</code></pre></li></ol><h3 id="Shear-Modulus-Calculation"><a class="docs-heading-anchor" href="#Shear-Modulus-Calculation">Shear Modulus Calculation</a><a id="Shear-Modulus-Calculation-1"></a><a class="docs-heading-anchor-permalink" href="#Shear-Modulus-Calculation" title="Permalink"></a></h3><p>Always compute shear modulus (<span>$\mu$</span>) consistently:</p><pre><code class="language-julia hljs"># Given Young&#39;s modulus and Poisson&#39;s ratio
+E = 2.1e11      # Young&#39;s modulus [Pa]
+ν = 0.3         # Poisson&#39;s ratio [-]
+
+# Compute shear modulus
+μ = E / (2 * (1 + ν))
+
+ph.materials[&quot;material&quot;] = PH.MaterialParameters(E=E, μ=μ, ...)</code></pre><p><strong>Common Poisson&#39;s ratios:</strong></p><ul><li>Steel: ν ≈ 0.29-0.30</li><li>Polyester: ν ≈ 0.35-0.40</li><li>Nylon: ν ≈ 0.40-0.45</li></ul><h3 id="Material-Naming"><a class="docs-heading-anchor" href="#Material-Naming">Material Naming</a><a id="Material-Naming-1"></a><a class="docs-heading-anchor-permalink" href="#Material-Naming" title="Permalink"></a></h3><p>Use descriptive, consistent tags:</p><pre><code class="language-julia hljs"># Good: Clear, descriptive
+ph.materials[&quot;chain_76mm_grade3&quot;] = ...
+ph.materials[&quot;polyester_200mm&quot;] = ...
+ph.materials[&quot;wire_rope_spiral&quot;] = ...
+
+# Less clear
+ph.materials[&quot;mat1&quot;] = ...
+ph.materials[&quot;material&quot;] = ...</code></pre><h3 id="Validation"><a class="docs-heading-anchor" href="#Validation">Validation</a><a id="Validation-1"></a><a class="docs-heading-anchor-permalink" href="#Validation" title="Permalink"></a></h3><p>Always validate material behavior:</p><pre><code class="language-julia hljs"># Check stress-strain response
+E = 2.1e11
+ε = 0.001  # 0.1% strain
+σ_expected = E * ε
+
+# Verify in post-processing that computed stresses are reasonable</code></pre><h3 id="Viscoelastic-Materials"><a class="docs-heading-anchor" href="#Viscoelastic-Materials">Viscoelastic Materials</a><a id="Viscoelastic-Materials-1"></a><a class="docs-heading-anchor-permalink" href="#Viscoelastic-Materials" title="Permalink"></a></h3><p>When using Scharpery model:</p><ol><li><p><strong>Start simple</strong>: Use N=1 (single relaxation time) first</p><pre><code class="language-julia hljs">ph.materials[&quot;poly_simple&quot;] = PH.MaterialParameters(
+    type=&quot;Scharpery&quot;,
+    D0=2.0e-10,
+    N=1,
+    Dn=[1.0e-10],
+    λn=[1.0e-3],
+    ...
+)</code></pre></li><li><p><strong>Calibrate from experiments</strong>: Use creep or stress relaxation test data</p></li><li><p><strong>Consider time scales</strong>: Choose relaxation times appropriate for your simulation</p><pre><code class="language-julia hljs"># For quasi-static analysis (hours): λn ~ 1e-4 to 1e-2 [s⁻¹]
+# For dynamic analysis (minutes): λn ~ 1e-2 to 1e-1 [s⁻¹]</code></pre></li></ol><hr/><h2 id="See-Also"><a class="docs-heading-anchor" href="#See-Also">See Also</a><a id="See-Also-1"></a><a class="docs-heading-anchor-permalink" href="#See-Also" title="Permalink"></a></h2><ul><li><a href="../../API/Physics/Materials/">API: Materials</a></li><li><a href="../segments/">User Guide: Segments</a></li><li><a href="../lines/">User Guide: Lines</a></li><li><a href="../../API/Physics/TangentialDiffCalculus/">API: TangentialDiffCalculus</a></li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../lines/">« Lines</a><a class="docs-footer-nextpage" href="../../DeveloperGuide/">Developer Guide »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.0 on <span class="colophon-date" title="Saturday 15 November 2025 20:47">Saturday 15 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

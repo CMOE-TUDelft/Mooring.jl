@@ -1,16 +1,311 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Segments · Mooring.jl</title><meta name="title" content="Segments · Mooring.jl"/><meta property="og:title" content="Segments · Mooring.jl"/><meta property="twitter:title" content="Segments · Mooring.jl"/><meta name="description" content="Documentation for Mooring.jl."/><meta property="og:description" content="Documentation for Mooring.jl."/><meta property="twitter:description" content="Documentation for Mooring.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Mooring.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Mooring.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../GettingStarted/">Getting Started</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../../UserGuide/">User Guide</a></li><li><a class="tocitem" href="../installation/">Installation</a></li><li><a class="tocitem" href="../points/">Points</a></li><li class="is-active"><a class="tocitem" href>Segments</a><ul class="internal"><li><a class="tocitem" href="#YAML-example"><span>YAML example</span></a></li><li><a class="tocitem" href="#Julia-example"><span>Julia example</span></a></li></ul></li><li><a class="tocitem" href="../lines/">Lines</a></li></ul></li><li><a class="tocitem" href="../../DeveloperGuide/">Developer Guide</a></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../API/API/">API documentation</a></li><li><a class="tocitem" href="../../API/IO/ParameterHandler/">Input/Output</a></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Physics</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Physics/EnvironmentalConditions/">Environmental Conditions</a></li><li><a class="tocitem" href="../../API/Physics/SeaBed/">Sea bed external loading</a></li><li><a class="tocitem" href="../../API/Physics/Drag/">Drag force</a></li><li><a class="tocitem" href="../../API/Physics/PointMotion/">Point Motion</a></li><li><a class="tocitem" href="../../API/Physics/TangentialDiffCalculus/">Tangential Differential Calculus</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Segments</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Segments</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Defining-Segments"><a class="docs-heading-anchor" href="#Defining-Segments">Defining Segments</a><a id="Defining-Segments-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Segments" title="Permalink"></a></h1><p>Mooring segments represent the physical elements (ropes, chains, or synthetic cables) that connect two mooring points. Each segment connects a <strong>start point</strong> and a <strong>stop point</strong>, and has associated material and hydrodynamic properties.</p><p>Each segment is defined by the following parameters, see (<a href="@ref">`SegmentParameters</a>):</p><ul><li><code>id::Int</code> - unique integer identifier</li><li><code>tag::String</code> – unique name or identifier</li><li><code>start_point::Int</code> – ID of the starting point (refers to <code>points</code>)</li><li><code>stop_point::Int</code> – ID of the ending point (refers to <code>points</code>)</li><li><code>material_tag::String</code> – reference to a material tag (defined in <code>materials</code>)</li><li><code>area::Float64</code> – cross-sectional area [m²]</li><li><code>density::Float64</code> – mass density</li><li>(optional) <code>drag_tag::String</code> – reference to a drag law (defined in <code>drags</code>)</li><li>(optional) <code>seabed_tag::String</code> – reference to seabed interaction (defined in <code>seabeds</code>)</li></ul><hr/><h2 id="YAML-example"><a class="docs-heading-anchor" href="#YAML-example">YAML example</a><a id="YAML-example-1"></a><a class="docs-heading-anchor-permalink" href="#YAML-example" title="Permalink"></a></h2><pre><code class="language-yaml hljs">segments:
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Segments · Mooring.jl</title><meta name="title" content="Segments · Mooring.jl"/><meta property="og:title" content="Segments · Mooring.jl"/><meta property="twitter:title" content="Segments · Mooring.jl"/><meta name="description" content="Documentation for Mooring.jl."/><meta property="og:description" content="Documentation for Mooring.jl."/><meta property="twitter:description" content="Documentation for Mooring.jl."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Mooring.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Mooring.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../GettingStarted/">Getting Started</a></li><li><span class="tocitem">User Guide</span><ul><li><a class="tocitem" href="../../UserGuide/">User Guide</a></li><li><a class="tocitem" href="../installation/">Installation</a></li><li><a class="tocitem" href="../points/">Points</a></li><li class="is-active"><a class="tocitem" href>Segments</a><ul class="internal"><li><a class="tocitem" href="#Two-Types-of-Segment-Structures"><span>Two Types of Segment Structures</span></a></li><li><a class="tocitem" href="#Segment-Properties-(SegmentParameters)"><span>Segment Properties (SegmentParameters)</span></a></li><li><a class="tocitem" href="#Defining-Segments-in-Julia"><span>Defining Segments in Julia</span></a></li><li><a class="tocitem" href="#Defining-Segments-in-YAML"><span>Defining Segments in YAML</span></a></li><li><a class="tocitem" href="#Working-with-Segments"><span>Working with Segments</span></a></li><li><a class="tocitem" href="#Workflow:-From-SegmentParameters-to-MooringSegment"><span>Workflow: From SegmentParameters to MooringSegment</span></a></li><li><a class="tocitem" href="#Physical-Map-Functions"><span>Physical Map Functions</span></a></li><li><a class="tocitem" href="#Best-Practices"><span>Best Practices</span></a></li><li><a class="tocitem" href="#Common-Issues"><span>Common Issues</span></a></li><li><a class="tocitem" href="#Next-Steps"><span>Next Steps</span></a></li><li><a class="tocitem" href="#See-Also"><span>See Also</span></a></li></ul></li><li><a class="tocitem" href="../lines/">Lines</a></li><li><a class="tocitem" href="../materials/">Materials</a></li></ul></li><li><a class="tocitem" href="../../DeveloperGuide/">Developer Guide</a></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../API/API/">Overview</a></li><li><input class="collapse-toggle" id="menuitem-5-2" type="checkbox"/><label class="tocitem" for="menuitem-5-2"><span class="docs-label">Entities</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Entities/MooringPoint/">MooringPoint</a></li><li><a class="tocitem" href="../../API/Entities/MooringSegment/">MooringSegment</a></li><li><a class="tocitem" href="../../API/Entities/MooringLine/">MooringLine</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-3" type="checkbox"/><label class="tocitem" for="menuitem-5-3"><span class="docs-label">Geometry</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Geometry/MooringDiscreteModel/">MooringDiscreteModel</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-4" type="checkbox"/><label class="tocitem" for="menuitem-5-4"><span class="docs-label">Input/Output</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/IO/ParameterHandler/">ParameterHandler</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5-5" type="checkbox"/><label class="tocitem" for="menuitem-5-5"><span class="docs-label">Physics</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../API/Physics/Materials/">Materials</a></li><li><a class="tocitem" href="../../API/Physics/EnvironmentalConditions/">EnvironmentalConditions</a></li><li><a class="tocitem" href="../../API/Physics/SeaBed/">SeaBed</a></li><li><a class="tocitem" href="../../API/Physics/Drag/">Drag</a></li><li><a class="tocitem" href="../../API/Physics/PointMotion/">PointMotion</a></li><li><a class="tocitem" href="../../API/Physics/TangentialDiffCalculus/">TangentialDiffCalculus</a></li></ul></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">User Guide</a></li><li class="is-active"><a href>Segments</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Segments</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Defining-Segments"><a class="docs-heading-anchor" href="#Defining-Segments">Defining Segments</a><a id="Defining-Segments-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Segments" title="Permalink"></a></h1><p>Mooring segments are the fundamental physical elements in <strong>Mooring.jl</strong> that represent cables connecting two points. Segments can model:</p><ul><li><strong>Steel chains</strong>: Heavy, rigid mooring chains</li><li><strong>Wire ropes</strong>: Steel wire cables with high strength</li><li><strong>Synthetic ropes</strong>: Lightweight polyester or nylon cables</li><li><strong>Hybrid systems</strong>: Combinations of different materials</li></ul><p>Each segment connects a <strong>start point</strong> to a <strong>stop point</strong> and carries material, geometric, and hydrodynamic properties.</p><h4 id="Table-of-Contents"><a class="docs-heading-anchor" href="#Table-of-Contents">Table of Contents</a><a id="Table-of-Contents-1"></a><a class="docs-heading-anchor-permalink" href="#Table-of-Contents" title="Permalink"></a></h4><ul><li><a href="#two-types-of-segment-structures">Two Types of Segment Structures</a></li><li><a href="#segment-properties-segmentparameters">Segment Properties (SegmentParameters)</a></li><li><a href="#defining-segments-in-julia">Defining Segments in Julia</a></li><li><a href="#defining-segments-in-yaml">Defining Segments in YAML</a></li><li><a href="#working-with-segments">Working with Segments</a></li><li><a href="#workflow-from-segmentparameters-to-mooringsegment">Workflow: From SegmentParameters to MooringSegment</a></li><li><a href="#physical-map-functions">Physical Map Functions</a></li><li><a href="#best-practices">Best Practices</a></li><li><a href="#common-issues">Common Issues</a></li><li><a href="#next-steps">Next Steps</a></li><li><a href="#see-also">See Also</a></li></ul><h2 id="Two-Types-of-Segment-Structures"><a class="docs-heading-anchor" href="#Two-Types-of-Segment-Structures">Two Types of Segment Structures</a><a id="Two-Types-of-Segment-Structures-1"></a><a class="docs-heading-anchor-permalink" href="#Two-Types-of-Segment-Structures" title="Permalink"></a></h2><p><strong>Mooring.jl</strong> uses two distinct structures for handling segments at different levels:</p><h3 id="1.-SegmentParameters-(High-Level:-Parameter-Handling)"><a class="docs-heading-anchor" href="#1.-SegmentParameters-(High-Level:-Parameter-Handling)">1. <code>SegmentParameters</code> (High-Level: Parameter Handling)</a><a id="1.-SegmentParameters-(High-Level:-Parameter-Handling)-1"></a><a class="docs-heading-anchor-permalink" href="#1.-SegmentParameters-(High-Level:-Parameter-Handling)" title="Permalink"></a></h3><p><code>SegmentParameters</code> is used for <strong>defining and configuring</strong> segments in YAML files or through the parameter handler. This struct stores all the user-specified properties needed to create a segment (cable) in the mooring system. You interact with this struct when setting up your simulation configuration.</p><pre><code class="language-julia hljs">using Mooring.ParameterHandlers as PH
+
+# Create segment parameters for configuration
+segment_params = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    length=100.0,
+    area=0.00785,
+    density=7850.0,
+    material_tag=&quot;steel_chain&quot;
+)</code></pre><h3 id="2.-MooringSegment-(Low-Level:-FEM-Operations)"><a class="docs-heading-anchor" href="#2.-MooringSegment-(Low-Level:-FEM-Operations)">2. <code>MooringSegment</code> (Low-Level: FEM Operations)</a><a id="2.-MooringSegment-(Low-Level:-FEM-Operations)-1"></a><a class="docs-heading-anchor-permalink" href="#2.-MooringSegment-(Low-Level:-FEM-Operations)" title="Permalink"></a></h3><p><code>MooringSegment</code> is used internally for <strong>finite element analysis</strong> operations. This struct contains the triangulation and material properties. From these parameters it can create <strong>its own dedicated finite element space</strong>. The package automatically creates <code>MooringSegment</code> instances from your <code>SegmentParameters</code> when building the discrete model.</p><pre><code class="language-julia hljs">using Mooring.MooringSegments
+
+# MooringSegment is created internally from the discrete model
+# You typically don&#39;t create these directly
+mooring_segment = MooringSegment(
+    model,              # Discrete model with mesh
+    &quot;Segment_1&quot;,        # Tag from SegmentParameters
+    pointA,             # MooringPoint instance
+    pointB,             # MooringPoint instance
+    map_function,       # Geometric map (linear/quadratic)
+    material,           # Material properties
+    density,            # Submerged density
+    area                # Cross-sectional area
+)
+
+# Key feature: Each MooringSegment gets its own FE space
+U, V = get_transient_FESpaces(mooring_segment, order=1, dim=2)</code></pre><p><strong>Key Distinction:</strong></p><ul><li><strong><code>SegmentParameters</code></strong>: What you define (geometry, material, connections) → <em>User configuration level</em></li><li><strong><code>MooringSegment</code></strong>: What the solver uses (triangulation, FE space, residuals) → <em>FEM computation level</em></li></ul><p><strong>Critical Feature:</strong> Each <code>MooringSegment</code> has its <strong>own independent finite element space</strong>. This design allows:</p><ul><li>Different mesh refinements per segment</li><li>Different interpolation orders per segment</li><li>Flexible boundary conditions at segment endpoints</li><li>Efficient assembly of multi-segment systems</li></ul><h2 id="Segment-Properties-(SegmentParameters)"><a class="docs-heading-anchor" href="#Segment-Properties-(SegmentParameters)">Segment Properties (SegmentParameters)</a><a id="Segment-Properties-(SegmentParameters)-1"></a><a class="docs-heading-anchor-permalink" href="#Segment-Properties-(SegmentParameters)" title="Permalink"></a></h2><p>When defining segments through the parameter handler, each segment uses the following parameters:</p><table><tr><th style="text-align: right">Parameter</th><th style="text-align: right">Type</th><th style="text-align: right">Required</th><th style="text-align: right">Description</th></tr><tr><td style="text-align: right"><code>id</code></td><td style="text-align: right"><code>Int</code></td><td style="text-align: right">Yes</td><td style="text-align: right">Unique integer identifier for the segment</td></tr><tr><td style="text-align: right"><code>start_point</code></td><td style="text-align: right"><code>Int</code></td><td style="text-align: right">Yes</td><td style="text-align: right">ID of the starting point</td></tr><tr><td style="text-align: right"><code>stop_point</code></td><td style="text-align: right"><code>Int</code></td><td style="text-align: right">Yes</td><td style="text-align: right">ID of the ending point</td></tr><tr><td style="text-align: right"><code>material_tag</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">Yes</td><td style="text-align: right">Reference to a defined material</td></tr><tr><td style="text-align: right"><code>area</code></td><td style="text-align: right"><code>Float64</code></td><td style="text-align: right">Yes</td><td style="text-align: right">Cross-sectional area [m²]</td></tr><tr><td style="text-align: right"><code>density</code></td><td style="text-align: right"><code>Float64</code></td><td style="text-align: right">Yes</td><td style="text-align: right">Material mass density [kg/m³]</td></tr><tr><td style="text-align: right"><code>length</code></td><td style="text-align: right"><code>Float64</code></td><td style="text-align: right">Yes</td><td style="text-align: right">Unstretched length of the segment [m]</td></tr><tr><td style="text-align: right"><code>drag_tag</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">No</td><td style="text-align: right">Reference to drag model (default: &quot;no_drag&quot;)</td></tr><tr><td style="text-align: right"><code>seabed_tag</code></td><td style="text-align: right"><code>String</code></td><td style="text-align: right">No</td><td style="text-align: right">Reference to seabed interaction (default: &quot;default_seabed&quot;)</td></tr></table><h3 id="Unstretched-Length"><a class="docs-heading-anchor" href="#Unstretched-Length">Unstretched Length</a><a id="Unstretched-Length-1"></a><a class="docs-heading-anchor-permalink" href="#Unstretched-Length" title="Permalink"></a></h3><p>The <code>length</code> parameter specifies the <strong>unstretched</strong> (reference) length of the cable:</p><ul><li>This is the natural length without any applied tension</li><li>Under tension, the actual length will increase based on material stiffness</li><li>For catenary configurations, <code>length</code> should be greater than the straight-line distance between points</li></ul><h3 id="Cross-Sectional-Area"><a class="docs-heading-anchor" href="#Cross-Sectional-Area">Cross-Sectional Area</a><a id="Cross-Sectional-Area-1"></a><a class="docs-heading-anchor-permalink" href="#Cross-Sectional-Area" title="Permalink"></a></h3><p>The area affects:</p><ul><li><strong>Axial stiffness</strong>: Larger area → stiffer cable</li><li><strong>Weight</strong>: Weight per unit length = <code>density × area × g</code></li><li><strong>Hydrodynamic forces</strong>: Drag is proportional to area (if drag enabled)</li></ul><p><strong>Typical values</strong>: | Cable Type | Diameter | Area [m²] | Notes | |––––––|–––––|–––––-|–––-| | Chain 76mm | 76mm | 0.00454 | ≈ π×(0.038)² | | Chain 120mm | 120mm | 0.0113 | ≈ π×(0.06)² | | Wire rope 100mm | 100mm | 0.00785 | Circular cross-section | | Synthetic rope 200mm | 200mm | 0.0314 | May be non-circular |</p><h3 id="Density"><a class="docs-heading-anchor" href="#Density">Density</a><a id="Density-1"></a><a class="docs-heading-anchor-permalink" href="#Density" title="Permalink"></a></h3><p>Density of the submerged material. The material density determines the submerged weight:</p><pre><code class="nohighlight hljs">Submerged weight per meter = ρ_submerged × area × g = (ρ_cable - ρ_water) × area × g</code></pre><p><strong>Typical densities</strong>: | Material | Density [kg/m³] | Notes | |–––––|––––––––-|–––-| | Steel chain | 7850 | Standard structural steel | | Wire rope | 7800-7900 | Slightly lower due to voids | | Polyester rope | 1380 | Positive buoyancy in water | | Nylon rope | 1140 | Positive buoyancy in water | | Seawater | 1025 | For reference |</p><h3 id="Material-Tag"><a class="docs-heading-anchor" href="#Material-Tag">Material Tag</a><a id="Material-Tag-1"></a><a class="docs-heading-anchor-permalink" href="#Material-Tag" title="Permalink"></a></h3><p>References a material, which is defined depending on the material model. For an elastic material, with elastic properties:</p><ul><li><strong>Young&#39;s modulus (E)</strong>: Axial stiffness</li><li><strong>Shear modulus (μ)</strong>: Lateral stiffness</li><li>Supports linear and nonlinear material models</li></ul><p>See <a href="../../API/Physics/Materials/">Materials</a> for more details.</p><h3 id="Drag-Tag"><a class="docs-heading-anchor" href="#Drag-Tag">Drag Tag</a><a id="Drag-Tag-1"></a><a class="docs-heading-anchor-permalink" href="#Drag-Tag" title="Permalink"></a></h3><p>Optional reference to hydrodynamic drag model:</p><ul><li><code>&quot;no_drag&quot;</code>: No hydrodynamic forces (default, for quasi-static in still water)</li><li>Custom drag models: For dynamic analysis with currents/waves</li></ul><p>See <a href="../../API/Physics/Drag/">Drag</a> for more details.</p><h3 id="Seabed-Tag"><a class="docs-heading-anchor" href="#Seabed-Tag">Seabed Tag</a><a id="Seabed-Tag-1"></a><a class="docs-heading-anchor-permalink" href="#Seabed-Tag" title="Permalink"></a></h3><p>Optional reference to seabed contact model:</p><ul><li><code>&quot;default_seabed&quot;</code>: Standard seabed contact model</li><li>Custom models: For specific soil properties</li></ul><p>See <a href="../../API/Physics/SeaBed/">SeaBed</a> for more details.</p><hr/><h2 id="Defining-Segments-in-Julia"><a class="docs-heading-anchor" href="#Defining-Segments-in-Julia">Defining Segments in Julia</a><a id="Defining-Segments-in-Julia-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Segments-in-Julia" title="Permalink"></a></h2><h3 id="Basic-2D-Example"><a class="docs-heading-anchor" href="#Basic-2D-Example">Basic 2D Example</a><a id="Basic-2D-Example-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-2D-Example" title="Permalink"></a></h3><p>Simple vertical hanging cable:</p><pre><code class="language-julia hljs">using Mooring
+import Mooring.ParameterHandlers as PH
+
+# Create parameter handler
+ph = PH.ParameterHandler()
+
+# Define material (steel chain)
+ph.materials[&quot;chain&quot;] = PH.MaterialParameters(
+    tag=&quot;chain&quot;,
+    E=2.1e11,    # Young&#39;s modulus [Pa]
+    μ=8.1e10     # Shear modulus [Pa]
+)
+
+# Define motion type
+ph.motions[&quot;fixed&quot;] = PH.MotionParameters(tag=&quot;fixed&quot;)
+
+# Define points (2D)
+ph.points[1] = PH.PointParameters(
+    id=1,
+    coords=[0.0, -100.0],    # Anchor at seabed
+    motion_tag=&quot;fixed&quot;,
+    mesh_size=10.0
+)
+ph.points[2] = PH.PointParameters(
+    id=2,
+    coords=[0.0, -20.0],     # Fairlead
+    motion_tag=&quot;fixed&quot;,
+    mesh_size=5.0
+)
+
+# Define segment
+ph.segments[1] = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    material_tag=&quot;chain&quot;,
+    area=0.0113,              # 120mm chain ≈ 0.0113 m²
+    density=7850.0,           # Steel density [kg/m³]
+    length=90.0,              # Unstretched length [m]
+    drag_tag=&quot;no_drag&quot;,
+    seabed_tag=&quot;default_seabed&quot;
+)</code></pre><h3 id="Catenary-Cable-(3D)"><a class="docs-heading-anchor" href="#Catenary-Cable-(3D)">Catenary Cable (3D)</a><a id="Catenary-Cable-(3D)-1"></a><a class="docs-heading-anchor-permalink" href="#Catenary-Cable-(3D)" title="Permalink"></a></h3><p>Cable with excess length for natural catenary shape:</p><pre><code class="language-julia hljs">using Mooring
+import Mooring.ParameterHandlers as PH
+
+ph = PH.ParameterHandler()
+
+# Define material
+ph.materials[&quot;wire_rope&quot;] = PH.MaterialParameters(
+    tag=&quot;wire_rope&quot;,
+    E=1.8e11,    # Wire rope slightly lower than solid steel
+    μ=7.0e10
+)
+
+ph.motions[&quot;fixed&quot;] = PH.MotionParameters(tag=&quot;fixed&quot;)
+
+# Define anchor point
+ph.points[1] = PH.PointParameters(
+    id=1,
+    coords=[0.0, 0.0, -150.0],    # 150m depth
+    motion_tag=&quot;fixed&quot;,
+    mesh_size=15.0
+)
+
+# Define fairlead point
+ph.points[2] = PH.PointParameters(
+    id=2,
+    coords=[100.0, 50.0, -25.0],  # 100m in x, 50m in y, 25m depth
+    motion_tag=&quot;fixed&quot;,
+    mesh_size=8.0
+)
+
+# Calculate distances
+horizontal_dist = sqrt(100.0^2 + 50.0^2)  # ≈ 111.8 m
+vertical_dist = abs(-25.0 - (-150.0))     # = 125 m
+straight_dist = sqrt(horizontal_dist^2 + vertical_dist^2)  # ≈ 167.4 m
+
+# Add 15% excess for catenary
+segment_length = straight_dist * 1.15  # ≈ 192.5 m
+
+# Define segment
+ph.segments[1] = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    material_tag=&quot;wire_rope&quot;,
+    area=0.00785,             # 100mm wire rope
+    density=7850.0,
+    length=segment_length,
+    drag_tag=&quot;no_drag&quot;,
+    seabed_tag=&quot;default_seabed&quot;
+)</code></pre><h3 id="Multi-Segment-Line"><a class="docs-heading-anchor" href="#Multi-Segment-Line">Multi-Segment Line</a><a id="Multi-Segment-Line-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-Segment-Line" title="Permalink"></a></h3><p>Chain-polyester-chain configuration:</p><pre><code class="language-julia hljs">using Mooring
+import Mooring.ParameterHandlers as PH
+
+ph = PH.ParameterHandler()
+
+# Define materials
+ph.materials[&quot;chain&quot;] = PH.MaterialParameters(tag=&quot;chain&quot;, E=2.1e11, μ=8.1e10)
+ph.materials[&quot;polyester&quot;] = PH.MaterialParameters(tag=&quot;polyester&quot;, E=5.0e9, μ=2.0e9)
+
+ph.motions[&quot;fixed&quot;] = PH.MotionParameters(tag=&quot;fixed&quot;)
+
+# Define points (3 points for 2 segments)
+ph.points[1] = PH.PointParameters(id=1, coords=[0.0, 0.0, -200.0], motion_tag=&quot;fixed&quot;, mesh_size=20.0)  # Anchor
+ph.points[2] = PH.PointParameters(id=2, coords=[100.0, 0.0, -150.0], motion_tag=&quot;fixed&quot;, mesh_size=10.0) # Intermediate
+ph.points[3] = PH.PointParameters(id=3, coords=[150.0, 0.0, -30.0], motion_tag=&quot;fixed&quot;, mesh_size=8.0)   # Fairlead
+
+# Bottom chain segment
+ph.segments[1] = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    material_tag=&quot;chain&quot;,
+    area=0.00785,             # 100mm chain
+    density=7850.0,
+    length=120.0,             # Ground chain
+    drag_tag=&quot;no_drag&quot;,
+    seabed_tag=&quot;default_seabed&quot;
+)
+
+# Polyester rope segment
+ph.segments[2] = PH.SegmentParameters(
+    id=2,
+    start_point=2,
+    stop_point=3,
+    material_tag=&quot;polyester&quot;,
+    area=0.0314,              # 200mm polyester rope
+    density=1380.0,           # Lighter than water!
+    length=200.0,             # Main suspension
+    drag_tag=&quot;no_drag&quot;,
+    seabed_tag=&quot;default_seabed&quot;
+)</code></pre><hr/><h2 id="Defining-Segments-in-YAML"><a class="docs-heading-anchor" href="#Defining-Segments-in-YAML">Defining Segments in YAML</a><a id="Defining-Segments-in-YAML-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-Segments-in-YAML" title="Permalink"></a></h2><h3 id="Simple-Single-Segment"><a class="docs-heading-anchor" href="#Simple-Single-Segment">Simple Single Segment</a><a id="Simple-Single-Segment-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-Single-Segment" title="Permalink"></a></h3><pre><code class="language-yaml hljs"># mooring_segment.yaml
+materials:
+  - tag: &quot;chain&quot;
+    E: 2.1e11
+    μ: 8.1e10
+
+motions:
+  - tag: &quot;fixed&quot;
+    type: &quot;NoMotion&quot;
+
+points:
   - id: 1
-    tag: seg1
+    coords: [0.0, -100.0]
+    motion_tag: &quot;fixed&quot;
+    mesh_size: 10.0
+  - id: 2
+    coords: [50.0, -20.0]
+    motion_tag: &quot;fixed&quot;
+    mesh_size: 5.0
+
+segments:
+  - id: 1
     start_point: 1
     stop_point: 2
-    material: steel
-    area: 0.01
+    material_tag: &quot;chain&quot;
+    area: 0.0113
     density: 7850.0
-    drag: no_drag
-    seabed: default_seabed</code></pre><p>In this example:</p><p><code>seg1</code> connects point 1 (e.g. an anchor) to point 2 (e.g. a fairlead).</p><p>It uses the &quot;steel&quot; material defined in <code>materials</code> (see materials section). A cross-sectional area of 0.01 m² and density 7850 kg/m³ are provided. Hydrodynamic drag and seabed interaction are also specified.</p><hr/><h2 id="Julia-example"><a class="docs-heading-anchor" href="#Julia-example">Julia example</a><a id="Julia-example-1"></a><a class="docs-heading-anchor-permalink" href="#Julia-example" title="Permalink"></a></h2><p>The same example can be directly defined in a julia script:</p><pre><code class="language-julia hljs">using Mooring
-import Mooring.ParameterHandler as PH
-ph.points[1] = PH.PointParameters(id=1, coords=[0.0,0.0,-50.0], motion_tag=&quot;fixed&quot;)
-ph.points[2] = PH.PointParameters(id=2, coords=[10.0,0.0,0.0], motion_tag=&quot;fairlead_motion&quot;)
-ph.segments[1] = PH.SegmentParameters(id=1, start_point=1, stop_point=2, material_tag=&quot;steel&quot;, area=0.01,
-                                      density=7850.0, length=10.0, drag_tag=&quot;no_drag&quot;, seabed_tag=&quot;default_seabed&quot;)</code></pre><p>Segments are turned into <a href="@ref"><code>MooringSegment</code></a> objects during line setup.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../points/">« Points</a><a class="docs-footer-nextpage" href="../lines/">Lines »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.0 on <span class="colophon-date" title="Friday 14 November 2025 20:28">Friday 14 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+    length: 90.0
+    drag_tag: &quot;no_drag&quot;
+    seabed_tag: &quot;default_seabed&quot;</code></pre><h3 id="Multi-Segment-Configuration"><a class="docs-heading-anchor" href="#Multi-Segment-Configuration">Multi-Segment Configuration</a><a id="Multi-Segment-Configuration-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-Segment-Configuration" title="Permalink"></a></h3><pre><code class="language-yaml hljs">segments:
+  # Bottom chain
+  - id: 1
+    start_point: 1
+    stop_point: 2
+    material_tag: &quot;chain&quot;
+    area: 0.00785
+    density: 7850.0
+    length: 120.0
+    drag_tag: &quot;no_drag&quot;
+    seabed_tag: &quot;default_seabed&quot;
+    
+  # Polyester rope
+  - id: 2
+    start_point: 2
+    stop_point: 3
+    material_tag: &quot;polyester&quot;
+    area: 0.0314
+    density: 1380.0
+    length: 200.0
+    drag_tag: &quot;no_drag&quot;
+    seabed_tag: &quot;default_seabed&quot;
+    
+  # Top chain
+  - id: 3
+    start_point: 3
+    stop_point: 4
+    material_tag: &quot;chain&quot;
+    area: 0.00454
+    density: 7850.0
+    length: 50.0
+    drag_tag: &quot;no_drag&quot;
+    seabed_tag: &quot;default_seabed&quot;</code></pre><hr/><h2 id="Working-with-Segments"><a class="docs-heading-anchor" href="#Working-with-Segments">Working with Segments</a><a id="Working-with-Segments-1"></a><a class="docs-heading-anchor-permalink" href="#Working-with-Segments" title="Permalink"></a></h2><h3 id="Accessing-Segment-Data"><a class="docs-heading-anchor" href="#Accessing-Segment-Data">Accessing Segment Data</a><a id="Accessing-Segment-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Accessing-Segment-Data" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Get a specific segment
+segment_1 = ph.segments[1]
+
+# Access properties
+start_pt = segment_1.start_point
+stop_pt = segment_1.stop_point
+material = segment_1.material_tag
+area = segment_1.area
+length = segment_1.length
+
+println(&quot;Segment 1: Point $start_pt → Point $stop_pt&quot;)
+println(&quot;  Material: $material, Area: $area m², Length: $length m&quot;)</code></pre><h3 id="Iterating-Over-Segments"><a class="docs-heading-anchor" href="#Iterating-Over-Segments">Iterating Over Segments</a><a id="Iterating-Over-Segments-1"></a><a class="docs-heading-anchor-permalink" href="#Iterating-Over-Segments" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Loop through all segments
+for (id, segment) in ph.segments
+    weight_per_meter = segment.density * segment.area * 9.81
+    println(&quot;Segment $id: $(weight_per_meter) N/m&quot;)
+end
+
+# Count segments
+num_segments = length(ph.segments)
+println(&quot;Total segments: $num_segments&quot;)</code></pre><h3 id="Calculating-Segment-Properties"><a class="docs-heading-anchor" href="#Calculating-Segment-Properties">Calculating Segment Properties</a><a id="Calculating-Segment-Properties-1"></a><a class="docs-heading-anchor-permalink" href="#Calculating-Segment-Properties" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Axial stiffness
+function axial_stiffness(segment::PH.SegmentParameters, material::PH.MaterialParameters)
+    return material.E * segment.area
+end
+
+# Example usage
+seg = ph.segments[1]
+mat = ph.materials[seg.material_tag]
+EA = axial_stiffness(seg, mat)
+println(&quot;Axial stiffness EA = $EA N&quot;)</code></pre><hr/><h2 id="Workflow:-From-SegmentParameters-to-MooringSegment"><a class="docs-heading-anchor" href="#Workflow:-From-SegmentParameters-to-MooringSegment">Workflow: From SegmentParameters to MooringSegment</a><a id="Workflow:-From-SegmentParameters-to-MooringSegment-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow:-From-SegmentParameters-to-MooringSegment" title="Permalink"></a></h2><p>Understanding how <code>SegmentParameters</code> transforms into <code>MooringSegment</code> helps clarify the package architecture and the role of independent FE spaces:</p><h3 id="1.-**User-Configuration-Stage**-(SegmentParameters)"><a class="docs-heading-anchor" href="#1.-**User-Configuration-Stage**-(SegmentParameters)">1. <strong>User Configuration Stage</strong> (<code>SegmentParameters</code>)</a><a id="1.-**User-Configuration-Stage**-(SegmentParameters)-1"></a><a class="docs-heading-anchor-permalink" href="#1.-**User-Configuration-Stage**-(SegmentParameters)" title="Permalink"></a></h3><p>You define segment properties in YAML or Julia:</p><pre><code class="language-julia hljs"># Define configuration
+ph.segments[1] = PH.SegmentParameters(
+    id=1,
+    start_point=1,
+    stop_point=2,
+    length=100.0,
+    area=0.00785,
+    density=7850.0,
+    material_tag=&quot;steel_chain&quot;
+)</code></pre><p>At this stage, you&#39;re working with <strong>physical properties</strong> (length, area, density, material).</p><h3 id="2.-**Geometry-Generation-Stage**"><a class="docs-heading-anchor" href="#2.-**Geometry-Generation-Stage**">2. <strong>Geometry Generation Stage</strong></a><a id="2.-**Geometry-Generation-Stage**-1"></a><a class="docs-heading-anchor-permalink" href="#2.-**Geometry-Generation-Stage**" title="Permalink"></a></h3><p>The package uses your <code>SegmentParameters</code> to create a discrete geometric model with mesh:</p><pre><code class="language-julia hljs"># Package internally creates geometry from your parameters
+model = create_mooring_discrete_model(ph)</code></pre><p>The length and point connections from <code>SegmentParameters</code> are used to generate the 1D mesh for each segment.</p><h3 id="3.-**FEM-Setup-Stage**-(MooringSegment)"><a class="docs-heading-anchor" href="#3.-**FEM-Setup-Stage**-(MooringSegment)">3. <strong>FEM Setup Stage</strong> (<code>MooringSegment</code>)</a><a id="3.-**FEM-Setup-Stage**-(MooringSegment)-1"></a><a class="docs-heading-anchor-permalink" href="#3.-**FEM-Setup-Stage**-(MooringSegment)" title="Permalink"></a></h3><p>The package creates <code>MooringSegment</code> instances with <strong>dedicated FE spaces</strong> for each segment:</p><pre><code class="language-julia hljs"># Package internally creates MooringSegment from the discrete model
+mooring_segment = MooringSegment(
+    model,              # Discrete model with mesh
+    &quot;Segment_1&quot;,        # Tag from SegmentParameters
+    pointA,             # MooringPoint (start)
+    pointB,             # MooringPoint (stop)
+    map_function,       # Geometric map (linear/quadratic)
+    material,           # Material constitutive law
+    density,            # Submerged density
+    area                # Cross-sectional area
+)
+
+# Critical: Each segment gets its own FE space
+U1, V1 = get_transient_FESpaces(segment1, order=1, dim=2)
+U2, V2 = get_transient_FESpaces(segment2, order=1, dim=2)
+# U1 and U2 are INDEPENDENT finite element spaces</code></pre><p>At this stage, you&#39;re working with <strong>FEM structures</strong> (triangulations, FE spaces, residual functions).</p><h3 id="4.-**Why-Each-Segment-Has-Its-Own-FE-Space**"><a class="docs-heading-anchor" href="#4.-**Why-Each-Segment-Has-Its-Own-FE-Space**">4. <strong>Why Each Segment Has Its Own FE Space</strong></a><a id="4.-**Why-Each-Segment-Has-Its-Own-FE-Space**-1"></a><a class="docs-heading-anchor-permalink" href="#4.-**Why-Each-Segment-Has-Its-Own-FE-Space**" title="Permalink"></a></h3><p>This is a <strong>key architectural feature</strong> of Mooring.jl:</p><p><strong>Benefits:</strong></p><ul><li><strong>Flexible mesh refinement</strong>: Each segment can have different element sizes</li><li><strong>Independent DOFs</strong>: Degrees of freedom are local to each segment</li><li><strong>Easy assembly</strong>: Segments are coupled only at shared points through boundary conditions</li><li><strong>Modular design</strong>: Add/remove segments without affecting others</li><li><strong>Parallel potential</strong>: Segments can be processed independently</li></ul><p><strong>Example:</strong></p><pre><code class="language-julia hljs"># Three segments with different properties
+segment1: order=1, 10 elements  → FE space V1 (11 nodes × dim DOFs)
+segment2: order=2, 20 elements  → FE space V2 (41 nodes × dim DOFs)  
+segment3: order=1, 5 elements   → FE space V3 (6 nodes × dim DOFs)
+
+# Each has independent DOFs, coupled at endpoints</code></pre><h3 id="5.-**What-Each-Structure-Contains**"><a class="docs-heading-anchor" href="#5.-**What-Each-Structure-Contains**">5. <strong>What Each Structure Contains</strong></a><a id="5.-**What-Each-Structure-Contains**-1"></a><a class="docs-heading-anchor-permalink" href="#5.-**What-Each-Structure-Contains**" title="Permalink"></a></h3><table><tr><th style="text-align: right">Aspect</th><th style="text-align: right">SegmentParameters</th><th style="text-align: right">MooringSegment</th></tr><tr><td style="text-align: right"><strong>Purpose</strong></td><td style="text-align: right">User configuration</td><td style="text-align: right">FEM computation</td></tr><tr><td style="text-align: right"><strong>Contains</strong></td><td style="text-align: right">Length, area, density, material tag</td><td style="text-align: right">Triangulation, FE space, material law, residual</td></tr><tr><td style="text-align: right"><strong>Mesh info</strong></td><td style="text-align: right">None (just length)</td><td style="text-align: right">Complete 1D triangulation</td></tr><tr><td style="text-align: right"><strong>FE space</strong></td><td style="text-align: right">N/A</td><td style="text-align: right">Dedicated TestFESpace &amp; TrialFESpace</td></tr><tr><td style="text-align: right"><strong>Coupling</strong></td><td style="text-align: right">Point IDs (start/stop)</td><td style="text-align: right">MooringPoint instances with boundary conditions</td></tr><tr><td style="text-align: right"><strong>When used</strong></td><td style="text-align: right">Parameter setup, YAML I/O</td><td style="text-align: right">Assembly, solving, post-processing</td></tr><tr><td style="text-align: right"><strong>Typical user</strong></td><td style="text-align: right">You (simulation setup)</td><td style="text-align: right">Package internals (solver)</td></tr></table><h3 id="6.-**When-You-Interact-With-Each**"><a class="docs-heading-anchor" href="#6.-**When-You-Interact-With-Each**">6. <strong>When You Interact With Each</strong></a><a id="6.-**When-You-Interact-With-Each**-1"></a><a class="docs-heading-anchor-permalink" href="#6.-**When-You-Interact-With-Each**" title="Permalink"></a></h3><p><strong>Work with <code>SegmentParameters</code> when:</strong></p><ul><li>Reading/writing YAML configuration files</li><li>Setting up simulation parameters (length, area, density)</li><li>Defining material and drag tags</li><li>Connecting segments to points</li><li>Parametric studies (changing properties)</li></ul><p><strong>Work with <code>MooringSegment</code> when:</strong></p><ul><li>Extending the package with custom residuals</li><li>Implementing custom material models</li><li>Developing advanced FEM features (higher-order elements)</li><li>Debugging FEM assembly and solving</li><li>Post-processing stress/strain fields</li></ul><p><strong>Key Takeaway:</strong> You primarily work with <code>SegmentParameters</code> for configuration. The package automatically handles:</p><ul><li>Conversion to <code>MooringSegment</code> with dedicated FE spaces</li><li>Mesh generation for each segment</li><li>Coupling between segments at shared points</li><li>Assembly of the global FEM system</li></ul><hr/><h2 id="Physical-Map-Functions"><a class="docs-heading-anchor" href="#Physical-Map-Functions">Physical Map Functions</a><a id="Physical-Map-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Physical-Map-Functions" title="Permalink"></a></h2><p>Mooring.jl provides functions to map from reference (1D) coordinates to physical (2D/3D) space:</p><h3 id="Linear-Map"><a class="docs-heading-anchor" href="#Linear-Map">Linear Map</a><a id="Linear-Map-1"></a><a class="docs-heading-anchor-permalink" href="#Linear-Map" title="Permalink"></a></h3><p>Creates a straight line between endpoints:</p><pre><code class="language-julia hljs"># Used automatically when segment length ≈ straight distance
+# Good for taut cables with minimal sag</code></pre><h3 id="Quadratic-Map"><a class="docs-heading-anchor" href="#Quadratic-Map">Quadratic Map</a><a id="Quadratic-Map-1"></a><a class="docs-heading-anchor-permalink" href="#Quadratic-Map" title="Permalink"></a></h3><p>Creates a catenary-like parabolic curve with correct arc length:</p><pre><code class="language-julia hljs"># Used automatically when segment length &gt; straight distance
+# Provides better initial guess for hanging cables
+# Reduces Newton iterations in quasi-static analysis</code></pre><p>The choice of map is handled automatically based on the geometry. See <a href="../../API/Entities/MooringLine/">MooringLine API</a> for details.</p><hr/><h2 id="Best-Practices"><a class="docs-heading-anchor" href="#Best-Practices">Best Practices</a><a id="Best-Practices-1"></a><a class="docs-heading-anchor-permalink" href="#Best-Practices" title="Permalink"></a></h2><h3 id="Segment-Length-Guidelines"><a class="docs-heading-anchor" href="#Segment-Length-Guidelines">Segment Length Guidelines</a><a id="Segment-Length-Guidelines-1"></a><a class="docs-heading-anchor-permalink" href="#Segment-Length-Guidelines" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Calculate straight-line distance
+dx = x2 - x1
+dy = y2 - y1  # (0 for 2D)
+dz = z2 - z1
+straight_distance = sqrt(dx^2 + dy^2 + dz^2)
+
+# Recommended excess for catenary
+if cable_type == &quot;chain&quot;
+    excess = 0.05 to 0.15  # 5-15% excess
+elseif cable_type == &quot;synthetic&quot;
+    excess = 0.10 to 0.20  # 10-20% excess (more flexible)
+end
+
+segment_length = straight_distance * (1 + excess)</code></pre><h3 id="Material-Selection"><a class="docs-heading-anchor" href="#Material-Selection">Material Selection</a><a id="Material-Selection-1"></a><a class="docs-heading-anchor-permalink" href="#Material-Selection" title="Permalink"></a></h3><table><tr><th style="text-align: right">Application</th><th style="text-align: right">Recommended Material</th><th style="text-align: right">Why</th></tr><tr><td style="text-align: right">Deep water (&gt;1000m)</td><td style="text-align: right">Polyester rope</td><td style="text-align: right">Lighter weight, less bottom tension</td></tr><tr><td style="text-align: right">Harsh environment</td><td style="text-align: right">Chain</td><td style="text-align: right">Abrasion resistance</td></tr><tr><td style="text-align: right">Dynamic loads</td><td style="text-align: right">Nylon rope</td><td style="text-align: right">Energy absorption</td></tr><tr><td style="text-align: right">Shallow water</td><td style="text-align: right">Chain</td><td style="text-align: right">Cost-effective, proven</td></tr></table><h3 id="Area-and-Density"><a class="docs-heading-anchor" href="#Area-and-Density">Area and Density</a><a id="Area-and-Density-1"></a><a class="docs-heading-anchor-permalink" href="#Area-and-Density" title="Permalink"></a></h3><p>Always verify your values:</p><pre><code class="language-julia hljs"># For circular cross-section
+diameter = 0.120  # 120mm
+area = π * (diameter/2)^2  # = 0.0113 m²
+
+# Check submerged weight makes sense
+weight_per_meter = (density - 1025.0) * area * 9.81
+println(&quot;Submerged weight: $weight_per_meter N/m&quot;)
+# Should be positive for steel, negative for buoyant synthetic ropes</code></pre><hr/><h2 id="Common-Issues"><a class="docs-heading-anchor" href="#Common-Issues">Common Issues</a><a id="Common-Issues-1"></a><a class="docs-heading-anchor-permalink" href="#Common-Issues" title="Permalink"></a></h2><h3 id="Problem:-Segment-length-too-short"><a class="docs-heading-anchor" href="#Problem:-Segment-length-too-short">Problem: Segment length too short</a><a id="Problem:-Segment-length-too-short-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-Segment-length-too-short" title="Permalink"></a></h3><p><strong>Symptoms</strong>: Solver fails to converge, unphysical tension</p><pre><code class="language-julia hljs"># Bad: Length less than straight distance
+straight_dist = 100.0
+segment_length = 90.0  # Too short!</code></pre><p><strong>Solution</strong>: Ensure length ≥ straight distance + sag allowance</p><pre><code class="language-julia hljs"># Good: Add appropriate excess
+straight_dist = 100.0
+segment_length = 110.0  # 10% excess for catenary</code></pre><h3 id="Problem:-Inconsistent-units"><a class="docs-heading-anchor" href="#Problem:-Inconsistent-units">Problem: Inconsistent units</a><a id="Problem:-Inconsistent-units-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-Inconsistent-units" title="Permalink"></a></h3><p><strong>Symptoms</strong>: Extremely large/small values, numerical issues</p><pre><code class="language-julia hljs"># Bad: Mixed units
+area = 120.0       # Thought mm², actually m²!
+density = 7.85     # Thought kg/m³, actually g/cm³!</code></pre><p><strong>Solution</strong>: Always use SI units</p><pre><code class="language-julia hljs"># Good: Consistent SI units
+area = 0.0113      # m² (from 120mm diameter)
+density = 7850.0   # kg/m³</code></pre><h3 id="Problem:-Wrong-material-tag"><a class="docs-heading-anchor" href="#Problem:-Wrong-material-tag">Problem: Wrong material tag</a><a id="Problem:-Wrong-material-tag-1"></a><a class="docs-heading-anchor-permalink" href="#Problem:-Wrong-material-tag" title="Permalink"></a></h3><p><strong>Symptoms</strong>: Error &quot;material tag not found&quot;</p><pre><code class="language-julia hljs"># Define material before referencing it
+ph.materials[&quot;chain&quot;] = PH.MaterialParameters(...)
+ph.segments[1] = PH.SegmentParameters(material_tag=&quot;chain&quot;, ...)</code></pre><hr/><h2 id="Next-Steps"><a class="docs-heading-anchor" href="#Next-Steps">Next Steps</a><a id="Next-Steps-1"></a><a class="docs-heading-anchor-permalink" href="#Next-Steps" title="Permalink"></a></h2><p>After defining segments:</p><ol><li>Assemble segments into <a href="../lines/">Complete Lines</a></li><li>Configure <a href="../../API/Physics/Materials/">Material Properties</a> in detail</li><li>Run <a href="../lines/#solving-quasi-static-equilibrium">Quasi-Static Analysis</a></li></ol><h2 id="See-Also"><a class="docs-heading-anchor" href="#See-Also">See Also</a><a id="See-Also-1"></a><a class="docs-heading-anchor-permalink" href="#See-Also" title="Permalink"></a></h2><ul><li><a href="../../API/Entities/MooringSegment/">API: MooringSegment</a></li><li><a href="../../API/Physics/Materials/">API: Materials</a></li><li><a href="../../API/Physics/Drag/">API: Drag Models</a></li><li><a href="../../API/Physics/SeaBed/">API: SeaBed Interaction</a></li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../points/">« Points</a><a class="docs-footer-nextpage" href="../lines/">Lines »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.0 on <span class="colophon-date" title="Saturday 15 November 2025 20:47">Saturday 15 November 2025</span>. Using Julia version 1.12.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
