@@ -2,13 +2,34 @@
 
 **Mooring.jl** is a Julia package for simulating mooring lines using the Finite Element Method. The package is based on **dynamic finite strain theory** and **tangential differential calculus**. **Mooring.jl** supports linear elastic, nonlinear elastic and nonlinear viscoelastic material properties, providing an accurate and efficient framework for modeling the behavior of mooring lines in offshore applications, either for chain/steel based cables or synthetic ropes.
 
-## Features
-- **Finite Element Method (FEM)** for high-fidelity mooring line simulations, with arbitrary order of interpolation
-- **Dynamic finite strain theory** for large deformation analysis
-- **Tangential differential calculus** for geometric consistency in simulations with complex material models
-- **Linear and nonlinear material models** including viscoelastic effects, relevant for synthetic ropes
-- **Efficient time integration schemes** for dynamic analysis
-- **Modular and extensible** design for research and engineering applications
+## Key Features
+
+### Advanced Finite Element Method
+- **Arbitrary interpolation order**: Use linear, quadratic, or higher-order finite elements for enhanced accuracy
+- **Wide variety of FE spaces**: Support for H¹-conforming spaces (continuous), L²-conforming spaces (discontinuous), and other Sobolev spaces
+- **Flexible discretization**: Independent mesh refinement and interpolation order per segment
+- **Multifield formulation**: Each mooring line uses multifield FE spaces combining segment-level spaces
+- **Independent FE space per segment**: Modular design enabling different discretizations for each segment
+- **Gridap.jl foundation**: Leverages powerful FEM abstractions for complex PDEs
+
+### Robust Nonlinear Mechanics
+- **Dynamic finite strain theory**: Geometrically exact formulation for arbitrarily large deformations
+- **Nonlinear constitutive models**: Support for linear elastic and nonlinear viscoelastic materials (Scharpery model). Easy to extend to user-defined models
+- **Tangential differential calculus**: Rigorous geometric framework ensuring consistency in 1D cable dynamics in 2D/3D space
+- **Fully implicit time integration**: Robust schemes for highly nonlinear and dynamic problems with strong stability. Wide variety of schemes: Newmark-β, generalized-α, backward Euler, Runge-Kutta, ...
+- **Automatic differentiation**: Jacobian computation for both geometric and material nonlinearities without manual derivations
+
+### Modular and Extensible Architecture
+- **Easy material implementation**: Add custom constitutive models by implementing stress functions
+- **Flexible forcing terms**: Simple to incorporate add-hoc forcing functions. Currently, drag forces, seabed interaction, buoyancy, wave loading are implemented
+- **Clear separation**: Parameter configuration (user level) vs. FEM operations (solver level)
+
+### User-Friendly Interface
+- **YAML configuration**: Define complete mooring systems without writing code
+- **Parameter handler**: Intuitive API for programmatic setup in Julia
+- **Comprehensive documentation**: Detailed user guides and API reference
+- **Easy installation**: Simple package manager installation
+- **Minimal dependencies**: Core Julia ecosystem with Gridap.jl for FEM
 
 ## Installation
 
