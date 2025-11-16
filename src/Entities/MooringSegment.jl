@@ -8,6 +8,8 @@ using Gridap.CellData
 import Mooring.Materials as M
 import Mooring.MooringPoints as Pts
 import Mooring.TangentialDiffCalculus as TDC
+import Mooring.ParameterHandlers as PH
+import Mooring.SeaBed as SB
 
 """
 MooringSegment Struct
@@ -23,6 +25,7 @@ to undeformed configuration.
 - `density::Real`: Submerged density of the segment (default is 1.0)
 - `area::Real`: Effective cross-sectional area of the segment (default is 1.0)
 - `phys_dim::Int`: Physical dimension of the segment
+- `seabed::SeaBedParameters`: Seabed parameters for line-bed contact interactions
 """
 struct MooringSegment
   tag::String
@@ -33,15 +36,16 @@ struct MooringSegment
   density::Real
   area::Real
   phys_dim::Int
+  seabed::PH.SeaBedParameters
 end
 
 """
 MooringSegment(model::DiscreteModel, segment_tag::String, pointA::Pts.MooringPoint, pointB::Pts.MooringPoint,
-        map::Function, material::Material, density::Real=1.0, area::Real=1.0)
+        map::Function, material::Material, density::Real=1.0, area::Real=1.0, seabed::PH.SeaBedParameters=PH.SeaBedParameters())
 
 Create a segment in the mooring system from a discrete model. The triangulations of the segment 
 and boundaries are created from the model. The segment is defined by its tag, the triangulation,
-the mapping function, and the material properties.
+the mapping function, the material properties, and the seabed parameters.
 """
 function MooringSegment(model::DiscreteModel, 
                  segment_tag::String, 
@@ -50,7 +54,8 @@ function MooringSegment(model::DiscreteModel,
                  map::Function, 
                  material::M.Material,
                  density::Real=1.0, 
-                 area::Real=1.0)  
+                 area::Real=1.0,
+                 seabed::PH.SeaBedParameters=PH.SeaBedParameters())  
 
   # Get the triangulation of the segment
   trian = Interior(model, tags=[segment_tag])
@@ -59,7 +64,7 @@ function MooringSegment(model::DiscreteModel,
   phys_dim = length(map(VectorValue(0.0)))
 
   # Create the segment
-  return MooringSegment(segment_tag, trian, [pointA, pointB], map, material, density, area, phys_dim)
+  return MooringSegment(segment_tag, trian, [pointA, pointB], map, material, density, area, phys_dim, seabed)
 end
 
 """
@@ -116,6 +121,12 @@ get_density(s::MooringSegment) = s.density
   Get the area of a segment
 """
 get_area(s::MooringSegment) = s.area
+
+"""
+  get_seabed(s::MooringSegment)
+  Get the seabed parameters of a segment
+"""
+get_seabed(s::MooringSegment) = s.seabed
 
 """
   get_dirichlet_tags(s::MooringSegment)
@@ -269,9 +280,15 @@ function get_quasi_static_residual(s::MooringSegment, Xₕ::CellField, g::Real=9
   gravity_value = -get_density(s) * get_area(s) * g
   Fᵨ = VectorValue(ntuple(i -> i == dims ? gravity_value : 0.0, dims))
 
+  # F_bed = SB.sea_bed_force(s.seabed, Xₕ, Q', S(u), 
+  #               maximum(eigvals(S(u)(get_cell_coordinates(Xₕ)[1]))), 
+  #               zero(VectorValue{dims,Float64}), zero(TensorValue{dims,dims,Float64}), 
+  #               zero(VectorValue{dims,Float64}))
+
   # Define the residual function
   res(u, v) = ∫(((∇(v)' ⋅ Q') ⊙ K(u)) * Jabs)dΩ -
-              ∫((v ⋅ Fᵨ) * Jabs)dΩ
+              ∫((v ⋅ Fᵨ) * Jabs)dΩ #-
+              # ∫((v ⋅ Fᵨ) * Jabs)dΩ
 
   return res
 end

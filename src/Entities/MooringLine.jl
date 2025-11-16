@@ -329,6 +329,7 @@ function setup_lines(ph::PH.ParameterHandler)
       map = get_physical_quadratic_map(seg_params, ph, start_point, stop_point)
       mat_params = ph.materials[seg_params.material_tag]
       material = Mat.Material(mat_params)
+      seabed = ph.seabeds[seg_params.seabed_tag]
       segment = Seg.MooringSegment(model, 
                                    seg_params.tag,
                                    points[seg_params.start_point],
@@ -336,7 +337,8 @@ function setup_lines(ph::PH.ParameterHandler)
                                    map, 
                                    material, 
                                    seg_params.density,
-                                   seg_params.area)
+                                   seg_params.area,
+                                   seabed)
       segments[s_id] = segment
     end
 
