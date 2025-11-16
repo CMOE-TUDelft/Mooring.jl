@@ -310,7 +310,7 @@ mutable struct ParameterHandler
   waves::Dict{String, WaveParameters}
   materials::Dict{String, MaterialParameters}
   motions::Dict{String, MotionParameters}
-  seabeds::Dict{String, SeaBedParameters}
+  seabeds::Dict{String, Union{SeaBedParameters, Nothing}}
 end
 
 """
@@ -327,7 +327,7 @@ function ParameterHandler()
   Dict{String, WaveParameters}("default_waves"=>WaveParameters()),
   Dict{String, MaterialParameters}("default_material"=>MaterialParameters()),
   Dict{String, MotionParameters}("default_motion"=>MotionParameters()),
-  Dict{String, SeaBedParameters}("default_seabed"=>SeaBedParameters())
+  Dict{String, Union{SeaBedParameters, Nothing}}("default_seabed"=>nothing)
   )
 end
 
@@ -509,7 +509,7 @@ function _handler_to_dict(ph::ParameterHandler)
   "waves"     => [Dict(String(field) => getfield(w, field) for field in fieldnames(WaveParameters)) for w in values(ph.waves)],
   "materials" => [Dict(String(field) => getfield(m, field) for field in fieldnames(MaterialParameters)) for m in values(ph.materials)],
   "motions"   => [Dict(String(field) => getfield(mo, field) for field in fieldnames(MotionParameters)) for mo in values(ph.motions)],
-  "seabeds"   => [Dict(String(field) => getfield(sb, field) for field in fieldnames(SeaBedParameters)) for sb in values(ph.seabeds)],
+  "seabeds"   => [Dict(String(field) => getfield(sb, field) for field in fieldnames(SeaBedParameters)) for sb in values(ph.seabeds) if sb !== nothing],
   )
 end
 

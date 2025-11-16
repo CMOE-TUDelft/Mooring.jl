@@ -25,7 +25,7 @@ to undeformed configuration.
 - `density::Real`: Submerged density of the segment (default is 1.0)
 - `area::Real`: Effective cross-sectional area of the segment (default is 1.0)
 - `phys_dim::Int`: Physical dimension of the segment
-- `seabed::SeaBedParameters`: Seabed parameters for line-bed contact interactions
+- `seabed::Union{SeaBedParameters, Nothing}`: Seabed parameters for line-bed contact interactions (nothing if no seabed interaction)
 """
 struct MooringSegment
   tag::String
@@ -36,12 +36,12 @@ struct MooringSegment
   density::Real
   area::Real
   phys_dim::Int
-  seabed::PH.SeaBedParameters
+  seabed::Union{PH.SeaBedParameters, Nothing}
 end
 
 """
 MooringSegment(model::DiscreteModel, segment_tag::String, pointA::Pts.MooringPoint, pointB::Pts.MooringPoint,
-        map::Function, material::Material, density::Real=1.0, area::Real=1.0, seabed::PH.SeaBedParameters=PH.SeaBedParameters())
+        map::Function, material::Material, density::Real=1.0, area::Real=1.0, seabed::Union{PH.SeaBedParameters, Nothing}=nothing)
 
 Create a segment in the mooring system from a discrete model. The triangulations of the segment 
 and boundaries are created from the model. The segment is defined by its tag, the triangulation,
@@ -55,7 +55,7 @@ function MooringSegment(model::DiscreteModel,
                  material::M.Material,
                  density::Real=1.0, 
                  area::Real=1.0,
-                 seabed::PH.SeaBedParameters=PH.SeaBedParameters())  
+                 seabed::Union{PH.SeaBedParameters, Nothing}=nothing)  
 
   # Get the triangulation of the segment
   trian = Interior(model, tags=[segment_tag])
@@ -275,20 +275,31 @@ function get_quasi_static_residual(s::MooringSegment, Xₕ::CellField, g::Real=9
   FΓ(u) = TDC.FΓ(u, Xₕ)
   K(u) = M.K∘(FΓ(u), S(u))
 
-  # Define gravity force
+  # Define vertical unit vector
   dims = get_physical_dim(s)
-  gravity_value = -get_density(s) * get_area(s) * g
-  Fᵨ = VectorValue(ntuple(i -> i == dims ? gravity_value : 0.0, dims))
+  e_z = VectorValue(ntuple(i -> i == dims ? 1.0 : 0.0, dims))
 
-  # F_bed = SB.sea_bed_force(s.seabed, Xₕ, Q', S(u), 
-  #               maximum(eigvals(S(u)(get_cell_coordinates(Xₕ)[1]))), 
-  #               zero(VectorValue{dims,Float64}), zero(TensorValue{dims,dims,Float64}), 
-  #               zero(VectorValue{dims,Float64}))
+  # Define gravity force
+  gravity_value = -get_density(s) * get_area(s) * g
+  Fᵨ = gravity_value * e_z
+            
+  # Sea bed force
+  res_bed = 
+  if s.seabed !== nothing
+    j(u) = TDC.j(FΓ(u),J)
+    Λ(u) = TDC.Λ(j(u),J)
+    function F_bed(u,X,Λ)
+      F = SB.sea_bed_force(s.seabed, X, u, 0.0*u, Λ, e_z)
+      return F*e_z
+    end
+    (u,v) -> ∫((v ⋅(F_bed∘(u,Xₕ,Λ(u)))) * Jabs)dΩ
+  else
+    (u,v) -> ∫(0.0*(v ⋅ u))dΩ
+  end
 
   # Define the residual function
-  res(u, v) = ∫(((∇(v)' ⋅ Q') ⊙ K(u)) * Jabs)dΩ -
-              ∫((v ⋅ Fᵨ) * Jabs)dΩ #-
-              # ∫((v ⋅ Fᵨ) * Jabs)dΩ
+  res(u, v) = ∫(((∇(v)' ⋅ Q') ⊙ K(u)) * Jabs)dΩ - ∫((v ⋅ Fᵨ) * Jabs)dΩ -
+              res_bed(u,v)
 
   return res
 end

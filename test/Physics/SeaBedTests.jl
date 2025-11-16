@@ -1,4 +1,5 @@
 import Mooring.SeaBed as SB
+import Mooring.TangentialDiffCalculus as TDC
 using Parameters
 
 # Testing SeaBedParameters
@@ -25,12 +26,17 @@ modified_params = SB.set_still_weight(sea_bed_params, 1.0)
 
 # Testing sea_bed_force
 X = VectorValue(0.0, 0.0)
-QTr = TensorValue(1.0, 0.0, 0.0, 1.0)
-T1s = VectorValue(1.0, 0.0)
-T1m = 2.0
 u = VectorValue(0.0, 0.0)
-∇u = TensorValue(1.0, 0.0, 0.0, 1.0)
+J = TensorValue(1.0, 0.0, 0.0, 1.0)
+FΓ = TDC.FΓ(J)
+j = TDC.j(FΓ, J)
+Λ = TDC.Λ(j, J)
+# QTr = TensorValue(1.0, 0.0, 0.0, 1.0)
+# T1s = VectorValue(1.0, 0.0)
+# T1m = 2.0
+# ∇u = TensorValue(1.0, 0.0, 0.0, 1.0)
 v = VectorValue(0.0, 0.0)
-@test SB.sea_bed_force(sea_bed_params, X, QTr, T1s, T1m, u, ∇u, v) == 0.0
+e_z = VectorValue(0.0, 1.0)
+@test SB.sea_bed_force(sea_bed_params, X, u, v, Λ, e_z) == 0.0
 u = VectorValue(0.0, -1.0)
-@test SB.sea_bed_force(sea_bed_params, X, QTr, T1s, T1m, u, ∇u, v) == 2.0 * sea_bed_params.cnstz
+@test SB.sea_bed_force(sea_bed_params, X, u, v, Λ, e_z) == 2.0 * Λ * sea_bed_params.cnstz
