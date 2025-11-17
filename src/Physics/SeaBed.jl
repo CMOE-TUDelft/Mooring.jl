@@ -151,15 +151,14 @@ Input:
 - `v::VectorValue`: Velocity of the line
 - `Λ::Real`: Stretch along the line
 - `e_z::VectorValue`: Unit vector in the vertical direction
-- `z0::Real`: Reference elevation of the sea bed (default is 0.0)
 
 Output:
 - `VectorValue`: Force exerted by the sea bed at a given point in the line
 """
 function sea_bed_force(params::SeaBedParameters, X::VectorValue, 
-    u::VectorValue, v::VectorValue, Λ::Real, e_z::VectorValue, z0::Real=0.0)
+    u::VectorValue, v::VectorValue, Λ::Real, e_z::VectorValue)
     
-    excursion = z0 - e_z ⋅ (X + u)
+    excursion = params.z0 - e_z ⋅ (X + u)
     ramp_factor = ramp_tanh(params, excursion)
     half_ramp_factor = min(1.0, ramp_factor)
     

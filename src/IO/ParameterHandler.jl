@@ -255,6 +255,7 @@ The following parameters are included, with default values:
 - `penetration_depth_ramp::Real = 1e-3`: Penetration depth ramp function parameter [m]
 - `still_weight::Real = 0.0`: Still weight [N]
 - `cnstz::Real = 0.0`: Constant spring stiffness of the sea bed [N/m]
+- `z0::Real = 0.0`: Reference seabed level [m]
   
 Relevant references:
 - Quadratic law impact damping: https://doi.org/10.1080/0020739X.2021.1954253
@@ -271,6 +272,7 @@ Relevant references:
   penetration_depth_ramp::Real = 1.0e-3
   still_weight::Real = 0.0
   cnstz::Real = kn * od / A
+  z0::Real = 0.0
 end
 
 """
