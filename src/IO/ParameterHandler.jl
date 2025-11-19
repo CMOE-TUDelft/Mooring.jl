@@ -233,7 +233,7 @@ for `WaveMotion`:
 """
 @with_kw struct MotionParameters
   tag::String = "default_motion"
-  type::String = "CustomMotion"
+  type::Union{String, Nothing} = "CustomMotion"
   # CustomMotion parameters
   f::String = "(t,x) -> VectorValue(0.0, 0.0)" # function f(t,x,y,z) of time (t) and position (x,y,z) in string format
   # WaveMotion parameters
