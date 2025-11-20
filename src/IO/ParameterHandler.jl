@@ -233,7 +233,7 @@ for `WaveMotion`:
 """
 @with_kw struct MotionParameters
   tag::String = "default_motion"
-  type::String = "CustomMotion"
+  type::Union{String, Nothing} = "CustomMotion"
   # CustomMotion parameters
   f::String = "(t,x) -> VectorValue(0.0, 0.0)" # function f(t,x,y,z) of time (t) and position (x,y,z) in string format
   # WaveMotion parameters
@@ -255,6 +255,7 @@ The following parameters are included, with default values:
 - `penetration_depth_ramp::Real = 1e-3`: Penetration depth ramp function parameter [m]
 - `still_weight::Real = 0.0`: Still weight [N]
 - `cnstz::Real = 0.0`: Constant spring stiffness of the sea bed [N/m]
+- `z0::Real = 0.0`: Reference seabed level [m]
   
 Relevant references:
 - Quadratic law impact damping: https://doi.org/10.1080/0020739X.2021.1954253
@@ -271,6 +272,7 @@ Relevant references:
   penetration_depth_ramp::Real = 1.0e-3
   still_weight::Real = 0.0
   cnstz::Real = kn * od / A
+  z0::Real = 0.0
 end
 
 """
@@ -310,7 +312,7 @@ mutable struct ParameterHandler
   waves::Dict{String, WaveParameters}
   materials::Dict{String, MaterialParameters}
   motions::Dict{String, MotionParameters}
-  seabeds::Dict{String, SeaBedParameters}
+  seabeds::Dict{String, Union{SeaBedParameters, Nothing}}
 end
 
 """
@@ -327,7 +329,7 @@ function ParameterHandler()
   Dict{String, WaveParameters}("default_waves"=>WaveParameters()),
   Dict{String, MaterialParameters}("default_material"=>MaterialParameters()),
   Dict{String, MotionParameters}("default_motion"=>MotionParameters()),
-  Dict{String, SeaBedParameters}("default_seabed"=>SeaBedParameters())
+  Dict{String, Union{SeaBedParameters, Nothing}}("default_seabed"=>nothing)
   )
 end
 
@@ -509,7 +511,7 @@ function _handler_to_dict(ph::ParameterHandler)
   "waves"     => [Dict(String(field) => getfield(w, field) for field in fieldnames(WaveParameters)) for w in values(ph.waves)],
   "materials" => [Dict(String(field) => getfield(m, field) for field in fieldnames(MaterialParameters)) for m in values(ph.materials)],
   "motions"   => [Dict(String(field) => getfield(mo, field) for field in fieldnames(MotionParameters)) for mo in values(ph.motions)],
-  "seabeds"   => [Dict(String(field) => getfield(sb, field) for field in fieldnames(SeaBedParameters)) for sb in values(ph.seabeds)],
+  "seabeds"   => [Dict(String(field) => getfield(sb, field) for field in fieldnames(SeaBedParameters)) for sb in values(ph.seabeds) if sb !== nothing],
   )
 end
 

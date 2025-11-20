@@ -68,7 +68,6 @@ function ramp_linear(params::SeaBedParameters, excursion::Real)
     return 0.0
 end
 
-
 """
 sea_bed_force
 
@@ -77,52 +76,47 @@ excursion of the line into the sea bed, the velocity of the line, and the proper
 The function is defined as:
 
 ```math
-\\alpha_1 * w + \\alpha_2 * k * s_\\Lambda * ( x_z - \\beta_1 * v_z - \\beta_2 * v_z * \\abs(v_z) )
+\\alpha_1 * w + \\alpha_2 * k * \\Lambda * ( x_z - \\beta_1 * v_z - \\beta_2 * v_z * \\abs(v_z) )
 ```
+
+with \$ \\Lambda \$ the stretch along the line, \$ x_z \$ the vertical excursion, and \$ v_z \$ the vertical velocity.
+Computed as:
+```math
+x_z = \\mathbf{e}_z \\cdot (\\mathbf{X} + \\mathbf{u})
+V_z = \\mathbf{e}_z \\cdot \\mathbf{v}
+```
+
 
 Input:
 - `params::SeaBedParameters`: Sea bed parameters
 - `X::VectorValue`: Position of the line
-- `QTr::TensorValue`: Transformation matrix \$ Q^T \$
-- `T1s::TensorValue`: Stress tensor
-- `T1m::Real`: Maximum stress
 - `u::VectorValue`: Displacement of the line
-- `∇u::TensorValue`: Gradient of the displacement
 - `v::VectorValue`: Velocity of the line
+- `Λ::Real`: Stretch along the line
+- `e_z::VectorValue`: Unit vector in the vertical direction
 
 Output:
 - `VectorValue`: Force exerted by the sea bed at a given point in the line
 """
 function sea_bed_force(params::SeaBedParameters, X::VectorValue, 
-    QTr::TensorValue, T1s::VectorValue, T1m::Real, 
-    u::VectorValue, ∇u::TensorValue, v::VectorValue)
-  
-    # Define local variables
-    local excursion, ramp_factor
-    local FΓ, t1s, t1m2, sΛ        
-  
-    excursion = VectorValue(0.0,-1.0) ⋅ (X + u) # assumes flat bed in the x-y plane
+    u::VectorValue, v::VectorValue, Λ::Real, e_z::VectorValue)
+    
+    excursion = params.z0 - e_z ⋅ (X + u)
     ramp_factor = ramp_tanh(params, excursion)
     half_ramp_factor = min(1.0, ramp_factor)
-  
-    vz = VectorValue(0.0, 1.0) ⋅ v # velocity in the z direction
-  
-    FΓ = ( ∇u' ⋅ QTr ) + TensorValue(1.0,0.0,0.0,1.0)
-    t1s = FΓ ⋅ T1s
-    t1m2 = t1s ⋅ t1s    
-  
-    sΛ = (t1m2.^0.5) / T1m # Stretch along the line
+    
+    vz = e_z ⋅ v # velocity in the z direction
     
     # params.cnstz = params.kn * params.od / params.A
     @unpack still_weight, cnstz, linear_damping_factor, quadratic_damping_factor = params
 
     return half_ramp_factor * still_weight  + 
-      ramp_factor * cnstz * sΛ * ( 
-        excursion +
-        -linear_damping_factor * vz +
-        -quadratic_damping_factor * vz * abs(vz) 
-      )
-  
-  end
-
+    ramp_factor * cnstz * Λ * ( 
+    excursion +
+    -linear_damping_factor * vz +
+    -quadratic_damping_factor * vz * abs(vz) 
+    )
+    
 end
+
+end # module SeaBed

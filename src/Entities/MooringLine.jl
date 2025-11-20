@@ -329,6 +329,7 @@ function setup_lines(ph::PH.ParameterHandler)
       map = get_physical_quadratic_map(seg_params, ph, start_point, stop_point)
       mat_params = ph.materials[seg_params.material_tag]
       material = Mat.Material(mat_params)
+      seabed = ph.seabeds[seg_params.seabed_tag]
       segment = Seg.MooringSegment(model, 
                                    seg_params.tag,
                                    points[seg_params.start_point],
@@ -336,7 +337,8 @@ function setup_lines(ph::PH.ParameterHandler)
                                    map, 
                                    material, 
                                    seg_params.density,
-                                   seg_params.area)
+                                   seg_params.area,
+                                   seabed)
       segments[s_id] = segment
     end
 
@@ -359,13 +361,12 @@ It returns a tuple containing:
 - `Y`: A `MultiFieldFESpace` that combines the test finite element spaces of all segments.
 """
 function get_transient_FE_spaces(line::MooringLine)
-  test_spaces = SingleFieldFESpace[]
-  trial_spaces = TransientTrialFESpace[]
+  nsegments = length(line.segments)
+  test_spaces = Vector{SingleFieldFESpace}(undef, nsegments)
+  trial_spaces = Vector{TransientTrialFESpace}(undef, nsegments)
   for (s_id, segment) in line.segments
     dim = Seg.get_physical_dim(segment)
-    U, V = Seg.get_transient_FESpaces(segment,dim=dim)
-    push!(test_spaces, V)
-    push!(trial_spaces, U)
+    trial_spaces[s_id], test_spaces[s_id] = Seg.get_transient_FESpaces(segment,dim=dim)
   end
   X = TransientMultiFieldFESpace(trial_spaces)
   Y = MultiFieldFESpace(test_spaces)
@@ -380,10 +381,10 @@ It returns a finite element function `Xₕ` that represents the reference config
 The reference configuration is obtained by interpolating the physical maps of each segment in the mooring line
 over the provided finite element space."""
 function get_reference_configuration(line::MooringLine, X::MultiFieldFESpace)
-  maps = Function[]
+  nsegments = length(line.segments)
+  maps = Vector{Function}(undef, nsegments)
   for (s_id, segment) in line.segments
-    map = Seg.get_map(segment)
-    push!(maps, map)
+    maps[s_id] = Seg.get_map(segment)
   end
   Xₕ = interpolate_everywhere(maps, X)
   return Xₕ
@@ -400,10 +401,9 @@ An optional gravitational acceleration parameter `g` can be provided (default is
 Check also [`MooringSegment.get_quasi_static_residual`](@ref) for details on the definition of the segment residual.
 """
 function get_quasi_static_residual(line::MooringLine, Xₕ::MultiFieldFEFunction, g::Float64=9.81)
-  res_terms = Function[]
-  for (s_it,(s_id, segment)) in enumerate(line.segments)
-    res = Seg.get_quasi_static_residual(segment, Xₕ[s_it], g)
-    push!(res_terms, res)
+  res_terms = Vector{Function}(undef, length(line.segments))
+  for (s_id, segment) in line.segments
+    res_terms[s_id] = Seg.get_quasi_static_residual(segment, Xₕ[s_id], g)
   end
   function res(x,y)
     sum(res_terms[i](x[i],y[i]) for i in eachindex(res_terms))
