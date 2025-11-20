@@ -51,25 +51,25 @@ ph.points[1] = PH.PointParameters(
   id=1,
   coords = [fairlead_x, fairlead_y],
   motion_tag="fixed",
-  mesh_size=0.05
+  mesh_size=0.1
 )
 ph.points[2] = PH.PointParameters(
   id=2,
   coords = [fairlead_x + 0.3, fairlead_y - 0.1],  # Intermediate point 1
   motion_tag="free",
-  mesh_size=0.05
+  mesh_size=0.1
 )
 ph.points[3] = PH.PointParameters(
   id=3,
   coords = [fairlead_x + 0.7, anchor_y + 0.1],    # Intermediate point 2
   motion_tag="free",
-  mesh_size=0.05
+  mesh_size=0.1
 )
 ph.points[4] = PH.PointParameters(
   id=4,
   coords = [anchor_x, anchor_y],
   motion_tag="fixed",
-  mesh_size=0.05
+  mesh_size=0.1
 )
 
 # Define segments with different materials
@@ -124,10 +124,11 @@ ph.lines[1] = PH.LineParameters(
 u, x = ML.solve_quasistatic(ph)
 
 for (iline, (u_line, x_ref_line)) in enumerate(zip(u,x))
-  Ω = Interior(get_background_model(get_triangulation(u_line[1])))
-  writevtk(Ω, 
-           "multisegment_2d_line_$(iline).vtu", 
-           cellfields=["u"=>u_line[1], "x"=>x_ref_line[1]])
+  for i_segment in 1:length(u_line)
+    Ω = get_triangulation(u_line[i_segment])
+    writevtk(Ω, "multisegment_2d_line_$(iline)_segment_$(i_segment).vtu", 
+             cellfields=["u"=>u_line[i_segment], "x"=>x_ref_line[i_segment]])
+  end
 end
 
 end # module SingleLineMultiSegment2D
