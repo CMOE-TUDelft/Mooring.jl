@@ -46,17 +46,6 @@ using LinearAlgebra
   @test coords2[1] == 15.0
   @test coords2[4] == 12.0
 
-  # # Check map
-  # x_p1 = ph.points[1].coords
-  # x_p2 = ph.points[2].coords
-  # length1 = norm(x_p2 .- x_p1)
-  # map1 = Topo.get_physical_map(seg1,topo)
-
-  # @test map1(VectorValue(0.0)) ≈ VectorValue(x_p1)
-  # @test map1(VectorValue(length1)) ≈ VectorValue(x_p2)
-  # mid1 = map1(VectorValue(length1/2))
-  # @test mid1 ≈ VectorValue([(x_p1[i] + x_p2[i])/2 for i in 1:3])
-
 end # end of testset
 
 @testset "Discrete model tests" begin

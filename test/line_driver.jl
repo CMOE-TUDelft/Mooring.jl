@@ -24,8 +24,8 @@ model = DM.generate_discrete_model(topo)
 writevtk(model, "model_geo_points_lines")
 
 # Define the mapping function and material
-map1 = Topo.get_physical_map(s1, topo)
-map2 = Topo.get_physical_map(s2, topo)
+map1 = Topo.get_physical_linear_map(s1, topo)
+map2 = Topo.get_physical_linear_map(s2, topo)
 material1 = M.LinearElastic(E=1.0e3)
 material2 = M.LinearElastic(E=1.0e0)
 

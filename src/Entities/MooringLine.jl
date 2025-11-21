@@ -11,6 +11,7 @@ using Gridap.MultiField
 using Gridap.ODEs
 using Gridap.Algebra
 using Gridap.ReferenceFEs: num_point_dims
+using Gridap.Geometry
 using Gridap.Geometry: get_node_coordinates
 using Roots: find_zero
 
@@ -34,33 +35,6 @@ end
 """
 get_segments(line::MooringLine) = line.segments
 
-"""
-get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
-
-This function makes the physical map between two points of a segment.
-Given a coordinate along the segment `r`, it returns the coordinate in the physical space.
-"""
-function get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
-
-  # Get physical coordinates of start and stop points
-  p1_id = seg.start_point
-  p2_id = seg.stop_point
-  x_phys_p1 = ph.points[p1_id].coords
-  x_phys_p2 = ph.points[p2_id].coords
-
-  # Reference coordinates of start and stop points
-  p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
-  p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
-  x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
-  x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
-  @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
-
-  return function(r::VectorValue{1,Float64})
-      s = (r[1] - x_ref_p1) / (x_ref_p2 - x_ref_p1)        # parametric coordinate along segment
-      x_phys = x_phys_p1 .+ s .* (x_phys_p2 .- x_phys_p1) # linear interpolation
-      return VectorValue(x_phys) 
-  end
-end
 
 """
 get_physical_linear_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
@@ -142,10 +116,12 @@ function get_physical_quadratic_map(seg::PH.SegmentParameters, ph::PH.ParameterH
   x_phys_p2 = ph.points[p2_id].coords
 
   # Reference coordinates of start and stop points
-  p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
-  p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
-  x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
-  x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
+  # p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
+  # p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
+  # x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
+  # x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
+  x_ref_p1 = Pts.get_reference_node_coord(start_point)
+  x_ref_p2 = Pts.get_reference_node_coord(stop_point)
   @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
 
   # Determine dimensionality
@@ -311,12 +287,22 @@ function setup_lines(ph::PH.ParameterHandler)
     # Create discrete model
     model = DM.generate_discrete_model(line, ph)
 
+    # Create segment triangulations
+    s_triangulations = Vector{BodyFittedTriangulation}(undef, length(line.segments))
+    for s_id in line.segments
+      tag = ph.segments[s_id].tag
+      s_triangulations[s_id] = Interior(model, tags=[tag])
+    end
+
     # Create MooringPoints
     points = Dict{Int, Pts.MooringPoint}()
     for p_id in line.points
       point_params = ph.points[p_id]
       motion = PM.MotionType(p_id, ph)
-      point = Pts.MooringPoint(model, point_params.tag, motion)
+      # List of segment triangulations connected to this point
+      connected_segments = [s_id for s_id in line.segments if ph.segments[s_id].start_point == p_id || ph.segments[s_id].stop_point == p_id]
+      s_id_and_triangulations = [(s_id,s_triangulations[s_id]) for s_id in connected_segments]
+      point = Pts.MooringPoint(s_id_and_triangulations, point_params.tag, motion)
       points[p_id] = point
     end
 
