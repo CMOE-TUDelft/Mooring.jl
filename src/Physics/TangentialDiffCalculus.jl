@@ -2,6 +2,7 @@ module TangentialDiffCalculus
 
 using Gridap.CellData
 using Gridap.TensorValues
+using Gridap.Geometry: get_triangulation, num_cell_dims
 
 export J, G, Q, ∇ₓΓdir, FΓ, P
 export j, g, q, Λ, Edir, Etang
@@ -177,6 +178,19 @@ The result is a scalar.
 Λ(j,J) = (det(g(j))).^(0.5)/(det(G(J))).^(0.5)
 
 """
+    T(J)
+
+**Tangent vector**
+
+This function returns the unit tangent vector of a given line. The tangent vector is defined as:
+```math
+\\mathbf{T} = \\frac{\\mathbf{J}}{\\|\\mathbf{J}\\|}
+```
+"""
+T(J) = J/sqrt(G(J)[1])
+T(J::CellField) = J / (J'⋅J).^(0.5)
+
+"""
     Edir(FΓ::TensorValue)
 
 **Directional Green-Lagrange strain**
@@ -191,6 +205,10 @@ The directional Green-Lagrange strain is defined as:
 where `I` is the identity tensor. The dimensions of the directional Green-Lagrange strain are `n×n`, where `n` is the dimension of the physical space.
 """
 Edir(FΓ::TensorValue) = 0.5*(FΓ'⋅FΓ - one(FΓ))
+function Edir(FΓ::CellField) 
+    dims = num_cell_dims(get_triangulation(FΓ))
+    0.5*(FΓ'⋅FΓ - one(TensorValue{dims,dims,Float64}))
+end
 
 """
     Etang(P::TensorValue,Edir::TensorValue)
