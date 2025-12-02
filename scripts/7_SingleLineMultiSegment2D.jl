@@ -51,25 +51,25 @@ ph.points[1] = PH.PointParameters(
   id=1,
   coords = [fairlead_x, fairlead_y],
   motion_tag="fixed",
-  mesh_size=0.1
+  mesh_size=0.02
 )
 ph.points[2] = PH.PointParameters(
   id=2,
   coords = [fairlead_x + 0.3, fairlead_y - 0.1],  # Intermediate point 1
   motion_tag="free",
-  mesh_size=0.1
+  mesh_size=0.02
 )
 ph.points[3] = PH.PointParameters(
   id=3,
   coords = [fairlead_x + 0.7, anchor_y + 0.1],    # Intermediate point 2
   motion_tag="free",
-  mesh_size=0.1
+  mesh_size=0.02
 )
 ph.points[4] = PH.PointParameters(
   id=4,
   coords = [anchor_x, anchor_y],
   motion_tag="fixed",
-  mesh_size=0.1
+  mesh_size=0.02
 )
 
 # Define segments with different materials
