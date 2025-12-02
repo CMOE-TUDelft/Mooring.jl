@@ -158,9 +158,9 @@ function get_quasi_static_residual(p::MooringPoint, materials::Vector{M.Material
     K2 = CellFieldAt{:minus}(M.K∘(FΓ2, S2))
     H2 = K2⋅T2
     
-    # Domain contribution (TODO: hard-coded constant 1000 for penalty)
+    # Domain contribution (TODO: hard-coded constant 10000 for penalty)
     c = DomainContribution()
-    add_contribution!(c,Γ, lazy_map(IntegrationMap(),(1000*(jump_u⋅jump_v))(points), weights))
+    add_contribution!(c,Γ, lazy_map(IntegrationMap(),(10000*(jump_u⋅jump_v))(points), weights))
     add_contribution!(c,Γ, lazy_map(IntegrationMap(),((mean_v⋅(H1-H2))⋅VectorValue(1.0))(points), weights))
     return c
 
