@@ -261,6 +261,7 @@ function get_quasi_static_residual(s::MooringSegment, Xₕ::CellField, g::Real=9
   
   # Get the material properties
   material = get_material(s)
+  area = get_area(s)
 
   # Get Measures
   dΩ, dΓ1, dΓ2 = get_measures(s)
@@ -292,13 +293,13 @@ function get_quasi_static_residual(s::MooringSegment, Xₕ::CellField, g::Real=9
       F = SB.sea_bed_force(s.seabed, X, u, 0.0*u, Λ, e_z)
       return F*e_z
     end
-    (u,v) -> ∫((v ⋅(F_bed∘(u,Xₕ,Λ(u)))) * Jabs)dΩ
+    (u,v) -> ∫(area * (v ⋅(F_bed∘(u,Xₕ,Λ(u)))) * Jabs)dΩ
   else
     (u,v) -> ∫(0.0*(v ⋅ u))dΩ
   end
 
   # Define the residual function
-  res(u, v) = ∫(((∇(v)' ⋅ Q') ⊙ K(u)) * Jabs)dΩ - ∫((v ⋅ Fᵨ) * Jabs)dΩ -
+  res(u, v) = ∫(area * ((∇(v)' ⋅ Q') ⊙ K(u)) * Jabs)dΩ - ∫(area * (v ⋅ Fᵨ) * Jabs)dΩ -
               res_bed(u,v)
 
   return res

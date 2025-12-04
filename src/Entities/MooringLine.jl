@@ -462,7 +462,7 @@ function solve_quasistatic(ph::PH.ParameterHandler)
     # solve
     # TODO: add nls parameters as input parameters (solver parameters)
     op = FEOperator(res, X(0.0), Y)
-    nls = NLSolver(BackslashSolver(), iterations=100, show_trace=true, ftol=1e-8,method=:newton)
+    nls = NLSolver(BackslashSolver(), iterations=200, show_trace=true, ftol=1e-8,method=:newton)
     uₕ = solve(nls, op)
     push!(u, uₕ)
     push!(x_ref, Xₕ)
