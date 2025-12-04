@@ -17,7 +17,7 @@ This struct is used to define a point in the mooring system.
 It includes the following fields:
 - `tag::String`: Identifier for the point
 - `btrian::Triangulation`: BoundaryTriangulation or InterfaceTriangulation with the position of the point in space
-- `strian::Vector{Tuple{Int,Triangulation}}`: Vector of tuples containing segment ID and corresponding Triangulation connected to this point
+- `s_id_trians::Vector{Tuple{Int,Triangulation}}`: Vector of tuples containing segment ID and corresponding Triangulation connected to this point
 - `motion::MotionType`: Type of motion of the point. If no motion is specified, the point is free to move in space.
 """
 struct MooringPoint

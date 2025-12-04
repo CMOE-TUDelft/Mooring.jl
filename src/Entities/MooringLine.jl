@@ -22,10 +22,10 @@ export setup_lines
 MooringLine struct
 
 This struct is used to define a mooring line in the mooring system. 
-A mooring lines is defined by a set of segments, each segment is defined as [`MooringSegment`](@ref) types.
+A mooring line is defined by a set of segments, each segment is defined as [`MooringSegment`](@ref) types.
 It includes the following fields:
-- `points::Vector{MooringPoint}`: Vector of points that make up the mooring line
-- `segments::Vector{MooringSegment}`: Vector of segments that make up the mooring line
+- `points::Dict{Int, MooringPoint}`: Dictionary of points indexed by point ID
+- `segments::Dict{Int, MooringSegment}`: Dictionary of segments indexed by segment ID
 """
 struct MooringLine
   points::Dict{Int, Pts.MooringPoint}

@@ -187,7 +187,14 @@ This function returns the unit tangent vector of a given line. The tangent vecto
 \\mathbf{T} = \\frac{\\mathbf{J}}{\\|\\mathbf{J}\\|}
 ```
 """
+# Tangent vector for scalar/tensor inputs.
+# Note: G(J)[1] assumes the metric tensor is 1×1 (i.e., for lines). This is valid for 1D manifolds.
+# If used for higher-dimensional manifolds, this may not be correct.
 T(J) = J/sqrt(G(J)[1])
+
+# Tangent vector for CellField inputs.
+# This separate implementation is needed because Gridap handles CellField operations differently.
+# The result is mathematically equivalent to the scalar/tensor case.
 T(J::CellField) = J / (J'⋅J).^(0.5)
 
 """
