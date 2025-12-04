@@ -11,7 +11,9 @@ using Gridap.MultiField
 using Gridap.ODEs
 using Gridap.Algebra
 using Gridap.ReferenceFEs: num_point_dims
+using Gridap.Geometry
 using Gridap.Geometry: get_node_coordinates
+using Gridap.Fields: Point
 using Roots: find_zero
 
 export setup_lines
@@ -20,47 +22,27 @@ export setup_lines
 MooringLine struct
 
 This struct is used to define a mooring line in the mooring system. 
-A mooring lines is defined by a set of segments, each segment is defined as [`MooringSegment`](@ref) types.
+A mooring line is defined by a set of segments, each segment is defined as [`MooringSegment`](@ref) types.
 It includes the following fields:
-- `segments::Vector{MooringSegment}`: Vector of segments that make up the mooring line
+- `points::Dict{Int, MooringPoint}`: Dictionary of points indexed by point ID
+- `segments::Dict{Int, MooringSegment}`: Dictionary of segments indexed by segment ID
 """
 struct MooringLine
+  points::Dict{Int, Pts.MooringPoint}
   segments::Dict{Int, Seg.MooringSegment}
 end
+
+"""
+  get_points(line::MooringLine)
+  Get the points of a mooring line.
+"""
+get_points(line::MooringLine) = line.points
 
 """
   get_segments(line::MooringLine)
   Get the segments of a mooring line.
 """
 get_segments(line::MooringLine) = line.segments
-
-"""
-get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
-
-This function makes the physical map between two points of a segment.
-Given a coordinate along the segment `r`, it returns the coordinate in the physical space.
-"""
-function get_physical_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
-
-  # Get physical coordinates of start and stop points
-  p1_id = seg.start_point
-  p2_id = seg.stop_point
-  x_phys_p1 = ph.points[p1_id].coords
-  x_phys_p2 = ph.points[p2_id].coords
-
-  # Reference coordinates of start and stop points
-  p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
-  p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
-  x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
-  x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
-  @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
-
-  return function(r::VectorValue{1,Float64})
-      s = (r[1] - x_ref_p1) / (x_ref_p2 - x_ref_p1)        # parametric coordinate along segment
-      x_phys = x_phys_p1 .+ s .* (x_phys_p2 .- x_phys_p1) # linear interpolation
-      return VectorValue(x_phys) 
-  end
-end
 
 """
 get_physical_linear_map(seg::PH.SegmentParameters, ph::PH.ParameterHandler, start_point::Pts.MooringPoint, stop_point::Pts.MooringPoint)
@@ -93,10 +75,8 @@ function get_physical_linear_map(seg::PH.SegmentParameters, ph::PH.ParameterHand
   x_phys_p2 = ph.points[p2_id].coords
 
   # Reference coordinates of start and stop points
-  p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
-  p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
-  x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
-  x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
+  x_ref_p1 = Pts.get_reference_node_coord(start_point)
+  x_ref_p2 = Pts.get_reference_node_coord(stop_point)
   @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
 
   return function(r::VectorValue{1,Float64})
@@ -142,10 +122,8 @@ function get_physical_quadratic_map(seg::PH.SegmentParameters, ph::PH.ParameterH
   x_phys_p2 = ph.points[p2_id].coords
 
   # Reference coordinates of start and stop points
-  p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
-  p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
-  x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
-  x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
+  x_ref_p1 = Pts.get_reference_node_coord(start_point)
+  x_ref_p2 = Pts.get_reference_node_coord(stop_point)
   @assert norm(x_ref_p1-x_ref_p2) ≈ seg.length "Reference length between points $p1_id and $p2_id does not match segment length $(seg.length)"
 
   # Determine dimensionality
@@ -311,12 +289,22 @@ function setup_lines(ph::PH.ParameterHandler)
     # Create discrete model
     model = DM.generate_discrete_model(line, ph)
 
+    # Create segment triangulations
+    s_triangulations = Vector{BodyFittedTriangulation}(undef, length(line.segments))
+    for s_id in line.segments
+      tag = ph.segments[s_id].tag
+      s_triangulations[s_id] = Interior(model, tags=[tag])
+    end
+
     # Create MooringPoints
     points = Dict{Int, Pts.MooringPoint}()
     for p_id in line.points
       point_params = ph.points[p_id]
       motion = PM.MotionType(p_id, ph)
-      point = Pts.MooringPoint(model, point_params.tag, motion)
+      # List of segment triangulations connected to this point
+      connected_segments = [s_id for s_id in line.segments if ph.segments[s_id].start_point == p_id || ph.segments[s_id].stop_point == p_id]
+      s_id_and_triangulations = [(s_id,s_triangulations[s_id]) for s_id in connected_segments]
+      point = Pts.MooringPoint(s_id_and_triangulations, point_params.tag, motion)
       points[p_id] = point
     end
 
@@ -343,7 +331,7 @@ function setup_lines(ph::PH.ParameterHandler)
     end
 
     # Create MooringLine
-    mooring_line = MooringLine(segments)
+    mooring_line = MooringLine(points,segments)
 
     # Store line
     lines[line_id] = mooring_line
@@ -401,12 +389,39 @@ An optional gravitational acceleration parameter `g` can be provided (default is
 Check also [`MooringSegment.get_quasi_static_residual`](@ref) for details on the definition of the segment residual.
 """
 function get_quasi_static_residual(line::MooringLine, Xₕ::MultiFieldFEFunction, g::Float64=9.81)
-  res_terms = Vector{Function}(undef, length(line.segments))
+  
+  # Compute residual terms for each segment
+  s_res_terms = Vector{Function}(undef, length(line.segments))
   for (s_id, segment) in line.segments
-    res_terms[s_id] = Seg.get_quasi_static_residual(segment, Xₕ[s_id], g)
+    s_res_terms[s_id] = Seg.get_quasi_static_residual(segment, Xₕ[s_id], g)
   end
+
+  # Compute point contributions (if any)
+  p_res_terms = Dict{Int, Tuple{Vector{Int}, Function}}()
+  for (p_id, point) in line.points
+    if Pts.is_free_point(point)
+      segment_ids = Pts.get_segment_ids(point)
+      materials = Mat.Material[Seg.get_material(line.segments[s_id]) for s_id in segment_ids]
+      p_Xₕ = [Xₕ[s_id] for s_id in segment_ids]
+      p_res_term = Pts.get_quasi_static_residual(point, materials, p_Xₕ, g)
+      p_res_terms[p_id] = (segment_ids, p_res_term)
+    end
+  end
+
+  # Combine segment residuals into line residual
   function res(x,y)
-    sum(res_terms[i](x[i],y[i]) for i in eachindex(res_terms))
+
+    # Sum segment contributions
+    contributions = sum(s_res_terms[i](x[i],y[i]) for i in eachindex(s_res_terms))
+    
+    # Add point contributions
+    for (s_ids,p_res_term) in values(p_res_terms)
+      u = [x[s_id] for s_id in s_ids]
+      v = [y[s_id] for s_id in s_ids]
+      contributions += p_res_term(u,v)
+    end
+    
+    return contributions
   end
   return res
 end

@@ -18,9 +18,13 @@ add_tag_from_tags!(labels,"pointA",[1])
 add_tag_from_tags!(labels,"pointB",[2])
 add_tag_from_tags!(labels,"segment1",[3])
 
+# Create segment triangulation
+trian = Interior(model, tags=["segment1"])
+
 # Create points
-pointA = Pt.MooringPoint(model, "pointA")
-pointB = Pt.MooringPoint(model, "pointB")
+s_id_trians = [(1, trian)]
+pointA = Pt.MooringPoint(s_id_trians, "pointA")
+pointB = Pt.MooringPoint(s_id_trians, "pointB")
 
 # Create a segment
 segment = Seg.MooringSegment(model, "segment1", pointA, pointB, map, material)

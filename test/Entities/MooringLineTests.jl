@@ -1,6 +1,7 @@
 import Mooring.ParameterHandler as PH
 import Mooring.MooringLines as ML
 import Mooring.MooringSegments as Seg
+import Mooring.MooringPoints as Pts
 using Gridap.MultiField
 using Gridap.Geometry: get_node_coordinates
 using Gridap.TensorValues
@@ -37,10 +38,8 @@ stop_point = points[ph.segments[1].stop_point]
     f_linear = ML.get_physical_linear_map(ph.segments[1], ph, start_point, stop_point)
     
     # Get reference coordinates
-    p1_ref_node = start_point.btrian.glue.face_to_bgface[1]
-    p2_ref_node = stop_point.btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(start_point.btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(stop_point.btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(start_point)
+    x_ref_p2 = Pts.get_reference_node_coord(stop_point)
     
     # Test at endpoints
     start_pos = f_linear(VectorValue(x_ref_p1))
@@ -74,10 +73,8 @@ end
     f_linear = ML.get_physical_linear_map(ph_horiz.segments[1], ph_horiz, points_horiz[1], points_horiz[2])
     
     # Get reference coordinates
-    p1_ref_node = points_horiz[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_horiz[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_horiz[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_horiz[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_horiz[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_horiz[2])
     
     # Test at several points - should match linear map (no excess length)
     for t in [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -104,10 +101,8 @@ end
     f_quad = ML.get_physical_quadratic_map(ph_vert.segments[1], ph_vert, points_vert[1], points_vert[2])
     
     # Get reference coordinates
-    p1_ref_node = points_vert[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_vert[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_vert[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_vert[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_vert[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_vert[2])
     
     # Endpoints should match exactly
     start_pos = f_quad(VectorValue(x_ref_p1))
@@ -142,10 +137,8 @@ end
     f_linear = ML.get_physical_linear_map(ph_incl.segments[1], ph_incl, points_incl[1], points_incl[2])
     
     # Get reference coordinates
-    p1_ref_node = points_incl[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_incl[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_incl[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_incl[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_incl[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_incl[2])
     
     # Test endpoints match
     start_pos = f_quad(VectorValue(x_ref_p1))
@@ -207,10 +200,8 @@ end
     f_linear = ML.get_physical_linear_map(ph_3d.segments[1], ph_3d, points_3d[1], points_3d[2])
     
     # Get reference coordinates
-    p1_ref_node = points_3d[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_3d[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_3d[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_3d[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_3d[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_3d[2])
     
     # Test endpoints
     start_pos = f_quad(VectorValue(x_ref_p1))
@@ -272,10 +263,8 @@ end
     f_quad = ML.get_physical_quadratic_map(ph_multi.segments[1], ph_multi, points_multi[1], points_multi[2])
     f_linear = ML.get_physical_linear_map(ph_multi.segments[1], ph_multi, points_multi[1], points_multi[2])
     
-    p1_ref_node = points_multi[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_multi[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_multi[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_multi[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_multi[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_multi[2])
     
     # Test at multiple s values
     s_values = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
@@ -320,10 +309,8 @@ end
     
     f_quad = ML.get_physical_quadratic_map(ph_asym.segments[1], ph_asym, points_asym[1], points_asym[2])
     
-    p1_ref_node = points_asym[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_asym[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_asym[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_asym[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_asym[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_asym[2])
     
     # Test endpoints
     start_pos = f_quad(VectorValue(x_ref_p1))
@@ -353,10 +340,8 @@ end
     f_quad = ML.get_physical_quadratic_map(ph_exact.segments[1], ph_exact, points_exact[1], points_exact[2])
     f_linear = ML.get_physical_linear_map(ph_exact.segments[1], ph_exact, points_exact[1], points_exact[2])
     
-    p1_ref_node = points_exact[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_exact[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_exact[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_exact[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_exact[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_exact[2])
     
     # Test at multiple points - should match linear exactly
     for t in [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -383,10 +368,8 @@ end
     f_quad = ML.get_physical_quadratic_map(ph_large.segments[1], ph_large, points_large[1], points_large[2])
     f_linear = ML.get_physical_linear_map(ph_large.segments[1], ph_large, points_large[1], points_large[2])
     
-    p1_ref_node = points_large[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_large[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_large[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_large[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_large[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_large[2])
     mid_ref = (x_ref_p1 + x_ref_p2) / 2.0
     
     mid_pos_quad = f_quad(VectorValue(mid_ref))
@@ -414,10 +397,8 @@ end
     f_linear = ML.get_physical_linear_map(ph_test.segments[1], ph_test, points_test[1], points_test[2])
     
     # Get reference coordinates
-    p1_ref_node = points_test[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_test[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_test[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_test[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_test[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_test[2])
     
     # Numerically compute arc length of the quadratic map
     n = 1000
@@ -463,10 +444,8 @@ end
     f_quad = ML.get_physical_quadratic_map(ph_sag.segments[1], ph_sag, points_sag[1], points_sag[2])
     f_linear = ML.get_physical_linear_map(ph_sag.segments[1], ph_sag, points_sag[1], points_sag[2])
     
-    p1_ref_node = points_sag[1].btrian.glue.face_to_bgface[1]
-    p2_ref_node = points_sag[2].btrian.glue.face_to_bgface[1]
-    x_ref_p1 = get_node_coordinates(points_sag[1].btrian)[p1_ref_node][1]
-    x_ref_p2 = get_node_coordinates(points_sag[2].btrian)[p2_ref_node][1]
+    x_ref_p1 = Pts.get_reference_node_coord(points_sag[1])
+    x_ref_p2 = Pts.get_reference_node_coord(points_sag[2])
     
     # Test symmetry and parabolic shape properties
     quarter_ref = x_ref_p1 + 0.25 * (x_ref_p2 - x_ref_p1)

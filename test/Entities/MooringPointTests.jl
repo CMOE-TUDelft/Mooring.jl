@@ -10,9 +10,13 @@ labels = get_face_labeling(model)
 add_tag_from_tags!(labels,"pointA",[1])
 add_tag_from_tags!(labels,"pointB",[2])
 
+# Create triangulations
+trian = Triangulation(model)
+
 # Create points
-pointA = Pt.MooringPoint(model, "pointA", nothing)
-pointB = Pt.MooringPoint(model, "pointB")
+s_id_trians = [(1, trian)]
+pointA = Pt.MooringPoint(s_id_trians, "pointA", nothing)
+pointB = Pt.MooringPoint(s_id_trians, "pointB")
 
 # Test the point properties
 @test Pt.get_tag(pointA) == "pointA"
